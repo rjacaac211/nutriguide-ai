@@ -1,0 +1,30 @@
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+
+import chatRoutes from "./routes/chat.js";
+import userRoutes from "./routes/users.js";
+
+dotenv.config();
+
+const app = express();
+app.locals.userProfiles = {};
+const PORT = process.env.PORT || 3001;
+
+app.use(cors({ origin: true }));
+app.use(express.json());
+
+app.use("/api/chat", chatRoutes);
+app.use("/api/users", userRoutes);
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.get("/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.listen(PORT, () => {
+  console.log(`NutriGuide backend running on http://localhost:${PORT}`);
+});
