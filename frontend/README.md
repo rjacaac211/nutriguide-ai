@@ -1,6 +1,6 @@
 # NutriGuide Frontend
 
-React SPA with chat UI and user profile form. Proxies `/api` requests to the backend.
+React SPA with Create Profile onboarding flow, dashboard, and AI chat widget. Proxies `/api` requests to the backend.
 
 Part of [NutriGuide AI](../README.md).
 
@@ -39,9 +39,12 @@ npm run preview
 
 ## Features
 
-- **Chat UI** — Nutrition Q&A with the AI agent
-- **New chat** — Start a fresh conversation with a new thread (clean memory)
-- **User Profile Form** — Age, weight, goal, activity level, dietary restrictions
+- **Create Account** — Landing page with onboarding entry point
+- **Onboarding Wizard** — Multi-step questionnaire (goal, gender, birth date, height, weight, preferences, activity, speed of change)
+- **Loading & Summary** — Progress animation, name entry, goal summary with calculated target date
+- **Dashboard** — Calorie summary (eaten/remaining/burned), meals logged (Breakfast, Lunch, Dinner, Snack), activity section
+- **Chat Widget** — Floating, collapsible AI chat (bottom-right) for nutrition Q&A; **New chat** starts a fresh conversation
+- **Session-scoped** — Profile and chat use `sessionId`; reload starts a new session (no persistence)
 - **API Proxy** — `/api` requests forwarded to backend
 
 Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`.
@@ -51,7 +54,10 @@ Conversation memory is handled by the agent per session (thread); the frontend s
 ```
 frontend/
 ├── src/
-│   ├── components/   # Chat, UserProfileForm
+│   ├── components/   # LandingStep, OnboardingWizard, QuestionSlide, LoadingScreen,
+│   │                 # EnterNameStep, GoalSummaryStep, Dashboard, CalorieSummary,
+│   │                 # MealsLogged, ActivitySection, ChatWidget, Chat
+│   ├── config/       # onboardingQuestions.js
 │   ├── api/          # API client
 │   └── ...
 ├── vite.config.js    # Proxy: /api -> http://localhost:3001

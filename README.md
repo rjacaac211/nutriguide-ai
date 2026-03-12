@@ -8,7 +8,7 @@ A production-ready nutrition chatbot that demonstrates LangGraph (Python), Node.
 - **Node.js / Express**: Backend API, middleware, agent proxy
 - **RAG**: OpenAI embeddings + ChromaDB for nutrition knowledge
 - **OpenAI**: GPT-4o-mini for the agent
-- **React**: Chat UI and user profile form
+- **React**: Create Profile onboarding, dashboard, and AI chat widget
 
 ## Prerequisites
 
@@ -76,7 +76,7 @@ Runs on http://localhost:5173 (proxies `/api` to backend).
 
 ## Usage
 
-**All three services must be running** for the frontend chat to work:
+**All three services must be running** for the frontend to work:
 
 1. **AI Agent** (port 8000) – handles chat with OpenAI
 2. **Backend** (port 3001) – proxies requests from frontend to agent
@@ -85,12 +85,13 @@ Runs on http://localhost:5173 (proxies `/api` to backend).
 If the backend is not running, the chat will show "Thinking..." and then fail. Start the backend with `cd backend && npm run dev`.
 
 1. Open http://localhost:5173
-2. Click "Edit Profile" and fill in age, weight, goal, activity level, dietary restrictions (optional but improves recommendations)
-3. Save your profile
-4. Ask nutrition questions in the chat (e.g., "What should I eat to lose weight?", "I'm vegetarian—suggest a high-protein breakfast")
-5. Use **New chat** to start a fresh conversation with a clean memory
+2. Click **Create Account** to start the onboarding flow
+3. Answer the profile questions (goal, gender, birth date, height, weight, preferences, activity level, etc.)
+4. Enter your name and view your goal summary
+5. Use the **dashboard** to see calorie summary, meals logged, and activity
+6. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
 
-The agent uses your profile and RAG-retrieved nutrition knowledge to personalize responses. Conversation memory is maintained per session (thread) on the agent side.
+**Session-scoped data:** Profile and conversation memory are stored in memory and are not persisted. Reloading the page starts a new session—you will need to create your profile again. This mirrors the LangGraph agent's session-scoped conversation memory.
 
 ## Project Structure
 
@@ -106,16 +107,17 @@ NutriGuide-AI/
 │       └── index.js
 ├── frontend/           # React app ([README](frontend/README.md))
 │   └── src/
-│       ├── components/ # Chat, UserProfileForm
+│       ├── components/ # LandingStep, OnboardingWizard, QuestionSlide, Dashboard, ChatWidget, etc.
+│       ├── config/     # onboardingQuestions
 │       └── api/
 └── README.md
 ```
 
 ## API
 
-- `POST /api/chat` — Send message: `{ userId, message, threadId }` (agent maintains session memory per thread)
-- `GET /api/users/:id/profile` — Get user profile
-- `PUT /api/users/:id/profile` — Update profile: `{ age, weight_kg, goal, dietary_restrictions, activity_level }`
+- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread)
+- `GET /api/users/:id/profile` — Get user profile (id = sessionId)
+- `PUT /api/users/:id/profile` — Update profile. Extended schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`
 
 ## Troubleshooting
 

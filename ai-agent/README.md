@@ -60,7 +60,13 @@ Process a chat message and return the agent's response. Conversation history is 
   "user_id": "string",
   "message": "string",
   "thread_id": "string",
-  "user_profiles": {"userId": {"age", "weight_kg", "goal", "dietary_restrictions", "activity_level"}}
+  "user_profiles": {
+    "sessionId": {
+      "name", "gender", "birth_date", "age", "height_cm", "weight_kg",
+      "goal_weight_kg", "goal", "activity_level", "speed_kg_per_week",
+      "preferences", "challenges", "dietary_restrictions"
+    }
+  }
 }
 ```
 
@@ -87,7 +93,7 @@ Health check. Returns `{"status": "ok", "agent_ready": true|false}`.
 ai-agent/
 ├── agent/          # Agent logic
 │   ├── main.py     # create_nutrition_agent
-│   ├── tools.py    # get_user_profile
+│   ├── tools.py    # get_user_profile (extended with name, gender, height_cm, goal_weight_kg, preferences, challenges)
 │   └── rag.py      # ChromaDB retriever
 ├── knowledge/      # Nutrition docs for RAG
 ├── main.py         # FastAPI server

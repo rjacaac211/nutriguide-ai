@@ -1,6 +1,6 @@
 # NutriGuide Backend
 
-Express API that proxies chat requests to the AI agent and manages user profiles in memory.
+Express API that proxies chat requests to the AI agent and manages user profiles in memory. Profiles are keyed by `sessionId` (session-scoped; reload = new session = no profile).
 
 Part of [NutriGuide AI](../README.md).
 
@@ -44,12 +44,12 @@ Runs on **http://localhost:3001**.
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| POST | `/api/chat` | Send message to agent. Body: `{ userId, message, threadId }` |
-| GET | `/api/users/:id/profile` | Get user profile |
-| PUT | `/api/users/:id/profile` | Update profile. Body: `{ age, weight_kg, goal, dietary_restrictions, activity_level }` |
+| POST | `/api/chat` | Send message to agent. Body: `{ userId, message, threadId }` (userId = sessionId) |
+| GET | `/api/users/:id/profile` | Get user profile (id = sessionId) |
+| PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }` |
 | GET | `/api/health` | Health check |
 
-**Note:** User profiles are stored in memory and are not persisted across restarts.
+**Note:** User profiles are stored in memory and are not persisted across restarts. Profiles are keyed by sessionId; reloading the frontend generates a new sessionId, so the previous profile is not accessible.
 
 ## Structure
 
