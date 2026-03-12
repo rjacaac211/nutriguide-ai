@@ -1,6 +1,6 @@
 # NutriGuide AI Agent
 
-Python FastAPI service hosting the LangGraph nutrition agent with RAG (ChromaDB) and tools. Handles chat requests and returns personalized nutrition recommendations.
+Python FastAPI service hosting the LangGraph nutrition agent with RAG (ChromaDB) and tools. Handles chat requests and returns personalized nutrition recommendations. Uses LangGraph's InMemorySaver checkpointer for session-scoped conversation memory.
 
 Part of [NutriGuide AI](../README.md).
 
@@ -8,7 +8,7 @@ Part of [NutriGuide AI](../README.md).
 
 - **Python 3.10+**
 - **FastAPI** — HTTP server
-- **LangChain / LangGraph** — Agent with tools
+- **LangChain / LangGraph** — Agent with tools and checkpointer (session memory)
 - **ChromaDB** — RAG vector store for nutrition knowledge
 - **OpenAI** — GPT-4o-mini for the agent
 
@@ -51,14 +51,15 @@ Runs on **http://localhost:8000** (uvicorn).
 
 ### POST /chat
 
-Process a chat message and return the agent's response.
+Process a chat message and return the agent's response. Conversation history is maintained per `thread_id` via the InMemorySaver checkpointer (session-scoped; lost on server restart).
 
 **Request:**
 
 ```json
 {
   "user_id": "string",
-  "messages": [{"role": "user"|"assistant", "content": "string"}],
+  "message": "string",
+  "thread_id": "string",
   "user_profiles": {"userId": {"age", "weight_kg", "goal", "dietary_restrictions", "activity_level"}}
 }
 ```
@@ -67,10 +68,14 @@ Process a chat message and return the agent's response.
 
 ```json
 {
-  "messages": [{"role": "assistant", "content": "string"}],
+  "messages": [{"role": "user"|"assistant", "content": "string"}],
   "response": "string"
 }
 ```
+
+### Session Memory
+
+The agent uses LangGraph's `InMemorySaver` checkpointer. Each `thread_id` maps to a separate conversation with its own message history. The client sends only the new message; the agent loads prior state from the checkpoint and appends the new message.
 
 ### GET /health
 

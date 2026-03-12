@@ -88,8 +88,9 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 2. Click "Edit Profile" and fill in age, weight, goal, activity level, dietary restrictions (optional but improves recommendations)
 3. Save your profile
 4. Ask nutrition questions in the chat (e.g., "What should I eat to lose weight?", "I'm vegetarian—suggest a high-protein breakfast")
+5. Use **New chat** to start a fresh conversation with a clean memory
 
-The agent uses your profile and RAG-retrieved nutrition knowledge to personalize responses.
+The agent uses your profile and RAG-retrieved nutrition knowledge to personalize responses. Conversation memory is maintained per session (thread) on the agent side.
 
 ## Project Structure
 
@@ -112,7 +113,7 @@ NutriGuide-AI/
 
 ## API
 
-- `POST /api/chat` — Send message: `{ userId, message, messages? }`
+- `POST /api/chat` — Send message: `{ userId, message, threadId }` (agent maintains session memory per thread)
 - `GET /api/users/:id/profile` — Get user profile
 - `PUT /api/users/:id/profile` — Update profile: `{ age, weight_kg, goal, dietary_restrictions, activity_level }`
 

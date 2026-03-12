@@ -40,8 +40,11 @@ npm run preview
 ## Features
 
 - **Chat UI** — Nutrition Q&A with the AI agent
+- **New chat** — Start a fresh conversation with a new thread (clean memory)
 - **User Profile Form** — Age, weight, goal, activity level, dietary restrictions
 - **API Proxy** — `/api` requests forwarded to backend
+
+Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`.
 
 ## Structure
 
