@@ -1,0 +1,31 @@
+services:
+  ai-agent:
+    image: ${ECR_REGISTRY}/nutriguide-ai-agent:${IMAGE_TAG}
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-nutriguide-ai-prototype}
+    volumes:
+      - chroma_db:/app/chroma_db
+    restart: unless-stopped
+
+  backend:
+    image: ${ECR_REGISTRY}/nutriguide-backend:${IMAGE_TAG}
+    environment:
+      - PORT=3001
+      - AGENT_URL=http://ai-agent:8000
+    depends_on:
+      - ai-agent
+    restart: unless-stopped
+
+  frontend:
+    image: ${ECR_REGISTRY}/nutriguide-frontend:${IMAGE_TAG}
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  chroma_db:

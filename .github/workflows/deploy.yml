@@ -1,0 +1,78 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push frontend
+        run: |
+          docker build -t $ECR_REGISTRY/nutriguide-frontend:$IMAGE_TAG ./frontend
+          docker push $ECR_REGISTRY/nutriguide-frontend:$IMAGE_TAG
+
+      - name: Build and push backend
+        run: |
+          docker build -t $ECR_REGISTRY/nutriguide-backend:$IMAGE_TAG ./backend
+          docker push $ECR_REGISTRY/nutriguide-backend:$IMAGE_TAG
+
+      - name: Build and push ai-agent
+        run: |
+          docker build -t $ECR_REGISTRY/nutriguide-ai-agent:$IMAGE_TAG ./ai-agent
+          docker push $ECR_REGISTRY/nutriguide-ai-agent:$IMAGE_TAG
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      LANGCHAIN_TRACING_V2: "true"
+      LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
+      LANGCHAIN_PROJECT: nutriguide-ai-prototype
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key.pem
+          chmod 600 ~/.ssh/deploy_key.pem
+          ssh-keyscan -H ${{ vars.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Copy docker-compose.prod.yml to EC2
+        run: |
+          scp -i ~/.ssh/deploy_key.pem -o StrictHostKeyChecking=no \
+            docker-compose.prod.yml ubuntu@${{ vars.EC2_HOST }}:/home/ubuntu/nutriguide/
+
+      - name: Deploy on EC2
+        run: |
+          ssh -i ~/.ssh/deploy_key.pem -o StrictHostKeyChecking=no ubuntu@${{ vars.EC2_HOST }} \
+            "cd /home/ubuntu/nutriguide && \
+            echo 'OPENAI_API_KEY=$OPENAI_API_KEY' > .env && \
+            echo 'LANGCHAIN_TRACING_V2=$LANGCHAIN_TRACING_V2' >> .env && \
+            echo 'LANGCHAIN_API_KEY=$LANGCHAIN_API_KEY' >> .env && \
+            echo 'LANGCHAIN_PROJECT=$LANGCHAIN_PROJECT' >> .env && \
+            echo 'ECR_REGISTRY=$ECR_REGISTRY' >> .env && \
+            echo 'IMAGE_TAG=$IMAGE_TAG' >> .env && \
+            aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY && \
+            docker compose -f docker-compose.prod.yml pull && \
+            docker compose -f docker-compose.prod.yml up -d"
