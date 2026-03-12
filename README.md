@@ -16,17 +16,33 @@ A production-ready nutrition chatbot that demonstrates LangGraph (Python), Node.
 - Node.js 18+
 - OpenAI API key (required for the agent)
 
-**Note:** Create a `.env` file in the project root with `OPENAI_API_KEY=sk-your-key` before running the AI agent.
+## Quick Reference
+
+| Service   | Port | Description                    |
+| --------- | ---- | ------------------------------ |
+| AI Agent  | 8000 | LangGraph agent, RAG, tools    |
+| Backend   | 3001 | Express API, agent proxy       |
+| Frontend  | 5173 | React chat UI                  |
 
 ## Setup
 
 ### 1. Environment
 
-Create `.env` in the project root (or in each service directory):
+Copy [`.env.example`](.env.example) to `.env` in the project root and set your values:
 
 ```
 OPENAI_API_KEY=sk-your-key-here
 ```
+
+Optional (for LangSmith tracing):
+
+```
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=your_langchain_api_key
+LANGCHAIN_PROJECT=your_langchain_project_name
+```
+
+Backend options: `PORT=3001`, `AGENT_URL=http://localhost:8000`
 
 ### 2. AI Agent (Python)
 
@@ -79,15 +95,15 @@ The agent uses your profile and RAG-retrieved nutrition knowledge to personalize
 
 ```
 NutriGuide-AI/
-├── ai-agent/          # Python LangGraph agent
+├── ai-agent/          # Python LangGraph agent ([README](ai-agent/README.md))
 │   ├── agent/          # create_agent, tools, RAG
 │   ├── knowledge/      # Nutrition docs for RAG
 │   └── main.py         # FastAPI server
-├── backend/            # Express API
+├── backend/            # Express API ([README](backend/README.md))
 │   └── src/
 │       ├── routes/     # /chat, /users
 │       └── index.js
-├── frontend/           # React app
+├── frontend/           # React app ([README](frontend/README.md))
 │   └── src/
 │       ├── components/ # Chat, UserProfileForm
 │       └── api/
@@ -99,3 +115,9 @@ NutriGuide-AI/
 - `POST /api/chat` — Send message: `{ userId, message, messages? }`
 - `GET /api/users/:id/profile` — Get user profile
 - `PUT /api/users/:id/profile` — Update profile: `{ age, weight_kg, goal, dietary_restrictions, activity_level }`
+
+## Troubleshooting
+
+- **Chat stuck on "Thinking..."** — Backend is not running. Start it with `cd backend && npm run dev`.
+- **Agent connection errors** — Ensure the AI agent is running on port 8000. Set `AGENT_URL` in `.env` if it runs elsewhere.
+- **OpenAI API errors** — Verify `OPENAI_API_KEY` is set correctly in `.env`.
