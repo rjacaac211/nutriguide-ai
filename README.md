@@ -15,6 +15,7 @@ A production-ready nutrition chatbot that demonstrates LangGraph (Python), Node.
 - Python 3.10+
 - Node.js 18+
 - OpenAI API key (required for the agent)
+- Docker and Docker Compose (optional, for Docker setup)
 
 ## Quick Reference
 
@@ -74,6 +75,19 @@ npm run dev
 
 Runs on http://localhost:5173 (proxies `/api` to backend).
 
+### 5. Alternative: Docker Compose
+
+Run all services with Docker:
+
+```bash
+# From project root (ensure .env exists)
+docker compose up --build
+```
+
+App available at http://localhost:80. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, and ai-agent.
+
+For production deployment (ECR images), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Usage
 
 **All three services must be running** for the frontend to work:
@@ -97,6 +111,8 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 
 ```
 NutriGuide-AI/
+├── docker-compose.yml      # Local dev (build from source)
+├── docker-compose.prod.yml # Production (ECR images)
 ├── ai-agent/          # Python LangGraph agent ([README](ai-agent/README.md))
 │   ├── agent/          # create_agent, tools, RAG
 │   ├── knowledge/      # Nutrition docs for RAG
