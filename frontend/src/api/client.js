@@ -10,7 +10,7 @@ export async function checkBackendHealth() {
   }
 }
 
-export async function sendChat(userId, message, messages = []) {
+export async function sendChat(userId, message, threadId) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
 
@@ -18,7 +18,7 @@ export async function sendChat(userId, message, messages = []) {
     const res = await fetch(`${API_BASE}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, message, messages }),
+      body: JSON.stringify({ userId, message, threadId }),
       signal: controller.signal,
     });
     clearTimeout(timeoutId);

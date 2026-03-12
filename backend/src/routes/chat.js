@@ -5,14 +5,11 @@ const AGENT_URL = process.env.AGENT_URL || "http://localhost:8000";
 
 router.post("/", async (req, res) => {
   try {
-    const { userId, message, messages: existingMessages } = req.body;
+    const { userId, message, threadId } = req.body;
 
-    if (!userId || !message) {
-      return res.status(400).json({ error: "userId and message are required" });
+    if (!userId || !message || !threadId) {
+      return res.status(400).json({ error: "userId, message, and threadId are required" });
     }
-
-    const messages = existingMessages || [];
-    messages.push({ role: "user", content: message });
 
     const userProfiles = req.app.locals.userProfiles || {};
     const userProfile = userProfiles[userId] ? { [userId]: userProfiles[userId] } : {};
@@ -22,7 +19,8 @@ router.post("/", async (req, res) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user_id: userId,
-        messages,
+        message,
+        thread_id: threadId,
         user_profiles: userProfile,
       }),
     });

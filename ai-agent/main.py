@@ -13,7 +13,7 @@ load_dotenv(_env_local)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from agent.main import create_nutrition_agent
@@ -43,7 +43,8 @@ app.add_middleware(
 
 class ChatRequest(BaseModel):
     user_id: str
-    messages: list[dict]
+    message: str
+    thread_id: str
     user_profiles: dict[str, dict] | None = None
 
 
@@ -62,14 +63,21 @@ async def chat(request: ChatRequest):
     # User profiles are passed from the Express backend
     set_user_profiles(request.user_profiles or {})
 
-    # Inject user context so the agent knows which user_id to use
-    messages = [
-        SystemMessage(content=f"Current user ID for this conversation: {request.user_id}. Use this ID when calling get_user_profile."),
-        *[_dict_to_msg(m) for m in request.messages],
-    ]
+    config = {"configurable": {"thread_id": request.thread_id}}
+
+    # Only the new message; agent loads history from checkpoint via thread_id
+    # Add user context SystemMessage only on first message (new thread)
+    state = agent.get_state(config)
+    existing = (state.values or {}).get("messages", []) if state else []
+    messages = [HumanMessage(content=request.message)]
+    if not existing:
+        messages.insert(
+            0,
+            SystemMessage(content=f"Current user ID for this conversation: {request.user_id}. Use this ID when calling get_user_profile."),
+        )
 
     try:
-        result = agent.invoke({"messages": messages})
+        result = agent.invoke({"messages": messages}, config=config)
         result_messages = result.get("messages", [])
         # Last AI message with content is the final response
         response_text = ""

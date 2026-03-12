@@ -131,6 +131,31 @@
   min-height: 400px;
 }
 
+.chat-header-row {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.chat-new-btn {
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chat-new-btn:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.1);
+  color: #e2e8f0;
+}
+
+.chat-new-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .chat-messages {
   flex: 1;
   padding: 1rem;

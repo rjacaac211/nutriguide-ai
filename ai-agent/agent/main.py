@@ -3,6 +3,7 @@
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import StructuredTool
+from langgraph.checkpoint.memory import InMemorySaver
 
 from .tools import get_user_profile
 from .rag import get_retriever
@@ -42,9 +43,12 @@ def create_nutrition_agent():
         max_tokens=1000,
     )
 
+    checkpointer = InMemorySaver()
+    
     agent = create_agent(
         model=model,
         tools=tools,
         system_prompt=SYSTEM_PROMPT,
+        checkpointer=checkpointer,
     )
     return agent
