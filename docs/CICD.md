@@ -4,13 +4,21 @@ How the GitHub Actions pipeline works and how to modify it.
 
 ## Trigger
 
-The workflow runs on **push to `main`**.
+The workflow runs on **push to `main`**, but is **skipped** when the push only touches documentation files:
 
 ```yaml
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - '*.md'
 ```
+
+- `docs/**` – any file under the `docs/` folder  
+- `**/README.md` – README files anywhere (root, `frontend/`, `backend/`, `ai-agent/`, etc.)  
+- `*.md` – other root-level markdown files (e.g. `CHANGELOG.md`, `CONTRIBUTING.md`)
 
 ## Jobs
 
@@ -85,5 +93,6 @@ Add these in **Settings > Secrets and variables > Actions > Variables**:
 ## Modifying the Workflow
 
 - **Change trigger branch**: Edit `branches: [main]` in `.github/workflows/deploy.yml`
+- **Change docs skip paths**: Edit `paths-ignore` to add/remove paths that skip the pipeline when only those files change
 - **Add build steps**: Add steps in the `build-and-push` job before the push commands
 - **Use self-hosted runner**: Change `runs-on: ubuntu-latest` to `runs-on: self-hosted` (requires runner installed on EC2)
