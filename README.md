@@ -120,6 +120,10 @@ NutriGuide-AI/
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Extended schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`
 
+## Deployment
+
+For AWS deployment (EC2, ECR, GitHub Actions, Docker Compose), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
 ## Troubleshooting
 
 - **Chat stuck on "Thinking..."** — Backend is not running. Start it with `cd backend && npm run dev`.
