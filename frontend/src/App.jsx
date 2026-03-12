@@ -19,7 +19,14 @@ const PHASES = {
 };
 
 export default function App() {
-  const [sessionId] = useState(() => crypto.randomUUID());
+  const [sessionId] = useState(() => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/x/g, () =>
+      Math.floor(Math.random() * 16).toString(16)
+    );
+  });
   const [appPhase, setAppPhase] = useState(PHASES.LANDING);
   const [profile, setProfile] = useState({});
   const [backendOk, setBackendOk] = useState(null);

@@ -1,8 +1,17 @@
 import { useState, useRef, useEffect } from "react";
 import { sendChat } from "../api/client";
 
+function generateId() {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/x/g, () =>
+    Math.floor(Math.random() * 16).toString(16)
+  );
+}
+
 export default function Chat({ userId }) {
-  const [threadId, setThreadId] = useState(() => crypto.randomUUID());
+  const [threadId, setThreadId] = useState(() => generateId());
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,7 +57,7 @@ export default function Chat({ userId }) {
   };
 
   const handleNewChat = () => {
-    setThreadId(crypto.randomUUID());
+    setThreadId(generateId());
     setMessages([]);
     setError(null);
   };
