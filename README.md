@@ -1,6 +1,8 @@
 # NutriGuide AI
 
-A production-ready nutrition chatbot that demonstrates LangGraph (Python), Node.js/Express, RAG, OpenAI, and React. Provides personalized nutrition recommendations based on user profile, goals, and conversation history.
+A production-ready nutrition chatbot that helps users get personalized dietary advice through natural conversation. It combines an AI agent powered by LangGraph and RAG with a React frontend and Node.js/Express backend, demonstrating a full-stack architecture for AI-driven applications.
+
+Users complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base and maintains conversation context, so advice adapts to each user's profile and history.
 
 ## Tech Stack
 
