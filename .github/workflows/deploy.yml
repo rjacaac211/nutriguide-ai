@@ -45,9 +45,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      LANGCHAIN_TRACING_V2: "true"
+      LANGCHAIN_TRACING_V2: ${{ vars.LANGCHAIN_TRACING_V2 }}
       LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
-      LANGCHAIN_PROJECT: nutriguide-ai-prototype
+      LANGCHAIN_PROJECT: ${{ vars.LANGCHAIN_PROJECT }}
     steps:
       - uses: actions/checkout@v4
 
