@@ -9,6 +9,7 @@ Part of [NutriGuide AI](../README.md).
 - **Node.js 18+**
 - **React 18**
 - **Vite** — Build tool and dev server
+- **CSS** — Plain CSS with design tokens
 
 ## Prerequisites
 
@@ -49,6 +50,18 @@ npm run preview
 
 Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`.
 
+## UI / Design
+
+The frontend uses a light, nutrition-focused theme:
+
+- **Colors:** White/off-white backgrounds (`#f8fafc`, `#ffffff`), green accents (`#22c55e`) for progress bars and selected states, orange (`#f97316`) for primary CTAs
+- **Design tokens:** CSS variables in `App.css` (`--color-primary`, `--color-cta`, `--color-bg`, `--shadow-md`, `--radius`, etc.)
+- **Cards:** White surfaces with soft shadows and 12px rounded corners
+- **Chat widget:** Floating orange button (bottom-right) with minimalist SVG message icon; expands to a white chat panel
+- **Onboarding:** Compact layout with the NEXT button positioned close to question content
+
+Styles live in `src/index.css` (global) and `src/App.css` (component styles).
+
 ## Structure
 
 ```
@@ -59,6 +72,8 @@ frontend/
 │   │                 # MealsLogged, ActivitySection, ChatWidget, Chat
 │   ├── config/       # onboardingQuestions.js
 │   ├── api/          # API client
+│   ├── App.css       # Component styles, design tokens
+│   ├── index.css     # Global styles
 │   └── ...
 ├── vite.config.js    # Proxy: /api -> http://localhost:3001
 └── package.json

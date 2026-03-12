@@ -8,7 +8,7 @@ A production-ready nutrition chatbot that demonstrates LangGraph (Python), Node.
 - **Node.js / Express**: Backend API, middleware, agent proxy
 - **RAG**: OpenAI embeddings + ChromaDB for nutrition knowledge
 - **OpenAI**: GPT-4o-mini for the agent
-- **React**: Create Profile onboarding, dashboard, and AI chat widget
+- **React**: Create Profile onboarding, dashboard, and AI chat widget (light theme, green/orange palette)
 
 ## Prerequisites
 
@@ -109,6 +109,7 @@ NutriGuide-AI/
 │   └── src/
 │       ├── components/ # LandingStep, OnboardingWizard, QuestionSlide, Dashboard, ChatWidget, etc.
 │       ├── config/     # onboardingQuestions
+│       ├── App.css     # Component styles, design tokens
 │       └── api/
 └── README.md
 ```
