@@ -13,9 +13,10 @@ Docker layout and how to run NutriGuide-AI locally vs production.
 
 | Service | Technology | Port | Description |
 |---------|------------|------|-------------|
+| chroma | ChromaDB | 8000 (internal) | Vector store for RAG; pulls from Docker Hub |
 | frontend | React, Vite, Nginx | 80 | React UI, proxies /api to backend |
 | backend | Node.js, Express | 3001 | API, proxies chat to ai-agent |
-| ai-agent | Python, FastAPI | 8000 | LangGraph agent, RAG, OpenAI |
+| ai-agent | TypeScript, Express | 8000 | LangGraph.js agent, RAG, OpenAI |
 
 ## Local Development
 
@@ -24,7 +25,8 @@ Docker layout and how to run NutriGuide-AI locally vs production.
 docker compose up --build
 ```
 
-- Builds images from `./frontend`, `./backend`, `./ai-agent`
+- Builds images from `./frontend`, `./backend`, `./ai-agent-ts`
+- Pulls Chroma from Docker Hub (`chromadb/chroma`)
 - Uses `.env` in project root for environment variables
 - App available at http://localhost:80 (or http://localhost)
 
@@ -45,14 +47,15 @@ docker compose -f docker-compose.prod.yml up -d
 
 ## Build Context
 
-Each service has its own Dockerfile:
+Each service has its own Dockerfile (except Chroma, which uses the official image):
 
 | Service | Dockerfile | Build context |
 |---------|------------|---------------|
 | frontend | `frontend/Dockerfile` | `./frontend` |
 | backend | `backend/Dockerfile` | `./backend` |
-| ai-agent | `ai-agent/Dockerfile` | `./ai-agent` |
+| ai-agent | `ai-agent-ts/Dockerfile` | `./ai-agent-ts` |
+| chroma | — | Pulls `chromadb/chroma` from Docker Hub |
 
 ## Volumes
 
-- **chroma_db**: Persists ChromaDB data for the AI agent's RAG knowledge base across container restarts.
+- **chroma_db**: Persists Chroma data for the AI agent's RAG knowledge base across container restarts.

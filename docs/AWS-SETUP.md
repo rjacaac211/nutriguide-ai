@@ -12,7 +12,7 @@ Step-by-step AWS Console setup for NutriGuide-AI deployment. Perform these steps
 |-----------------|---------|
 | `nutriguide-frontend` | React + Nginx image |
 | `nutriguide-backend` | Node.js Express image |
-| `nutriguide-ai-agent` | Python FastAPI agent image |
+| `nutriguide-ai-agent` | TypeScript LangGraph.js agent image |
 
 For each repository:
 

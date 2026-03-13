@@ -29,7 +29,8 @@ flowchart LR
 |-----------|------------|
 | Frontend | React, Vite, Nginx |
 | Backend | Node.js, Express |
-| AI Agent | Python, FastAPI, LangChain, LangGraph |
+| AI Agent | TypeScript, Express, LangGraph.js, LangChain |
+| Chroma | ChromaDB (Docker Hub image) |
 | Registry | AWS ECR |
 | Compute | AWS EC2 |
 | CI/CD | GitHub Actions |

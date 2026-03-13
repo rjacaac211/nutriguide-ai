@@ -1,6 +1,6 @@
 # Running Services Individually for Debugging
 
-Use this guide to run each service in a separate terminal so you can see logs and diagnose 500 errors.
+Use this guide to run each service in a separate terminal so you can see logs and diagnose 500 errors. The AI agent is TypeScript (ai-agent-ts); Chroma runs as a separate service for RAG.
 
 ## Prerequisites
 

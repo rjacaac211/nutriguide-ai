@@ -6,7 +6,7 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 ### Build fails
 
-- **Docker build error**: Check that all Dockerfiles exist and build contexts are correct (`./frontend`, `./backend`, `./ai-agent`)
+- **Docker build error**: Check that all Dockerfiles exist and build contexts are correct (`./frontend`, `./backend`, `./ai-agent-ts`)
 - **ECR push denied**: Verify `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are correct and the IAM user has `AmazonEC2ContainerRegistryFullAccess`
 
 ### SSH timeout
@@ -19,6 +19,12 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 - IAM user needs `AmazonEC2ContainerRegistryFullAccess` (or equivalent ECR push permissions)
 - Verify `ECR_REGISTRY` variable matches your AWS account and region
+
+### Deploy fails: "no space left on device"
+
+- EC2 disk is full, usually from accumulated Docker images and layers
+- SSH to EC2 and run: `docker system prune -a -f --volumes` to free space
+- Consider increasing EC2 storage or adding a cron job to prune Docker periodically
 
 ## EC2
 
@@ -45,7 +51,7 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 ### Chat stuck on "Thinking..."
 
-- Backend or AI agent may not be running. SSH to EC2 and run `docker ps` to verify all three containers are up
+- Backend or AI agent may not be running. SSH to EC2 and run `docker ps` to verify all containers are up (frontend, backend, ai-agent, chroma)
 - Check logs: `docker compose -f docker-compose.prod.yml logs backend` and `logs ai-agent`
 
 ### Backend unreachable
