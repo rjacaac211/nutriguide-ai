@@ -6,6 +6,5 @@ export interface ChatRequest {
 }
 
 export interface ChatResponse {
-  messages: Array<{ role: string; content: string }>;
   response: string;
 }

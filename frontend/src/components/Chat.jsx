@@ -32,23 +32,12 @@ export default function Chat({ userId }) {
     setError(null);
 
     try {
-      const { response, messages: updatedMessages } = await sendChat(
-        userId,
-        userMsg,
-        threadId
-      );
-      const normalizeMsg = (m) => {
-        const role = m.role || (m.type === "ai" ? "assistant" : m.type === "human" ? "user" : null);
-        const content = typeof m.content === "string" ? m.content : Array.isArray(m.content) ? m.content.map((c) => (c?.text ?? c)).join(" ") : "";
-        return { role, content };
-      };
-      const displayMessages = updatedMessages
-        ? updatedMessages
-            .map(normalizeMsg)
-            .filter((m) => (m.role === "user" || m.role === "assistant") && m.content)
-            .map((m) => ({ role: m.role, content: m.content }))
-        : [];
-      setMessages(displayMessages.length > 0 ? displayMessages : [{ role: "user", content: userMsg }, { role: "assistant", content: response || "(No response)" }]);
+      const { response } = await sendChat(userId, userMsg, threadId);
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: userMsg },
+        { role: "assistant", content: response || "(No response)" },
+      ]);
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
