@@ -31,11 +31,12 @@ export default function Chat({ userId }) {
     setLoading(true);
     setError(null);
 
+    setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+
     try {
       const { response } = await sendChat(userId, userMsg, threadId);
       setMessages((prev) => [
         ...prev,
-        { role: "user", content: userMsg },
         { role: "assistant", content: response || "(No response)" },
       ]);
     } catch (err) {
