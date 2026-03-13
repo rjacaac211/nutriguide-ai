@@ -6,16 +6,15 @@ Users complete a short onboarding flow (goals, body metrics, preferences, activi
 
 ## Tech Stack
 
-- **Python / LangChain / LangGraph**: Single-agent with tools and RAG
+- **TypeScript / LangGraph.js / LangChain**: Single-agent with tools and RAG (`createAgent`)
 - **Node.js / Express**: Backend API, middleware, agent proxy
-- **RAG**: OpenAI embeddings + ChromaDB for nutrition knowledge
+- **RAG**: OpenAI embeddings + Chroma for nutrition knowledge (Chroma server in Docker)
 - **OpenAI**: GPT-4o-mini for the agent
 - **React**: Create Profile onboarding, dashboard, and AI chat widget (light theme, green/orange palette)
 
 ## Prerequisites
 
-- Python 3.10+
-- Node.js 18+
+- Node.js 20+
 - OpenAI API key (required for the agent)
 - Docker and Docker Compose (optional, for Docker setup)
 
@@ -23,9 +22,10 @@ Users complete a short onboarding flow (goals, body metrics, preferences, activi
 
 | Service   | Port | Description                    |
 | --------- | ---- | ------------------------------ |
-| AI Agent  | 8000 | LangGraph agent, RAG, tools    |
+| Chroma    | 8001 | Vector store for RAG (when run separately) |
+| AI Agent  | 8000 | LangGraph.js agent, RAG, tools |
 | Backend   | 3001 | Express API, agent proxy       |
-| Frontend  | 5173 | React chat UI                  |
+| Frontend  | 5173 | React chat UI (dev); 80 (Docker) |
 
 ## Setup
 
@@ -47,12 +47,17 @@ LANGCHAIN_PROJECT=your_langchain_project_name
 
 Backend options: `PORT=3001`, `AGENT_URL=http://localhost:8000`
 
-### 2. AI Agent (Python)
+AI agent options: `AGENT_PORT=8000`, `CHROMA_URL=http://localhost:8001` (when Chroma runs separately)
+
+### 2. AI Agent (TypeScript)
+
+Requires Chroma running (e.g. `docker run --rm -p 8001:8000 chromadb/chroma:0.6.1`). See [docs/RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) for full setup.
 
 ```bash
-cd ai-agent
-pip install -r requirements.txt
-python main.py
+cd ai-agent-ts
+npm install --legacy-peer-deps
+npm run build
+CHROMA_URL=http://localhost:8001 npm start
 ```
 
 Runs on http://localhost:8000
@@ -86,7 +91,7 @@ Run all services with Docker:
 docker compose up --build
 ```
 
-App available at http://localhost:80. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, and ai-agent.
+App available at http://localhost. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, Chroma, and ai-agent (TypeScript).
 
 For production deployment (ECR images), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
@@ -115,26 +120,29 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 NutriGuide-AI/
 ├── docker-compose.yml      # Local dev (build from source)
 ├── docker-compose.prod.yml # Production (ECR images)
-├── ai-agent/          # Python LangGraph agent ([README](ai-agent/README.md))
-│   ├── agent/          # create_agent, tools, RAG
-│   ├── knowledge/      # Nutrition docs for RAG
-│   └── main.py         # FastAPI server
-├── backend/            # Express API ([README](backend/README.md))
+├── ai-agent-ts/       # TypeScript LangGraph agent ([README](ai-agent-ts/README.md))
+│   ├── src/
+│   │   ├── agent/     # createAgent, tools, RAG
+│   │   ├── index.ts   # Express server
+│   │   └── types.ts
+│   └── knowledge/     # Nutrition docs for RAG
+├── ai-agent/          # (Legacy) Python agent — deprecated, use ai-agent-ts
+├── backend/           # Express API ([README](backend/README.md))
 │   └── src/
-│       ├── routes/     # /chat, /users
+│       ├── routes/    # /chat, /users
 │       └── index.js
-├── frontend/           # React app ([README](frontend/README.md))
+├── frontend/          # React app ([README](frontend/README.md))
 │   └── src/
 │       ├── components/ # LandingStep, OnboardingWizard, QuestionSlide, Dashboard, ChatWidget, etc.
-│       ├── config/     # onboardingQuestions
-│       ├── App.css     # Component styles, design tokens
+│       ├── config/    # onboardingQuestions
+│       ├── App.css    # Component styles, design tokens
 │       └── api/
 └── README.md
 ```
 
 ## API
 
-- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread)
+- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Extended schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`
 

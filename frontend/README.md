@@ -45,10 +45,11 @@ npm run preview
 - **Loading & Summary** — Progress animation, name entry, goal summary with calculated target date
 - **Dashboard** — Calorie summary (eaten/remaining/burned), meals logged (Breakfast, Lunch, Dinner, Snack), activity section
 - **Chat Widget** — Floating, collapsible AI chat (bottom-right) for nutrition Q&A; **New chat** starts a fresh conversation
+- **Chat display** — User message appears immediately when sent; NutriGuide shows "Thinking..." while the AI responds; only the final AI output is displayed (no internal tool outputs, profile dumps, or RAG labels)
 - **Session-scoped** — Profile and chat use `sessionId`; reload starts a new session (no persistence)
 - **API Proxy** — `/api` requests forwarded to backend
 
-Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`.
+Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` with the final AI output; the frontend appends each user message and assistant response to local state.
 
 ## UI / Design
 

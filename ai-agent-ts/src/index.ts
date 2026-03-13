@@ -6,7 +6,7 @@ import express, { Request, Response } from "express";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
-import { HumanMessage } from "@langchain/core/messages";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { agent } from "./agent/index.js";
 import { setUserProfiles } from "./agent/tools.js";
 import type { ChatRequest, ChatResponse } from "./types.js";
@@ -19,36 +19,6 @@ let agentReady = false;
 
 // Initialize agent (async - connects to Chroma, etc.)
 agentReady = true;
-
-function msgToDict(msg: { type?: string; content?: unknown }): { role: string; content: string } {
-  const raw = msg as { type?: string; content?: unknown };
-  const msgType = raw.type ?? "";
-  let content = raw.content ?? "";
-
-  if (Array.isArray(content)) {
-    const parts = content.map((c) => {
-      if (typeof c === "string") return c;
-      if (typeof c === "object" && c !== null && "text" in c) return (c as { text: string }).text;
-      return String(c);
-    });
-    content = parts.join(" ");
-  }
-  if (typeof content !== "string") {
-    content = content ? String(content) : "";
-  }
-
-  const roleMap: Record<string, string> = {
-    ai: "assistant",
-    human: "user",
-    AIMessage: "assistant",
-    HumanMessage: "user",
-  };
-  const role =
-    roleMap[msgType] ??
-    (msgType.includes("Tool") || msgType.includes("System") ? "system" : "assistant");
-
-  return { role, content: content as string };
-}
 
 function extractResponseText(messages: Array<{ content?: unknown }>): string {
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -84,20 +54,20 @@ app.post("/chat", async (req: Request, res: Response) => {
     const existingMessages = state?.values?.messages ?? [];
     const isNewThread = !existingMessages || existingMessages.length === 0;
 
-    const messageContent = isNewThread
-      ? `[Current user ID for this conversation: ${user_id}. Use this ID when calling get_user_profile.]\n\n${message}`
-      : message;
-    const messages = [new HumanMessage(messageContent)];
+    const messages = isNewThread
+      ? [
+          new SystemMessage(
+            `Current user ID for this conversation: ${user_id}. Use this ID when calling get_user_profile.`
+          ),
+          new HumanMessage(message),
+        ]
+      : [new HumanMessage(message)];
 
     const result = await agent.invoke({ messages }, config);
-    const resultMessages = (result?.messages ?? []) as Array<{ type?: string; content?: unknown }>;
+    const resultMessages = (result?.messages ?? []) as Array<{ content?: unknown }>;
     const responseText = extractResponseText(resultMessages);
 
-    const response: ChatResponse = {
-      messages: resultMessages.map(msgToDict),
-      response: responseText,
-    };
-    res.json(response);
+    res.json({ response: responseText } satisfies ChatResponse);
   } catch (err) {
     console.error("Chat error:", err);
     res.status(500).json({ error: (err as Error).message ?? "Chat request failed" });

@@ -1,4 +1,6 @@
-# NutriGuide AI Agent
+# NutriGuide AI Agent (Python — Deprecated)
+
+> **Deprecated:** This Python agent has been replaced by the TypeScript implementation. Use [ai-agent-ts](../ai-agent-ts/README.md) instead.
 
 Python FastAPI service hosting the LangGraph nutrition agent with RAG (ChromaDB) and tools. Handles chat requests and returns personalized nutrition recommendations. Uses LangGraph's InMemorySaver checkpointer for session-scoped conversation memory.
 

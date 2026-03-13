@@ -8,7 +8,7 @@ Complete these steps in order:
 
 | Step | Action |
 |------|--------|
-| 1 | Create 3 ECR repositories (nutriguide-frontend, backend, ai-agent). See [AWS-SETUP.md](AWS-SETUP.md) |
+| 1 | Create 3 ECR repositories (nutriguide-frontend, nutriguide-backend, nutriguide-ai-agent). See [AWS-SETUP.md](AWS-SETUP.md) |
 | 2 | Create IAM user for GitHub Actions, save access keys |
 | 3 | Create IAM role for EC2 (AmazonEC2ContainerRegistryReadOnly) |
 | 4 | Launch EC2 instance with key pair, IAM role, security group (22, 80) |

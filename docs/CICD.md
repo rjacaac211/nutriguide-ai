@@ -17,7 +17,7 @@ on:
 ```
 
 - `docs/**` – any file under the `docs/` folder  
-- `**/README.md` – README files anywhere (root, `frontend/`, `backend/`, `ai-agent/`, etc.)  
+- `**/README.md` – README files anywhere (root, `frontend/`, `backend/`, `ai-agent-ts/`, etc.)  
 - `*.md` – other root-level markdown files (e.g. `CHANGELOG.md`, `CONTRIBUTING.md`)
 
 ## Jobs
@@ -29,7 +29,7 @@ on:
   1. Checkout repository
   2. Configure AWS credentials (from secrets)
   3. Login to ECR
-  4. Build and push frontend, backend, ai-agent images to ECR
+  4. Build and push frontend, backend, ai-agent images to ECR (ai-agent built from `./ai-agent-ts`)
 - **Image tag**: `${{ github.sha }}` (commit SHA)
 
 ### 2. deploy
@@ -53,7 +53,7 @@ build-and-push
     |-- Push to ECR
     |-- Build backend image
     |-- Push to ECR
-    |-- Build ai-agent image
+    |-- Build ai-agent image (from ai-agent-ts)
     |-- Push to ECR
     |
     v
@@ -96,3 +96,4 @@ Add these in **Settings > Secrets and variables > Actions > Variables**:
 - **Change docs skip paths**: Edit `paths-ignore` to add/remove paths that skip the pipeline when only those files change
 - **Add build steps**: Add steps in the `build-and-push` job before the push commands
 - **Use self-hosted runner**: Change `runs-on: ubuntu-latest` to `runs-on: self-hosted` (requires runner installed on EC2)
+- **AI agent build context**: The ai-agent image is built from `./ai-agent-ts` (TypeScript). Chroma is pulled from Docker Hub, not built.
