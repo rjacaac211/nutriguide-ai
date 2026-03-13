@@ -41,7 +41,7 @@ jobs:
 
       - name: Build and push ai-agent
         run: |
-          docker build -t $ECR_REGISTRY/nutriguide-ai-agent:$IMAGE_TAG ./ai-agent
+          docker build -t $ECR_REGISTRY/nutriguide-ai-agent:$IMAGE_TAG ./ai-agent-ts
           docker push $ECR_REGISTRY/nutriguide-ai-agent:$IMAGE_TAG
 
   deploy:
