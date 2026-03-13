@@ -134,7 +134,7 @@ NutriGuide-AI/
 
 ## API
 
-- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread)
+- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Extended schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`
 

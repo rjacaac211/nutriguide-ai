@@ -44,7 +44,7 @@ Runs on **http://localhost:3001**.
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| POST | `/api/chat` | Send message to agent. Body: `{ userId, message, threadId }` (userId = sessionId) |
+| POST | `/api/chat` | Send message to agent. Body: `{ userId, message, threadId }` (userId = sessionId). Returns `{ response }` with the final AI output only. |
 | GET | `/api/users/:id/profile` | Get user profile (id = sessionId) |
 | PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }` |
 | GET | `/api/health` | Health check |

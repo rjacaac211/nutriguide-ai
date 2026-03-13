@@ -82,6 +82,8 @@ Shorter message:
 curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"user_id\":\"t\",\"message\":\"Hi\",\"thread_id\":\"t1\"}"
 ```
 
+**Response format:** The agent returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
+
 ---
 
 ## Common 500 Causes

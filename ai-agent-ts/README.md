@@ -2,6 +2,10 @@
 
 LangGraph.js-based nutrition assistant agent with RAG (Chroma) and tools.
 
+## Chat API
+
+`POST /chat` — Request: `{ user_id, message, thread_id, user_profiles? }`. Returns `{ response }` with the final AI output only (extracted from the last assistant message; intermediate tool outputs, user profile dumps, and RAG content are not included). The user ID is passed to the agent via a system message so it never appears in chat bubbles.
+
 ## Setup
 
 ```bash
