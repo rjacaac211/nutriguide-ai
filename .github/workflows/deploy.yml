@@ -8,6 +8,9 @@ on:
       - '**/README.md'
       - '*.md'
       - '.env.example'
+      - '.gitignore'
+      - '.dockerignore'
+      - 'notebooks/**'
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
