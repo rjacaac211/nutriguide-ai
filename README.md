@@ -126,7 +126,6 @@ NutriGuide-AI/
 │   │   ├── index.ts   # Express server
 │   │   └── types.ts
 │   └── knowledge/     # Nutrition docs for RAG
-├── ai-agent/          # (Legacy) Python agent — deprecated, use ai-agent-ts
 ├── backend/           # Express API ([README](backend/README.md))
 │   └── src/
 │       ├── routes/    # /chat, /users
