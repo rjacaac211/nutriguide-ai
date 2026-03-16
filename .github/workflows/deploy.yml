@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths-ignore:
       - 'docs/**'
+      - 'notebooks/**'
       - '**/README.md'
       - '*.md'
       - '.env.example'
