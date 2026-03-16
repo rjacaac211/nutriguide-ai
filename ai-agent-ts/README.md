@@ -13,6 +13,14 @@ npm install
 npm run build
 ```
 
+## Index knowledge (when adding/changing .md files)
+
+```bash
+npm run index
+```
+
+Run this when you add or change files in `knowledge/`. The agent reads from a pre-populated Pinecone index; it does not index at runtime. In CI, indexing runs automatically when `ai-agent-ts/knowledge/` changes.
+
 ## Run
 
 ```bash

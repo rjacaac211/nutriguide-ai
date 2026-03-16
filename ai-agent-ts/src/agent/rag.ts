@@ -92,9 +92,24 @@ export async function getRetriever() {
     pineconeIndex,
   });
 
-  await ensureIndexed(vectorStore);
   _retriever = vectorStore.asRetriever({ k: 4 });
   return _retriever;
+}
+
+/** Index knowledge files to Pinecone. Call from CI or manually when knowledge changes. */
+export async function indexKnowledgeToPinecone(): Promise<void> {
+  if (!process.env.PINECONE_INDEX) {
+    throw new Error("PINECONE_INDEX environment variable is required");
+  }
+  const embeddings = new OpenAIEmbeddings({
+    model: "text-embedding-3-small",
+  });
+  const pinecone = new Pinecone();
+  const pineconeIndex = pinecone.Index(process.env.PINECONE_INDEX);
+  const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
+    pineconeIndex,
+  });
+  await ensureIndexed(vectorStore);
 }
 
 export async function searchNutritionKnowledge(query: string): Promise<string> {

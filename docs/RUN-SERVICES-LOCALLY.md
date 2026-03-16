@@ -4,6 +4,7 @@ Use this guide to run each service in a separate terminal so you can see logs an
 
 ## Prerequisites
 
+- **Index knowledge first** — When you add or change `.md` files in `ai-agent-ts/knowledge/`, run `npm run index` in `ai-agent-ts` before testing. The agent reads from a pre-populated Pinecone index; it does not index at runtime.
 - `.env` in **project root** — both AI agent and backend load from it. Include at least:
   - `OPENAI_API_KEY` (required for AI agent)
   - `PINECONE_API_KEY` (required for RAG)
