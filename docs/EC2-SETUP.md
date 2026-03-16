@@ -33,6 +33,7 @@ Optional: upgrade existing packages for security (`sudo apt upgrade -y`). On a f
 ```bash
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
+rm get-docker.sh
 sudo usermod -aG docker ubuntu
 newgrp docker
 ```
