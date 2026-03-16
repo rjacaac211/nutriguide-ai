@@ -70,7 +70,7 @@ deploy
     |-- Add runner IP to EC2 security group (SSH port 22)
     |-- Copy docker-compose.prod.yml to EC2
     |-- SSH to EC2
-    |-- Write .env (OPENAI_API_KEY, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
+    |-- Write .env (OPENAI_API_KEY, PINECONE_*, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
     |-- aws ecr get-login-password | docker login
     |-- docker compose pull
     |-- docker compose up -d
@@ -87,6 +87,7 @@ Add these in **Settings > Secrets and variables > Actions > Secrets**:
 | `AWS_SECRET_ACCESS_KEY` | IAM user secret access key |
 | `EC2_SSH_KEY` | Full contents of the .pem file (including BEGIN/END lines) |
 | `OPENAI_API_KEY` | OpenAI API key for the AI agent |
+| `PINECONE_API_KEY` | Pinecone API key for RAG |
 | `LANGSMITH_API_KEY` | LangSmith API key (optional, for tracing) |
 
 ## GitHub Variables
@@ -96,6 +97,7 @@ Add these in **Settings > Secrets and variables > Actions > Variables**:
 | Name | Description | Example |
 |------|-------------|---------|
 | `EC2_HOST` | EC2 public IP or DNS | `ec2-3-236-56-12.compute-1.amazonaws.com` |
+| `PINECONE_INDEX` | Pinecone index name (not sensitive) | `nutriguide-app-knowledge` |
 | `ECR_REGISTRY` | ECR registry URI | `123456789012.dkr.ecr.us-east-1.amazonaws.com` |
 | `AWS_REGION` | AWS region | `us-east-1` |
 | `SECURITY_GROUP_ID` | EC2 security group ID (for dynamic IP whitelisting) | `sg-0123456789abcdef0` |
@@ -108,4 +110,4 @@ Add these in **Settings > Secrets and variables > Actions > Variables**:
 - **Change docs skip paths**: Edit `paths-ignore` to add/remove paths that skip the pipeline when only those files change
 - **Add build steps**: Add steps in the `build-and-push` job before the push commands
 - **Use self-hosted runner**: Change `runs-on: ubuntu-latest` to `runs-on: self-hosted` (requires runner installed on EC2)
-- **AI agent build context**: The ai-agent image is built from `./ai-agent-ts` (TypeScript). Chroma is pulled from Docker Hub, not built.
+- **AI agent build context**: The ai-agent image is built from `./ai-agent-ts` (TypeScript). RAG uses Pinecone (cloud).

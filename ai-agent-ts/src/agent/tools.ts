@@ -53,7 +53,7 @@ export const searchNutritionKnowledgeTool = tool(
   {
     name: "search_nutrition_knowledge",
     description:
-      "Search the nutrition knowledge base for evidence-based information on macros, meal timing, diets, allergies, and general nutrition. Use when the user asks about nutrition facts, meal plans, or dietary advice.",
+      "Search the nutrition knowledge base for evidence-based information on macros, meal timing, diets, allergies, and general nutrition. Use when the user asks about nutrition facts, meal plans, or dietary advice. Returns content with Sources (URLs) when available—cite these in your response.",
     schema: z.object({
       query: z.string().describe("The search query for nutrition information"),
     }),

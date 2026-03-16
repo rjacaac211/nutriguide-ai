@@ -30,7 +30,7 @@ flowchart LR
 | Frontend | React, Vite, Nginx |
 | Backend | Node.js, Express |
 | AI Agent | TypeScript, Express, LangGraph.js, LangChain |
-| Chroma | ChromaDB (Docker Hub image) |
+| RAG | Pinecone (cloud vector store) |
 | Registry | AWS ECR |
 | Compute | AWS EC2 |
 | CI/CD | GitHub Actions |
@@ -40,6 +40,7 @@ flowchart LR
 - AWS account
 - GitHub repository with the NutriGuide-AI codebase
 - OpenAI API key
+- Pinecone account and index (create at [app.pinecone.io](https://app.pinecone.io)); add `PINECONE_API_KEY` and `PINECONE_INDEX` to GitHub Secrets
 - (Optional) LangSmith API key for tracing
 
 ## Quick Start

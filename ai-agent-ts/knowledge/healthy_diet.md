@@ -97,3 +97,7 @@ Advice on a healthy diet for infants and children is similar to that for adults,
 - infants and young children of 6–23 months of age should consume a diverse diet that includes animal source foods, such as meat, fish, or eggs, as well as fruits and vegetables;
 - consumption of starchy staple foods should be minimized; and
 - foods high in sugar, salt and trans fats as well as sweet beverages should be avoided.
+
+---
+
+**Source:** World Health Organization: WHO. (2026, January 26). Healthy diet. https://www.who.int/news-room/fact-sheets/detail/healthy-diet

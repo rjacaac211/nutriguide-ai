@@ -8,7 +8,7 @@ Users complete a short onboarding flow (goals, body metrics, preferences, activi
 
 - **TypeScript / LangGraph.js / LangChain**: Single-agent with tools and RAG (`createAgent`)
 - **Node.js / Express**: Backend API, middleware, agent proxy
-- **RAG**: OpenAI embeddings + Chroma for nutrition knowledge (Chroma server in Docker)
+- **RAG**: OpenAI embeddings + Pinecone for nutrition knowledge (cloud vector store)
 - **OpenAI**: GPT-4o-mini for the agent
 - **React**: Create Profile onboarding, dashboard, and AI chat widget (light theme, green/orange palette)
 
@@ -22,8 +22,7 @@ Users complete a short onboarding flow (goals, body metrics, preferences, activi
 
 | Service   | Port | Description                    |
 | --------- | ---- | ------------------------------ |
-| Chroma    | 8001 | Vector store for RAG (when run separately) |
-| AI Agent  | 8000 | LangGraph.js agent, RAG, tools |
+| AI Agent  | 8000 | LangGraph.js agent, RAG (Pinecone), tools |
 | Backend   | 3001 | Express API, agent proxy       |
 | Frontend  | 5173 | React chat UI (dev); 80 (Docker) |
 
@@ -47,17 +46,17 @@ LANGSMITH_PROJECT=your_langchain_project_name
 
 Backend options: `PORT=3001`, `AGENT_URL=http://localhost:8000`
 
-AI agent options: `AGENT_PORT=8000`, `CHROMA_URL=http://localhost:8001` (when Chroma runs separately)
+AI agent options: `AGENT_PORT=8000`, `PINECONE_API_KEY`, `PINECONE_INDEX=nutriguide-app-knowledge`
 
 ### 2. AI Agent (TypeScript)
 
-Requires Chroma running (e.g. `docker run --rm -p 8001:8000 chromadb/chroma:0.6.1`). See [docs/RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) for full setup.
+Requires Pinecone index (create at [app.pinecone.io](https://app.pinecone.io)). See [docs/RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) for full setup.
 
 ```bash
 cd ai-agent-ts
-npm install --legacy-peer-deps
+npm install
 npm run build
-CHROMA_URL=http://localhost:8001 npm start
+npm start
 ```
 
 Runs on http://localhost:8000
@@ -91,7 +90,7 @@ Run all services with Docker:
 docker compose up --build
 ```
 
-App available at http://localhost. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, Chroma, and ai-agent (TypeScript).
+App available at http://localhost. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, and ai-agent (TypeScript). RAG uses Pinecone (cloud).
 
 For production deployment (ECR images), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 

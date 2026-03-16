@@ -1,10 +1,4 @@
 services:
-  chroma:
-    image: chromadb/chroma:0.6.1
-    volumes:
-      - chroma_db:/chroma/chroma
-    restart: unless-stopped
-
   ai-agent:
     image: ${ECR_REGISTRY}/nutriguide-ai-agent:${IMAGE_TAG}
     environment:
@@ -12,9 +6,8 @@ services:
       - LANGSMITH_TRACING_V2=${LANGSMITH_TRACING_V2}
       - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
       - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
-      - CHROMA_URL=http://chroma:8000
-    depends_on:
-      - chroma
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_INDEX=${PINECONE_INDEX}
     restart: unless-stopped
 
   backend:
@@ -33,6 +26,3 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-volumes:
-  chroma_db:

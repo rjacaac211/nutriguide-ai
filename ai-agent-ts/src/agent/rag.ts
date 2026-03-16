@@ -1,6 +1,8 @@
-import { Chroma } from "@langchain/community/vectorstores/chroma";
+import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { OpenAIEmbeddings } from "@langchain/openai";
+import { MarkdownTextSplitter } from "@langchain/textsplitters";
+import { Pinecone } from "@pinecone-database/pinecone";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -8,14 +10,23 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const COLLECTION_NAME = "nutrition_knowledge";
-const CHROMA_URL = process.env.CHROMA_URL || "http://localhost:8001";
+const PINECONE_INDEX = process.env.PINECONE_INDEX;
+
+/** Source URLs for knowledge files. Add entries when adding new .md files. */
+const KNOWN_SOURCES: Record<string, string> = {
+  "healthy_diet.md":
+    "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+};
 
 function getKnowledgeDir(): string {
-  // Resolve from dist/ or src/ to project root, then knowledge/
   const projectRoot = path.resolve(__dirname, "../..");
   return path.join(projectRoot, "knowledge");
 }
+
+const textSplitter = new MarkdownTextSplitter({
+  chunkSize: 1500,
+  chunkOverlap: 200,
+});
 
 function getNutritionDocuments(): Document[] {
   const knowledgeDir = getKnowledgeDir();
@@ -25,30 +36,44 @@ function getNutritionDocuments(): Document[] {
     return docs;
   }
 
-  const files = fs.readdirSync(knowledgeDir).filter((f) => f.endsWith(".txt"));
+  const files = fs.readdirSync(knowledgeDir).filter((f) => f.endsWith(".md"));
   for (const file of files) {
     const filePath = path.join(knowledgeDir, file);
     const content = fs.readFileSync(filePath, "utf-8");
     docs.push({
       pageContent: content,
-      metadata: { source: file },
+      metadata: {
+        source: file,
+        url: KNOWN_SOURCES[file] ?? "",
+      },
     });
   }
   return docs;
 }
 
-async function ensureIndexed(vectorStore: Chroma): Promise<void> {
+async function ensureIndexed(vectorStore: PineconeStore): Promise<void> {
   const docs = getNutritionDocuments();
   if (docs.length === 0) return;
 
-  const ids = docs.map((d) => {
-    const src = d.metadata?.source as string;
-    return src ? src.replace(/\.txt$/, "") : `doc-${Math.random()}`;
-  });
-  await vectorStore.addDocuments(docs, { ids });
+  const allChunks: Document[] = [];
+  const allIds: string[] = [];
+
+  for (const doc of docs) {
+    const chunks = await textSplitter.splitDocuments([doc]);
+    const src = doc.metadata?.source as string;
+    const baseId = src ? src.replace(/\.md$/, "") : `doc-${Math.random()}`;
+    for (let i = 0; i < chunks.length; i++) {
+      allChunks.push(chunks[i]);
+      allIds.push(`${baseId}-${i}`);
+    }
+  }
+
+  if (allChunks.length > 0) {
+    await vectorStore.addDocuments(allChunks, { ids: allIds });
+  }
 }
 
-let _retriever: ReturnType<Chroma["asRetriever"]> | null = null;
+let _retriever: ReturnType<PineconeStore["asRetriever"]> | null = null;
 
 export async function getRetriever() {
   if (_retriever) return _retriever;
@@ -57,9 +82,14 @@ export async function getRetriever() {
     model: "text-embedding-3-small",
   });
 
-  const vectorStore = new Chroma(embeddings, {
-    collectionName: COLLECTION_NAME,
-    url: CHROMA_URL,
+  if (!PINECONE_INDEX) {
+    throw new Error("PINECONE_INDEX environment variable is required");
+  }
+  const pinecone = new Pinecone();
+  const pineconeIndex = pinecone.Index(PINECONE_INDEX);
+
+  const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
+    pineconeIndex,
   });
 
   await ensureIndexed(vectorStore);
@@ -73,5 +103,16 @@ export async function searchNutritionKnowledge(query: string): Promise<string> {
   if (!docs || docs.length === 0) {
     return "No specific nutrition information found for this query. Use general nutrition knowledge.";
   }
-  return docs.map((d) => d.pageContent).join("\n\n");
+  const content = docs.map((d) => d.pageContent).join("\n\n");
+  const urls = [
+    ...new Set(
+      docs
+        .map((d) => d.metadata?.url as string | undefined)
+        .filter((u): u is string => Boolean(u))
+    ),
+  ];
+  if (urls.length > 0) {
+    return `${content}\n\n**Sources:**\n${urls.map((u) => `- ${u}`).join("\n")}`;
+  }
+  return content;
 }
