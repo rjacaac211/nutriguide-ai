@@ -1,3 +1,4 @@
+# Local development — builds from source
 services:
   ai-agent:
     build:
