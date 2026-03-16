@@ -21,8 +21,9 @@ Complete these steps in order:
 
 1. Commit and push changes to `main`
 2. GitHub Actions workflow runs automatically
-3. Verify in **Actions** tab that both jobs (build-and-push, deploy) succeed
-4. Open `http://YOUR_EC2_PUBLIC_IP` to verify the app
+3. If `ai-agent-ts/knowledge/` changed, the workflow indexes to Pinecone before deploy
+4. Verify in **Actions** tab that both jobs (build-and-push, deploy) succeed
+5. Open `http://YOUR_EC2_PUBLIC_IP` to verify the app
 
 ## Rollback
 

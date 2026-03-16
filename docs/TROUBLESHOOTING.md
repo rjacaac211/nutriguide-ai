@@ -61,8 +61,13 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 ### Env vars missing
 
-- The deploy workflow writes `.env` on EC2. Verify GitHub Secrets (`OPENAI_API_KEY`, `PINECONE_API_KEY`, `PINECONE_INDEX`) and Variables (`LANGSMITH_*`) are set
+- The deploy workflow writes `.env` on EC2. Verify GitHub Secrets (`OPENAI_API_KEY`, `PINECONE_API_KEY`) and Variables (`PINECONE_INDEX`, `LANGSMITH_*`) are set
 - SSH to EC2 and run `cat /home/ubuntu/nutriguide/.env` to inspect
+
+### RAG returns empty or generic answers
+
+- **Empty Pinecone index**: The agent reads from a pre-populated index; it does not index at runtime. In CI, indexing runs when `ai-agent-ts/knowledge/` changes. If you deployed before adding knowledge files, push a change that touches `ai-agent-ts/knowledge/` to trigger re-indexing, or run `npm run index` locally (with env vars set) and redeploy.
+- **Wrong index**: Ensure `PINECONE_INDEX` matches your Pinecone index name (e.g. `nutriguide-app-knowledge`)
 
 ## AWS
 

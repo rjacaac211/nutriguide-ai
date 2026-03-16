@@ -50,12 +50,13 @@ AI agent options: `AGENT_PORT=8000`, `PINECONE_API_KEY`, `PINECONE_INDEX=nutrigu
 
 ### 2. AI Agent (TypeScript)
 
-Requires Pinecone index (create at [app.pinecone.io](https://app.pinecone.io)). See [docs/RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) for full setup.
+Requires Pinecone index (create at [app.pinecone.io](https://app.pinecone.io)). Run `npm run index` when adding or changing files in `knowledge/`. See [docs/RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) for full setup.
 
 ```bash
 cd ai-agent-ts
 npm install
 npm run build
+npm run index   # when adding/changing knowledge files
 npm start
 ```
 
