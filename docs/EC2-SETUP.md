@@ -14,6 +14,18 @@ ssh -i /path/to/your-key.pem ubuntu@YOUR_EC2_PUBLIC_IP
 
 ---
 
+## 0. Update Package Index (Recommended)
+
+Refresh the package cache before installing anything:
+
+```bash
+sudo apt update
+```
+
+Optional: upgrade existing packages for security (`sudo apt upgrade -y`). On a fresh instance this is often quick.
+
+---
+
 ## 1. Install Docker
 
 ### Official Docker Script
@@ -28,6 +40,7 @@ newgrp docker
 ---
 
 ## 2. Verify Docker Compose
+
 
 ```bash
 docker compose version
