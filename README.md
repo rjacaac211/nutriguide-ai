@@ -95,18 +95,6 @@ App available at http://localhost. Uses [docker-compose.yml](docker-compose.yml)
 
 For production deployment (ECR images), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
-### 6. Notebooks (optional)
-
-Exploration notebooks live in `notebooks/`. The TypeScript notebook (`langgraph-ts/`) uses **tslab** (Jupyter TypeScript kernel) and has its own `package.json`:
-
-```bash
-cd notebooks/langgraph-ts
-npm install
-npx tslab install   # register tslab kernel (one-time)
-```
-
-Then open `agent-ts.ipynb` and select the **tslab** kernel. See [notebooks/README.md](notebooks/README.md) for details.
-
 ## Usage
 
 **All three services must be running** for the frontend to work:
@@ -149,9 +137,6 @@ NutriGuide-AI/
 │       ├── config/    # onboardingQuestions
 │       ├── App.css    # Component styles, design tokens
 │       └── api/
-├── notebooks/         # Jupyter notebooks for exploration ([README](notebooks/README.md))
-│   ├── langgraph-ts/  # TypeScript LangGraph notebook (package.json, tsconfig)
-│   └── langgraph-py/ # Python LangGraph notebook
 └── README.md
 ```
 
