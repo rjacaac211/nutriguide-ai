@@ -58,6 +58,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get runner public IP
+        id: ip
+        run: |
+          RUNNER_IP=$(curl -sf https://checkip.amazonaws.com || curl -sf https://api.ipify.org)
+          echo "ipv4=$RUNNER_IP" >> $GITHUB_OUTPUT
+          echo "Runner IP: $RUNNER_IP"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Add runner IP to security group
+        run: |
+          aws ec2 authorize-security-group-ingress \
+            --group-id ${{ vars.SECURITY_GROUP_ID }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
@@ -83,3 +105,12 @@ jobs:
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY && \
             docker compose -f docker-compose.prod.yml pull && \
             docker compose -f docker-compose.prod.yml up -d"
+
+      - name: Remove runner IP from security group
+        if: always() && steps.ip.outputs.ipv4 != ''
+        run: |
+          aws ec2 revoke-security-group-ingress \
+            --group-id ${{ vars.SECURITY_GROUP_ID }} \
+            --protocol tcp \
+            --port 22 \
+            --cidr ${{ steps.ip.outputs.ipv4 }}/32 || true

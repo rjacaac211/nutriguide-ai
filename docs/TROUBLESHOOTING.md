@@ -11,7 +11,7 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 ### SSH timeout
 
-- **Connection refused**: Ensure EC2 security group allows SSH (port 22) from GitHub's IPs (or 0.0.0.0/0 for testing)
+- **Connection timed out**: The workflow uses dynamic IP whitelisting. Ensure `SECURITY_GROUP_ID` is set in GitHub Variables and the IAM user has the custom policy for `ec2:AuthorizeSecurityGroupIngress` and `ec2:RevokeSecurityGroupIngress` (see [AWS-SETUP.md](AWS-SETUP.md)). The security group must allow SSH (22) from your IP for manual access; the workflow adds the runner's IP before deploy and removes it after.
 - **Permission denied**: Verify `EC2_SSH_KEY` contains the full .pem file including `-----BEGIN RSA PRIVATE KEY-----` and `-----END RSA PRIVATE KEY-----`
 - **Host key verification failed**: The workflow uses `ssh-keyscan` to add the host; if it still fails, check `EC2_HOST` is correct
 
@@ -68,12 +68,12 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 ### IAM permissions
 
-- **GitHub Actions user**: Needs `AmazonEC2ContainerRegistryFullAccess` for ECR push
+- **GitHub Actions user**: Needs `AmazonEC2ContainerRegistryFullAccess` for ECR push, plus the custom policy for security group updates (`ec2:AuthorizeSecurityGroupIngress`, `ec2:RevokeSecurityGroupIngress`) — see [AWS-SETUP.md](AWS-SETUP.md)
 - **EC2 instance role**: Needs `AmazonEC2ContainerRegistryReadOnly` for ECR pull
 
 ### Security group
 
-- Inbound: SSH (22), HTTP (80)
+- Inbound: SSH (22) from your IP (for manual access; GitHub Actions adds runner IP dynamically), HTTP (80) from 0.0.0.0/0
 - If the app is unreachable, verify HTTP (80) allows 0.0.0.0/0 (or your IP range)
 
 ### Key pair

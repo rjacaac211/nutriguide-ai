@@ -42,9 +42,13 @@ on:
 - **Depends on**: build-and-push
 - **Steps**:
   1. Checkout repository
-  2. Setup SSH key (from `EC2_SSH_KEY` secret)
-  3. Copy `docker-compose.prod.yml` to EC2 via scp
-  4. SSH to EC2, write `.env`, run ECR login, `docker compose pull`, `docker compose up -d`
+  2. Get runner public IP (via checkip.amazonaws.com or api.ipify.org)
+  3. Configure AWS credentials
+  4. Add runner IP to EC2 security group (dynamic whitelisting)
+  5. Setup SSH key (from `EC2_SSH_KEY` secret)
+  6. Copy `docker-compose.prod.yml` to EC2 via scp
+  7. SSH to EC2, write `.env`, run ECR login, `docker compose pull`, `docker compose up -d`
+  8. Remove runner IP from security group (runs even on failure via `if: always()`)
 
 ## Flow
 
@@ -62,12 +66,15 @@ build-and-push
     |
     v
 deploy
+    |-- Get runner public IP
+    |-- Add runner IP to EC2 security group (SSH port 22)
     |-- Copy docker-compose.prod.yml to EC2
     |-- SSH to EC2
     |-- Write .env (OPENAI_API_KEY, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
     |-- aws ecr get-login-password | docker login
     |-- docker compose pull
     |-- docker compose up -d
+    |-- Remove runner IP from security group (always runs)
 ```
 
 ## GitHub Secrets
@@ -91,6 +98,7 @@ Add these in **Settings > Secrets and variables > Actions > Variables**:
 | `EC2_HOST` | EC2 public IP or DNS | `ec2-3-236-56-12.compute-1.amazonaws.com` |
 | `ECR_REGISTRY` | ECR registry URI | `123456789012.dkr.ecr.us-east-1.amazonaws.com` |
 | `AWS_REGION` | AWS region | `us-east-1` |
+| `SECURITY_GROUP_ID` | EC2 security group ID (for dynamic IP whitelisting) | `sg-0123456789abcdef0` |
 | `LANGSMITH_TRACING_V2` | Enable LangSmith tracing | `true` or `false` |
 | `LANGSMITH_PROJECT` | LangSmith project name | `nutriguide-ai-prod` |
 
