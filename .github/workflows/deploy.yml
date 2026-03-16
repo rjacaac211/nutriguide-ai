@@ -52,9 +52,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      LANGCHAIN_TRACING_V2: ${{ vars.LANGCHAIN_TRACING_V2 }}
-      LANGCHAIN_API_KEY: ${{ secrets.LANGCHAIN_API_KEY }}
-      LANGCHAIN_PROJECT: ${{ vars.LANGCHAIN_PROJECT }}
+      LANGSMITH_TRACING_V2: ${{ vars.LANGSMITH_TRACING_V2 }}
+      LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+      LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT }}
     steps:
       - uses: actions/checkout@v4
 
@@ -75,9 +75,9 @@ jobs:
           ssh -i ~/.ssh/deploy_key.pem -o StrictHostKeyChecking=no ubuntu@${{ vars.EC2_HOST }} \
             "cd /home/ubuntu/nutriguide && \
             echo 'OPENAI_API_KEY=$OPENAI_API_KEY' > .env && \
-            echo 'LANGCHAIN_TRACING_V2=$LANGCHAIN_TRACING_V2' >> .env && \
-            echo 'LANGCHAIN_API_KEY=$LANGCHAIN_API_KEY' >> .env && \
-            echo 'LANGCHAIN_PROJECT=$LANGCHAIN_PROJECT' >> .env && \
+            echo 'LANGSMITH_TRACING_V2=$LANGSMITH_TRACING_V2' >> .env && \
+            echo 'LANGSMITH_API_KEY=$LANGSMITH_API_KEY' >> .env && \
+            echo 'LANGSMITH_PROJECT=$LANGSMITH_PROJECT' >> .env && \
             echo 'ECR_REGISTRY=$ECR_REGISTRY' >> .env && \
             echo 'IMAGE_TAG=$IMAGE_TAG' >> .env && \
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY && \

@@ -40,9 +40,9 @@ OPENAI_API_KEY=sk-your-key-here
 Optional (for LangSmith tracing):
 
 ```
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=your_langchain_api_key
-LANGCHAIN_PROJECT=your_langchain_project_name
+LANGSMITH_TRACING_V2=true
+LANGSMITH_API_KEY=your_langchain_api_key
+LANGSMITH_PROJECT=your_langchain_project_name
 ```
 
 Backend options: `PORT=3001`, `AGENT_URL=http://localhost:8000`

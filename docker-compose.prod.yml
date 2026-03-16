@@ -9,9 +9,9 @@ services:
     image: ${ECR_REGISTRY}/nutriguide-ai-agent:${IMAGE_TAG}
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
-      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
-      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-nutriguide-ai-prototype}
+      - LANGSMITH_TRACING_V2=${LANGSMITH_TRACING_V2}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
       - CHROMA_URL=http://chroma:8000
     depends_on:
       - chroma

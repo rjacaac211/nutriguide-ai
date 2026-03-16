@@ -61,7 +61,7 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 ### Env vars missing
 
-- The deploy workflow writes `.env` on EC2. Verify GitHub Secrets (`OPENAI_API_KEY`) and Variables (`LANGCHAIN_*`) are set
+- The deploy workflow writes `.env` on EC2. Verify GitHub Secrets (`OPENAI_API_KEY`) and Variables (`LANGSMITH_*`) are set
 - SSH to EC2 and run `cat /home/ubuntu/nutriguide/.env` to inspect
 
 ## AWS

@@ -27,4 +27,4 @@ Or use the project's `docker-compose.yml` which includes Chroma and the agent.
 - `OPENAI_API_KEY` — Required
 - `CHROMA_URL` — Chroma server URL (default: http://localhost:8000)
 - `AGENT_PORT` — Server port (default: 8000)
-- `LANGCHAIN_*` — Optional LangSmith tracing
+- `LANGSMITH_*` — Optional LangSmith tracing

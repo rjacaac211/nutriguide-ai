@@ -64,7 +64,7 @@ build-and-push
 deploy
     |-- Copy docker-compose.prod.yml to EC2
     |-- SSH to EC2
-    |-- Write .env (OPENAI_API_KEY, LANGCHAIN_*, ECR_REGISTRY, IMAGE_TAG)
+    |-- Write .env (OPENAI_API_KEY, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
     |-- aws ecr get-login-password | docker login
     |-- docker compose pull
     |-- docker compose up -d
@@ -80,7 +80,7 @@ Add these in **Settings > Secrets and variables > Actions > Secrets**:
 | `AWS_SECRET_ACCESS_KEY` | IAM user secret access key |
 | `EC2_SSH_KEY` | Full contents of the .pem file (including BEGIN/END lines) |
 | `OPENAI_API_KEY` | OpenAI API key for the AI agent |
-| `LANGCHAIN_API_KEY` | LangSmith API key (optional, for tracing) |
+| `LANGSMITH_API_KEY` | LangSmith API key (optional, for tracing) |
 
 ## GitHub Variables
 
@@ -91,8 +91,8 @@ Add these in **Settings > Secrets and variables > Actions > Variables**:
 | `EC2_HOST` | EC2 public IP or DNS | `ec2-3-236-56-12.compute-1.amazonaws.com` |
 | `ECR_REGISTRY` | ECR registry URI | `123456789012.dkr.ecr.us-east-1.amazonaws.com` |
 | `AWS_REGION` | AWS region | `us-east-1` |
-| `LANGCHAIN_TRACING_V2` | Enable LangSmith tracing | `true` or `false` |
-| `LANGCHAIN_PROJECT` | LangSmith project name | `nutriguide-ai-prod` |
+| `LANGSMITH_TRACING_V2` | Enable LangSmith tracing | `true` or `false` |
+| `LANGSMITH_PROJECT` | LangSmith project name | `nutriguide-ai-prod` |
 
 ## Modifying the Workflow
 
