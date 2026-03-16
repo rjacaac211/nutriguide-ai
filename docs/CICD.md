@@ -4,7 +4,7 @@ How the GitHub Actions pipeline works and how to modify it.
 
 ## Trigger
 
-The workflow runs on **push to `main`**, but is **skipped** when the push only touches documentation files:
+The workflow runs on **push to `main`**, but is **skipped** when the push only touches documentation, notebooks, or config files:
 
 ```yaml
 on:
@@ -12,13 +12,19 @@ on:
     branches: [main]
     paths-ignore:
       - 'docs/**'
-      - 'README.md'
+      - 'notebooks/**'
+      - '**/README.md'
       - '*.md'
+      - '.env.example'
+      - '.gitignore'
+      - '.dockerignore'
 ```
 
 - `docs/**` – any file under the `docs/` folder  
+- `notebooks/**` – Python experimentation notebooks (not deployed)  
 - `**/README.md` – README files anywhere (root, `frontend/`, `backend/`, `ai-agent-ts/`, etc.)  
-- `*.md` – other root-level markdown files (e.g. `CHANGELOG.md`, `CONTRIBUTING.md`)
+- `*.md` – other root-level markdown files (e.g. `CHANGELOG.md`, `CONTRIBUTING.md`)  
+- `.env.example`, `.gitignore`, `.dockerignore` – config files that do not affect the build
 
 ## Jobs
 

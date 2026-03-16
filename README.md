@@ -120,6 +120,7 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 NutriGuide-AI/
 ├── docker-compose.yml      # Local dev (build from source)
 ├── docker-compose.prod.yml # Production (ECR images)
+├── notebooks/         # Python Jupyter notebooks for experimentation ([README](notebooks/README.md))
 ├── ai-agent-ts/       # TypeScript LangGraph agent ([README](ai-agent-ts/README.md))
 │   ├── src/
 │   │   ├── agent/     # createAgent, tools, RAG
