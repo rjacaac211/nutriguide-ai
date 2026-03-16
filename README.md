@@ -16,6 +16,7 @@ Users complete a short onboarding flow (goals, body metrics, preferences, activi
 
 - Node.js 20+
 - OpenAI API key (required for the agent)
+- Pinecone account and index (required for RAG; create at [app.pinecone.io](https://app.pinecone.io))
 - Docker and Docker Compose (optional, for Docker setup)
 
 ## Quick Reference
@@ -34,6 +35,8 @@ Copy [`.env.example`](.env.example) to `.env` in the project root and set your v
 
 ```
 OPENAI_API_KEY=sk-your-key-here
+PINECONE_API_KEY=your-pinecone-key
+PINECONE_INDEX=nutriguide-app-knowledge
 ```
 
 Optional (for LangSmith tracing):
@@ -46,7 +49,7 @@ LANGSMITH_PROJECT=your_langchain_project_name
 
 Backend options: `PORT=3001`, `AGENT_URL=http://localhost:8000`
 
-AI agent options: `AGENT_PORT=8000`, `PINECONE_API_KEY`, `PINECONE_INDEX=nutriguide-app-knowledge`
+AI agent options: `AGENT_PORT=8000` (optional; default 8000). Pinecone keys above are required for RAG.
 
 ### 2. AI Agent (TypeScript)
 
@@ -119,10 +122,17 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 ```
 NutriGuide-AI/
 ├── docker-compose.yml      # Local dev (build from source)
-├── docker-compose.prod.yml # Production (ECR images)
+├── docker-compose.prod.yml # Production (ECR images, used by deploy workflow)
+├── docs/                   # Deployment, runbook, troubleshooting, Docker, CI/CD
+│   ├── DEPLOYMENT.md
+│   ├── RUN-SERVICES-LOCALLY.md
+│   ├── RUNBOOK.md
+│   ├── TROUBLESHOOTING.md
+│   └── ...
 ├── ai-agent-ts/       # TypeScript LangGraph agent ([README](ai-agent-ts/README.md))
 │   ├── src/
 │   │   ├── agent/     # createAgent, tools, RAG
+│   │   ├── scripts/   # index.ts (Pinecone indexing for knowledge/)
 │   │   ├── index.ts   # Express server
 │   │   └── types.ts
 │   └── knowledge/     # Nutrition docs for RAG
@@ -141,6 +151,8 @@ NutriGuide-AI/
 
 ## API
 
+- `GET /api/health` — Health check (returns `{ status: "ok" }`)
+- `GET /health` — Same, alternate path
 - `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Extended schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`
@@ -149,8 +161,23 @@ NutriGuide-AI/
 
 For AWS deployment (EC2, ECR, GitHub Actions, Docker Compose), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
+## Documentation
+
+| Doc | Description |
+|-----|-------------|
+| [RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) | Run each service separately for debugging |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | AWS deployment (EC2, ECR, GitHub Actions) |
+| [RUNBOOK.md](docs/RUNBOOK.md) | Operations runbook |
+| [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Deployment and CI/CD troubleshooting |
+| [DOCKER.md](docs/DOCKER.md) | Docker setup details |
+| [CICD.md](docs/CICD.md) | GitHub Actions and secrets |
+| [AWS-SETUP.md](docs/AWS-SETUP.md) | AWS IAM and security group setup |
+| [EC2-SETUP.md](docs/EC2-SETUP.md) | EC2 instance setup |
+
 ## Troubleshooting
 
 - **Chat stuck on "Thinking..."** — Backend is not running. Start it with `cd backend && npm run dev`.
 - **Agent connection errors** — Ensure the AI agent is running on port 8000. Set `AGENT_URL` in `.env` if it runs elsewhere.
 - **OpenAI API errors** — Verify `OPENAI_API_KEY` is set correctly in `.env`.
+
+For deployment, CI/CD, and EC2 issues, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
