@@ -1,52 +1,42 @@
 # Running Services Individually for Debugging
 
-Use this guide to run each service in a separate terminal so you can see logs and diagnose 500 errors. The AI agent is TypeScript (ai-agent-ts); Chroma runs as a separate service for RAG.
+Use this guide to run each service in a separate terminal so you can see logs and diagnose 500 errors. The AI agent is TypeScript (ai-agent-ts); RAG uses Pinecone (cloud-based, requires internet).
 
 ## Prerequisites
 
+- **Index knowledge first** — When you add or change `.md` files in `ai-agent-ts/knowledge/`, run `npm run index` in `ai-agent-ts` before testing. The agent reads from a pre-populated Pinecone index; it does not index at runtime.
 - `.env` in **project root** — both AI agent and backend load from it. Include at least:
   - `OPENAI_API_KEY` (required for AI agent)
+  - `PINECONE_API_KEY` (required for RAG)
+  - `PINECONE_INDEX=nutriguide-app-knowledge` (or your index name)
   - `PORT=3001` (backend)
   - `AGENT_URL=http://localhost:8000` (backend → AI agent)
   - `AGENT_PORT=8000` (AI agent; omit to use default)
-  - `CHROMA_URL=http://localhost:8001` (when Chroma runs on 8001)
 - Node.js 20+
+- Internet connection (Pinecone is cloud-only)
 
 ## Service Order & Ports
 
 | Service   | Port | Depends on |
 |-----------|------|------------|
-| Chroma    | 8001 | —          |
-| AI Agent  | 8000 | Chroma     |
+| AI Agent  | 8000 | Pinecone (cloud) |
 | Backend   | 3001 | AI Agent   |
 | Frontend  | 5173 | Backend   |
 
-Chroma uses host port **8001** to avoid conflict with the AI agent (8000).
-
 ---
 
-## Terminal 1: Chroma
-
-```powershell
-docker run --rm -p 8001:8000 chromadb/chroma:0.6.1
-```
-
-Use `chromadb/chroma:0.6.1` (not `latest`) for compatibility with the chromadb npm client. Chroma will be at `http://localhost:8001`.
-
----
-
-## Terminal 2: AI Agent
+## Terminal 1: AI Agent
 
 ```powershell
 cd ai-agent-ts
 npm run dev
 ```
 
-Loads `CHROMA_URL`, `PORT`, and `OPENAI_API_KEY` from root `.env`. You should see: `NutriGuide AI Agent listening on port 8000`
+Loads `PINECONE_API_KEY`, `PINECONE_INDEX`, `PORT`, and `OPENAI_API_KEY` from root `.env`. You should see: `NutriGuide AI Agent listening on port 8000`
 
 ---
 
-## Terminal 3: Backend
+## Terminal 2: Backend
 
 ```powershell
 cd backend
@@ -57,7 +47,7 @@ Loads `AGENT_URL` and `PORT` from root `.env`.
 
 ---
 
-## Terminal 4: Frontend
+## Terminal 3: Frontend
 
 ```powershell
 cd frontend
@@ -89,7 +79,7 @@ curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "
 ## Common 500 Causes
 
 1. **Missing `OPENAI_API_KEY`** — Agent fails on first LLM call
-2. **Chroma unreachable** — `CHROMA_URL` wrong or Chroma not running (RAG/search tool fails)
+2. **Pinecone unreachable** — `PINECONE_API_KEY` or `PINECONE_INDEX` wrong or missing (RAG/search tool fails). Ensure you have internet and a valid Pinecone index.
 3. **Agent not running** — Backend gets connection refused when calling `AGENT_URL`
 4. **Backend not running** — Frontend gets 500 when proxying to backend
 

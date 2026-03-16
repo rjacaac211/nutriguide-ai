@@ -4,8 +4,6 @@ __pycache__/
 .env
 .venv/
 venv/
-chroma_db/
-.chroma_db/
 dist/
 *.log
 .DS_Store

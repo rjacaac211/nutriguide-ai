@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths-ignore:
       - 'docs/**'
-      - '*.md'
       - '**/README.md'
       - '.env.example'
       - '.gitignore'
@@ -55,8 +54,24 @@ jobs:
       LANGSMITH_TRACING_V2: ${{ vars.LANGSMITH_TRACING_V2 }}
       LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
       LANGSMITH_PROJECT: ${{ vars.LANGSMITH_PROJECT }}
+      PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+      PINECONE_INDEX: ${{ vars.PINECONE_INDEX }}
     steps:
       - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: paths
+        with:
+          filters: |
+            knowledge:
+              - 'ai-agent-ts/knowledge/**'
+
+      - name: Index knowledge to Pinecone
+        if: steps.paths.outputs.knowledge == 'true'
+        run: |
+          cd ai-agent-ts
+          npm ci
+          npm run index
 
       - name: Get runner public IP
         id: ip
@@ -100,6 +115,8 @@ jobs:
             echo 'LANGSMITH_TRACING_V2=$LANGSMITH_TRACING_V2' >> .env && \
             echo 'LANGSMITH_API_KEY=$LANGSMITH_API_KEY' >> .env && \
             echo 'LANGSMITH_PROJECT=$LANGSMITH_PROJECT' >> .env && \
+            echo 'PINECONE_API_KEY=$PINECONE_API_KEY' >> .env && \
+            echo 'PINECONE_INDEX=$PINECONE_INDEX' >> .env && \
             echo 'ECR_REGISTRY=$ECR_REGISTRY' >> .env && \
             echo 'IMAGE_TAG=$IMAGE_TAG' >> .env && \
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY && \

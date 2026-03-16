@@ -7,7 +7,6 @@ venv
 .env.*
 .git
 .gitignore
-chroma_db
 dist
 *.md
 .cursor

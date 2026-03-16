@@ -30,7 +30,7 @@ flowchart LR
 | Frontend | React, Vite, Nginx |
 | Backend | Node.js, Express |
 | AI Agent | TypeScript, Express, LangGraph.js, LangChain |
-| Chroma | ChromaDB (Docker Hub image) |
+| RAG | Pinecone (cloud vector store) |
 | Registry | AWS ECR |
 | Compute | AWS EC2 |
 | CI/CD | GitHub Actions |
@@ -40,6 +40,7 @@ flowchart LR
 - AWS account
 - GitHub repository with the NutriGuide-AI codebase
 - OpenAI API key
+- Pinecone account and index (create at [app.pinecone.io](https://app.pinecone.io)); add `PINECONE_API_KEY` to GitHub Secrets and `PINECONE_INDEX` to GitHub Variables (see [CICD.md](CICD.md))
 - (Optional) LangSmith API key for tracing
 
 ## Quick Start
@@ -49,6 +50,8 @@ If you already have AWS and EC2 set up:
 1. Ensure GitHub Secrets and Variables are configured (see [CICD.md](CICD.md))
 2. Push to `main` to trigger the deploy workflow
 3. Open `http://YOUR_EC2_PUBLIC_IP` to verify
+
+**RAG knowledge:** The Pinecone index is populated automatically in CI when `ai-agent-ts/knowledge/` changes. No manual indexing is needed for production.
 
 ## Documentation
 
