@@ -12,7 +12,7 @@ CREATE TABLE "profile" (
     "user_id" TEXT NOT NULL,
     "name" TEXT,
     "gender" TEXT,
-    "birth_date" TIMESTAMP(3),
+    "birth_date" DATE,
     "age" INTEGER,
     "height_cm" DECIMAL(5,2),
     "weight_kg" DECIMAL(5,2),

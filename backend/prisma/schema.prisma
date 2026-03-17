@@ -22,7 +22,7 @@ model Profile {
   user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name               String?
   gender             String?
-  birthDate          DateTime? @map("birth_date")
+  birthDate          DateTime? @map("birth_date") @db.Date
   age                Int?
   heightCm           Decimal?  @map("height_cm") @db.Decimal(5, 2)
   weightKg           Decimal?  @map("weight_kg") @db.Decimal(5, 2)

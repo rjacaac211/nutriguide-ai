@@ -16,10 +16,16 @@ function ageFromBirthDate(birthDate) {
 function serializeProfile(profile) {
   if (!profile) return null;
   const toNum = (v) => (v != null && typeof v === "object" && "toNumber" in v ? v.toNumber() : v);
+  const birthDate = profile.birthDate;
+  const birth_date = birthDate instanceof Date
+    ? birthDate.toISOString().slice(0, 10)
+    : birthDate && typeof birthDate === "string"
+      ? birthDate.slice(0, 10)
+      : birthDate;
   return {
     name: profile.name,
     gender: profile.gender,
-    birth_date: profile.birthDate,
+    birth_date,
     age: profile.age,
     height_cm: toNum(profile.heightCm),
     weight_kg: toNum(profile.weightKg),
@@ -48,6 +54,15 @@ router.get("/:id/profile", async (req, res) => {
   }
 });
 
+function parseBirthDate(v) {
+  if (v == null || v === "") return null;
+  if (v instanceof Date && !isNaN(v.getTime())) return v;
+  const str = String(v).trim();
+  if (!str) return null;
+  const date = new Date(str);
+  return isNaN(date.getTime()) ? null : date;
+}
+
 router.put("/:id/profile", async (req, res) => {
   try {
     const userId = req.params.id;
@@ -67,7 +82,8 @@ router.put("/:id/profile", async (req, res) => {
       age,
     } = req.body;
 
-    const ageComputed = age ?? ageFromBirthDate(birth_date);
+    const birthDateParsed = parseBirthDate(birth_date);
+    const ageComputed = age ?? ageFromBirthDate(birthDateParsed);
 
     await prisma.$transaction([
       prisma.user.upsert({
@@ -83,7 +99,7 @@ router.put("/:id/profile", async (req, res) => {
         userId,
         name: name ?? null,
         gender: gender ?? null,
-        birthDate: birth_date ?? null,
+        birthDate: birthDateParsed,
         age: ageComputed,
         heightCm: height_cm ?? null,
         weightKg: weight_kg ?? null,
@@ -98,7 +114,7 @@ router.put("/:id/profile", async (req, res) => {
       update: {
         name: name ?? null,
         gender: gender ?? null,
-        birthDate: birth_date ?? null,
+        birthDate: birthDateParsed,
         age: ageComputed,
         heightCm: height_cm ?? null,
         weightKg: weight_kg ?? null,
