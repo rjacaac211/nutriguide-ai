@@ -1,4 +1,5 @@
 import express from "express";
+import { prisma } from "../db.js";
 
 const router = express.Router();
 
@@ -12,54 +13,110 @@ function ageFromBirthDate(birthDate) {
   return age;
 }
 
-router.get("/:id/profile", (req, res) => {
-  const profiles = req.app.locals.userProfiles || {};
-  const profile = profiles[req.params.id];
-  if (!profile) {
-    return res.status(404).json({ error: "Profile not found" });
+function serializeProfile(profile) {
+  if (!profile) return null;
+  const toNum = (v) => (v != null && typeof v === "object" && "toNumber" in v ? v.toNumber() : v);
+  return {
+    name: profile.name,
+    gender: profile.gender,
+    birth_date: profile.birthDate,
+    age: profile.age,
+    height_cm: toNum(profile.heightCm),
+    weight_kg: toNum(profile.weightKg),
+    goal_weight_kg: toNum(profile.goalWeightKg),
+    goal: profile.goal,
+    activity_level: profile.activityLevel,
+    speed_kg_per_week: toNum(profile.speedKgPerWeek),
+    preferences: profile.preferences ?? [],
+    challenges: profile.challenges ?? [],
+    dietary_restrictions: profile.dietaryRestrictions ?? [],
+  };
+}
+
+router.get("/:id/profile", async (req, res) => {
+  try {
+    const profile = await prisma.profile.findUnique({
+      where: { userId: req.params.id },
+    });
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    res.json(serializeProfile(profile));
+  } catch (err) {
+    console.error("Profile fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch profile" });
   }
-  res.json(profile);
 });
 
-router.put("/:id/profile", (req, res) => {
-  const {
-    name,
-    gender,
-    birth_date,
-    height_cm,
-    weight_kg,
-    goal_weight_kg,
-    goal,
-    activity_level,
-    speed_kg_per_week,
-    preferences,
-    challenges,
-    dietary_restrictions,
-    age,
-  } = req.body;
+router.put("/:id/profile", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const {
+      name,
+      gender,
+      birth_date,
+      height_cm,
+      weight_kg,
+      goal_weight_kg,
+      goal,
+      activity_level,
+      speed_kg_per_week,
+      preferences,
+      challenges,
+      dietary_restrictions,
+      age,
+    } = req.body;
 
-  if (!req.app.locals.userProfiles) {
-    req.app.locals.userProfiles = {};
+    const ageComputed = age ?? ageFromBirthDate(birth_date);
+
+    await prisma.$transaction([
+      prisma.user.upsert({
+        where: { id: userId },
+        create: { id: userId },
+        update: {},
+      }),
+    ]);
+
+    const profile = await prisma.profile.upsert({
+      where: { userId },
+      create: {
+        userId,
+        name: name ?? null,
+        gender: gender ?? null,
+        birthDate: birth_date ?? null,
+        age: ageComputed,
+        heightCm: height_cm ?? null,
+        weightKg: weight_kg ?? null,
+        goalWeightKg: goal_weight_kg ?? null,
+        goal: goal ?? "maintain",
+        activityLevel: activity_level ?? "moderate",
+        speedKgPerWeek: speed_kg_per_week ?? null,
+        preferences: preferences || [],
+        challenges: challenges || [],
+        dietaryRestrictions: dietary_restrictions || [],
+      },
+      update: {
+        name: name ?? null,
+        gender: gender ?? null,
+        birthDate: birth_date ?? null,
+        age: ageComputed,
+        heightCm: height_cm ?? null,
+        weightKg: weight_kg ?? null,
+        goalWeightKg: goal_weight_kg ?? null,
+        goal: goal ?? "maintain",
+        activityLevel: activity_level ?? "moderate",
+        speedKgPerWeek: speed_kg_per_week ?? null,
+        preferences: preferences || [],
+        challenges: challenges || [],
+        dietaryRestrictions: dietary_restrictions || [],
+      },
+    });
+
+    res.json(serializeProfile(profile));
+  } catch (err) {
+    console.error("Profile update error:", err);
+    res.status(500).json({ error: "Failed to update profile" });
   }
-
-  const ageComputed = age ?? ageFromBirthDate(birth_date);
-
-  req.app.locals.userProfiles[req.params.id] = {
-    name: name ?? null,
-    gender: gender ?? null,
-    birth_date: birth_date ?? null,
-    age: ageComputed,
-    height_cm: height_cm ?? null,
-    weight_kg: weight_kg ?? null,
-    goal_weight_kg: goal_weight_kg ?? null,
-    goal: goal ?? "maintain",
-    activity_level: activity_level ?? "moderate",
-    speed_kg_per_week: speed_kg_per_week ?? null,
-    preferences: preferences || [],
-    challenges: challenges || [],
-    dietary_restrictions: dietary_restrictions || [],
-  };
-  res.json(req.app.locals.userProfiles[req.params.id]);
 });
 
 export default router;

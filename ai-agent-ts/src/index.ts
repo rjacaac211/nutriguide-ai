@@ -8,7 +8,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { graph } from "./agent/index.js";
-import { setUserProfiles } from "./agent/tools.js";
 import type { ChatRequest, ChatResponse } from "./types.js";
 
 const app = express();
@@ -39,14 +38,12 @@ function extractResponseText(messages: Array<{ content?: unknown }>): string {
 app.post("/chat", async (req: Request, res: Response) => {
   try {
     const body = req.body as ChatRequest;
-    const { user_id, message, thread_id, user_profiles } = body;
+    const { user_id, message, thread_id } = body;
 
     if (!user_id || !message || !thread_id) {
       res.status(400).json({ error: "user_id, message, and thread_id are required" });
       return;
     }
-
-    setUserProfiles(user_profiles ?? {});
 
     const config = { configurable: { thread_id } };
 
@@ -80,7 +77,10 @@ app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", agent_ready: agentReady });
 });
 
-const PORT = Number(process.env.AGENT_PORT) || 8000;
-app.listen(PORT, "0.0.0.0", () => {
+const PORT = process.env.AGENT_PORT;
+if (!PORT) {
+  throw new Error("AGENT_PORT environment variable is required");
+}
+app.listen(Number(PORT), "0.0.0.0", () => {
   console.log(`NutriGuide AI Agent listening on port ${PORT}`);
 });

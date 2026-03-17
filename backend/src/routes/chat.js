@@ -1,7 +1,10 @@
 import express from "express";
 
 const router = express.Router();
-const AGENT_URL = process.env.AGENT_URL || "http://localhost:8000";
+const AGENT_URL = process.env.AGENT_URL;
+if (!AGENT_URL) {
+  throw new Error("AGENT_URL environment variable is required");
+}
 
 router.post("/", async (req, res) => {
   try {
@@ -11,9 +14,6 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "userId, message, and threadId are required" });
     }
 
-    const userProfiles = req.app.locals.userProfiles || {};
-    const userProfile = userProfiles[userId] ? { [userId]: userProfiles[userId] } : {};
-
     const response = await fetch(`${AGENT_URL}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -21,7 +21,6 @@ router.post("/", async (req, res) => {
         user_id: userId,
         message,
         thread_id: threadId,
-        user_profiles: userProfile,
       }),
     });
 

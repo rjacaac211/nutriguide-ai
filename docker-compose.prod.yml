@@ -2,12 +2,15 @@ services:
   ai-agent:
     image: ${ECR_REGISTRY}/nutriguide-ai-agent:${IMAGE_TAG}
     environment:
+      - AGENT_PORT=${AGENT_PORT}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - LANGSMITH_TRACING_V2=${LANGSMITH_TRACING_V2}
       - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
       - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
       - PINECONE_API_KEY=${PINECONE_API_KEY}
       - PINECONE_INDEX=${PINECONE_INDEX}
+      - BACKEND_URL=http://backend:3001
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     restart: unless-stopped
 
   backend:
@@ -15,6 +18,8 @@ services:
     environment:
       - PORT=3001
       - AGENT_URL=http://ai-agent:8000
+      - DATABASE_URL=${DATABASE_URL}
+      - INTERNAL_API_KEY=${INTERNAL_API_KEY}
     depends_on:
       - ai-agent
     restart: unless-stopped

@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  profile   Profile?
+  foodLogs  FoodLog[]
+}
+
+model Profile {
+  userId             String    @id
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name               String?
+  gender             String?
+  birthDate          DateTime? @map("birth_date")
+  age                Int?
+  heightCm           Decimal?  @map("height_cm") @db.Decimal(5, 2)
+  weightKg           Decimal?  @map("weight_kg") @db.Decimal(5, 2)
+  goalWeightKg       Decimal?  @map("goal_weight_kg") @db.Decimal(5, 2)
+  goal               String    @default("maintain")
+  activityLevel      String    @default("moderate") @map("activity_level")
+  speedKgPerWeek     Decimal?  @map("speed_kg_per_week") @db.Decimal(4, 2)
+  dietaryRestrictions Json?    @default("[]") @map("dietary_restrictions")
+  preferences        Json?     @default("[]")
+  challenges         Json?     @default("[]")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model FoodLog {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loggedAt     DateTime @default(now()) @map("logged_at")
+  mealType     String?  @map("meal_type")
+  items        Json     @default("[]")
+  totalCal     Decimal? @map("total_cal") @db.Decimal(10, 2)
+  totalProtein Decimal? @map("total_protein") @db.Decimal(10, 2)
+  totalCarbs   Decimal? @map("total_carbs") @db.Decimal(10, 2)
+  totalFat     Decimal? @map("total_fat") @db.Decimal(10, 2)
+  createdAt    DateTime @default(now())
+
+  @@index([userId, loggedAt(sort: Desc)])
+}

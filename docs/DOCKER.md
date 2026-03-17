@@ -25,7 +25,8 @@ docker compose up --build
 ```
 
 - Builds images from `./frontend`, `./backend`, `./ai-agent-ts`
-- Uses `.env` in project root for environment variables (including `PINECONE_API_KEY`, `PINECONE_INDEX`)
+- Uses `.env` in project root for environment variables (including `DATABASE_URL`, `PINECONE_API_KEY`, `PINECONE_INDEX`)
+- **Database**: No PostgreSQL container. Backend connects to your local PostgreSQL via `DATABASE_URL`. Use `host.docker.internal` as host (see [DATABASE_SETUP.md](DATABASE_SETUP.md))
 - App available at http://localhost:80 (or http://localhost)
 
 ## Production
@@ -34,6 +35,7 @@ Production uses `docker-compose.prod.yml` with images from ECR:
 
 - **Images**: `${ECR_REGISTRY}/nutriguide-{frontend|backend|ai-agent}:${IMAGE_TAG}`
 - **Env vars**: From `.env` on EC2 (written by deploy workflow)
+- **Database**: AWS RDS PostgreSQL. `DATABASE_URL` from GitHub Secrets (see [DATABASE_SETUP.md](DATABASE_SETUP.md))
 - **ECR_REGISTRY**, **IMAGE_TAG**: Set in `.env` during deploy
 
 The workflow copies `docker-compose.prod.yml` to EC2 and runs:

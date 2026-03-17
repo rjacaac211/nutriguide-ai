@@ -27,7 +27,7 @@ flowchart TD
 
 ## Chat API
 
-`POST /chat` — Request: `{ user_id, message, thread_id, user_profiles? }`. Returns `{ response }` with the final AI output only (extracted from the last assistant message; intermediate tool outputs, user profile dumps, and RAG content are not included). The user ID is passed to the agent via a system message so it never appears in chat bubbles.
+`POST /chat` — Request: `{ user_id, message, thread_id }`. Returns `{ response }` with the final AI output only (extracted from the last assistant message; intermediate tool outputs, user profile dumps, and RAG content are not included). The user ID is passed to the agent via a system message so it never appears in chat bubbles. The agent fetches user profiles from the backend via its tools (no `user_profiles` in the request).
 
 ## Project structure (src/agent/)
 
@@ -69,5 +69,7 @@ Or use the project's `docker-compose.yml` which includes the agent.
 - `OPENAI_API_KEY` — Required
 - `PINECONE_API_KEY` — Required for RAG
 - `PINECONE_INDEX` — Pinecone index name (default: nutriguide-app-knowledge)
-- `AGENT_PORT` — Server port (default: 8000)
+- `AGENT_PORT` — Server port (required)
+- `BACKEND_URL` — Backend base URL for fetching profiles (default: http://localhost:3001; use http://backend:3001 in Docker)
+- `INTERNAL_API_KEY` — Required for agent-backend auth (must match backend)
 - `LANGSMITH_*` — Optional LangSmith tracing
