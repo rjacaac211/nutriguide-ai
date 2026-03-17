@@ -6,7 +6,7 @@ Users complete a short onboarding flow (goals, body metrics, preferences, activi
 
 ## Tech Stack
 
-- **TypeScript / LangGraph.js / LangChain**: Single-agent with tools and RAG (`createAgent`)
+- **TypeScript / LangGraph.js / LangChain**: Custom LangGraph StateGraph with routing, multi-step reasoning, tools, and RAG
 - **Node.js / Express**: Backend API, middleware, agent proxy
 - **RAG**: OpenAI embeddings + Pinecone for nutrition knowledge (cloud vector store)
 - **OpenAI**: GPT-4o-mini for the agent
@@ -131,7 +131,7 @@ NutriGuide-AI/
 │   └── ...
 ├── ai-agent-ts/       # TypeScript LangGraph agent ([README](ai-agent-ts/README.md))
 │   ├── src/
-│   │   ├── agent/     # createAgent, tools, RAG
+│   │   ├── agent/     # StateGraph, nodes, tools, RAG
 │   │   ├── scripts/   # index.ts (Pinecone indexing for knowledge/)
 │   │   ├── index.ts   # Express server
 │   │   └── types.ts

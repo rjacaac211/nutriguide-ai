@@ -1,10 +1,41 @@
 # NutriGuide AI Agent (TypeScript)
 
-LangGraph.js-based nutrition assistant agent with RAG (Pinecone) and tools. Uses `createAgent` (langchain) with MemorySaver for session-scoped conversation memory.
+Custom LangGraph StateGraph-based nutrition assistant with RAG (Pinecone) and tools. Uses routing (nutrition vs off-topic), multi-step reasoning (analyze node), and an agent loop with MemorySaver for session-scoped conversation memory.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    START --> classifyIntent
+    classifyIntent -->|off_topic| respondDecline
+    classifyIntent -->|nutrition| analyze
+    analyze --> agentNode
+    agentNode -->|tool_calls| toolNode
+    toolNode --> agentNode
+    agentNode -->|no tools| END
+    respondDecline --> END
+```
+
+- **classifyIntent**: Routes to respondDecline (off-topic) or analyze (nutrition)
+- **respondDecline**: Polite decline for non-nutrition questions
+- **analyze**: Multi-step reasoning before agent (what user needs, search focus)
+- **agentNode**: LLM with tools (get_user_profile, search_nutrition_knowledge)
+- **toolNode**: Executes tool calls, loops back to agentNode
 
 ## Chat API
 
 `POST /chat` — Request: `{ user_id, message, thread_id, user_profiles? }`. Returns `{ response }` with the final AI output only (extracted from the last assistant message; intermediate tool outputs, user profile dumps, and RAG content are not included). The user ID is passed to the agent via a system message so it never appears in chat bubbles.
+
+## Project structure (src/agent/)
+
+| File | Description |
+|------|-------------|
+| `state.ts` | Annotation.Root state schema (messages, user_id, classification, analysis) |
+| `nodes.ts` | classifyIntent, respondDecline, analyze, agentNode, toolNode |
+| `graph.ts` | StateGraph, edges, MemorySaver |
+| `tools.ts` | getUserProfile, searchNutritionKnowledge (RAG) |
+| `rag.ts` | Pinecone RAG (embeddings, retriever) |
+| `index.ts` | Exports graph and tools |
 
 ## Setup
 

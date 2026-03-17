@@ -29,7 +29,7 @@ flowchart LR
 |-----------|------------|
 | Frontend | React, Vite, Nginx |
 | Backend | Node.js, Express |
-| AI Agent | TypeScript, Express, LangGraph.js, LangChain |
+| AI Agent | TypeScript, Express, LangGraph.js, LangChain (custom StateGraph) |
 | RAG | Pinecone (cloud vector store) |
 | Registry | AWS ECR |
 | Compute | AWS EC2 |
