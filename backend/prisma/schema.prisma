@@ -9,14 +9,16 @@ datasource db {
 
 model User {
   id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   profile   Profile?
   foodLogs  FoodLog[]
+
+  @@map("users")
 }
 
 model Profile {
-  userId             String    @id
+  userId             String    @id @map("user_id")
   user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name               String?
   gender             String?
@@ -31,8 +33,10 @@ model Profile {
   dietaryRestrictions Json?    @default("[]") @map("dietary_restrictions")
   preferences        Json?     @default("[]")
   challenges         Json?     @default("[]")
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  @@map("profile")
 }
 
 model FoodLog {
@@ -46,7 +50,8 @@ model FoodLog {
   totalProtein Decimal? @map("total_protein") @db.Decimal(10, 2)
   totalCarbs   Decimal? @map("total_carbs") @db.Decimal(10, 2)
   totalFat     Decimal? @map("total_fat") @db.Decimal(10, 2)
-  createdAt    DateTime @default(now())
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@index([userId, loggedAt(sort: Desc)])
+  @@map("food_log")
 }
