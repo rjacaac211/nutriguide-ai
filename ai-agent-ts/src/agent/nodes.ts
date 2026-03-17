@@ -25,7 +25,7 @@ const toolsByName = Object.fromEntries(tools.map((t) => [t.name, t]));
 const modelWithTools = model.bindTools(tools);
 
 const CLASSIFY_SCHEMA = z.object({
-  intent: z.enum(["nutrition", "off_topic"]),
+  intent: z.enum(["nutrition", "chitchat", "off_topic"]),
 });
 
 const classifyLlm = model.withStructuredOutput(CLASSIFY_SCHEMA);
@@ -33,6 +33,10 @@ const classifyLlm = model.withStructuredOutput(CLASSIFY_SCHEMA);
 const DECLINE_PROMPT = `You are NutriGuide, a friendly nutrition assistant. The user has asked something off-topic (not about nutrition, diet, fitness, meal planning, macros, weight management, or health).
 
 Politely decline and redirect them to nutrition-related questions. Keep your response brief (1-2 sentences).`;
+
+const CHITCHAT_PROMPT = `You are NutriGuide, a friendly nutrition assistant. The user is greeting you or making small talk (hi, thanks, how are you, etc.).
+
+Respond in 1-2 friendly sentences. Acknowledge them and invite them to ask nutrition questions if they'd like. Be warm but concise.`;
 
 const ANALYZE_PROMPT = `You are analyzing a user's nutrition-related question. In 2-3 sentences, briefly reason about:
 1. What the user needs (e.g., macro advice, meal planning, dietary restriction guidance)
@@ -67,7 +71,14 @@ export const classifyIntent = async (
             .join(" ")
         : "";
   const result = await classifyLlm.invoke(
-    `Classify this user message. Is it about nutrition, diet, fitness, meal planning, macros, weight management, or health? Reply with intent: "nutrition" or "off_topic".\n\nUser: ${text}`
+    `Classify this user message into exactly one intent:
+- nutrition: diet, fitness, macros, meal planning, weight management, health, dietary restrictions
+- chitchat: greetings (hi, hello, hey), thanks, how are you, small talk, casual conversation
+- off_topic: politics, weather, tech support, unrelated topics, anything not nutrition or chitchat
+
+Reply with intent: "nutrition", "chitchat", or "off_topic".
+
+User: ${text}`
   );
   return {
     classification: { intent: result.intent },
@@ -89,6 +100,34 @@ export const respondDecline = async (
         : "";
   const response = await model.invoke([
     new SystemMessage(DECLINE_PROMPT),
+    new HumanMessage(userText),
+  ]);
+  const content =
+    typeof response.content === "string"
+      ? response.content
+      : Array.isArray(response.content)
+        ? (response.content as { text?: string }[])
+            .map((c) => (typeof c === "string" ? c : c?.text ?? ""))
+            .join("")
+        : "";
+  return {
+    messages: [new AIMessage({ content })],
+  };
+};
+
+export const chitchatNode = async (state: NutriGuideStateType) => {
+  const messages = Array.isArray(state.messages) ? state.messages : [];
+  const lastMsg = messages.at(-1);
+  const userText =
+    typeof lastMsg?.content === "string"
+      ? lastMsg.content
+      : Array.isArray(lastMsg?.content)
+        ? (lastMsg.content as { text?: string }[])
+            .map((c) => (typeof c === "string" ? c : c?.text ?? ""))
+            .join(" ")
+        : "";
+  const response = await model.invoke([
+    new SystemMessage(CHITCHAT_PROMPT),
     new HumanMessage(userText),
   ]);
   const content =

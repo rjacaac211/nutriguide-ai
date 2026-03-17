@@ -10,7 +10,7 @@ export const NutriGuideState = Annotation.Root({
     default: () => [],
   }),
   user_id: Annotation<string>(),
-  classification: Annotation<{ intent: "nutrition" | "off_topic" } | undefined>(),
+  classification: Annotation<{ intent: "nutrition" | "chitchat" | "off_topic" } | undefined>(),
   analysis: Annotation<string | undefined>(),
 });
 

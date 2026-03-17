@@ -4,6 +4,7 @@ import { NutriGuideState } from "./state.js";
 import {
   classifyIntent,
   respondDecline,
+  chitchatNode,
   analyze,
   agentNode,
   toolNode,
@@ -12,24 +13,28 @@ import {
 
 function routeAfterClassify(
   state: { classification?: { intent?: string } }
-): "respondDecline" | "analyze" {
-  return state.classification?.intent === "off_topic"
-    ? "respondDecline"
-    : "analyze";
+): "respondDecline" | "chitchatNode" | "analyze" {
+  const intent = state.classification?.intent;
+  if (intent === "off_topic") return "respondDecline";
+  if (intent === "chitchat") return "chitchatNode";
+  return "analyze";
 }
 
 const workflow = new StateGraph(NutriGuideState)
   .addNode("classifyIntent", classifyIntent)
   .addNode("respondDecline", respondDecline)
+  .addNode("chitchatNode", chitchatNode)
   .addNode("analyze", analyze)
   .addNode("agentNode", agentNode)
   .addNode("toolNode", toolNode)
   .addEdge(START, "classifyIntent")
   .addConditionalEdges("classifyIntent", routeAfterClassify, [
     "respondDecline",
+    "chitchatNode",
     "analyze",
   ])
   .addEdge("respondDecline", END)
+  .addEdge("chitchatNode", END)
   .addEdge("analyze", "agentNode")
   .addConditionalEdges("agentNode", shouldContinue, ["toolNode", END])
   .addEdge("toolNode", "agentNode");

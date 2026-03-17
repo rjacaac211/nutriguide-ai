@@ -1,6 +1,6 @@
 # NutriGuide AI Agent (TypeScript)
 
-Custom LangGraph StateGraph-based nutrition assistant with RAG (Pinecone) and tools. Uses routing (nutrition vs off-topic), multi-step reasoning (analyze node), and an agent loop with MemorySaver for session-scoped conversation memory.
+Custom LangGraph StateGraph-based nutrition assistant with RAG (Pinecone) and tools. Uses routing (nutrition, chitchat, off-topic), multi-step reasoning (analyze node), and an agent loop with MemorySaver for session-scoped conversation memory.
 
 ## Architecture
 
@@ -8,16 +8,19 @@ Custom LangGraph StateGraph-based nutrition assistant with RAG (Pinecone) and to
 flowchart TD
     START --> classifyIntent
     classifyIntent -->|off_topic| respondDecline
+    classifyIntent -->|chitchat| chitchatNode
     classifyIntent -->|nutrition| analyze
     analyze --> agentNode
     agentNode -->|tool_calls| toolNode
     toolNode --> agentNode
     agentNode -->|no tools| END
     respondDecline --> END
+    chitchatNode --> END
 ```
 
-- **classifyIntent**: Routes to respondDecline (off-topic) or analyze (nutrition)
+- **classifyIntent**: Routes to respondDecline (off-topic), chitchatNode (greetings/small talk), or analyze (nutrition)
 - **respondDecline**: Polite decline for non-nutrition questions
+- **chitchatNode**: Short friendly reply for greetings and small talk (no tools, no RAG)
 - **analyze**: Multi-step reasoning before agent (what user needs, search focus)
 - **agentNode**: LLM with tools (get_user_profile, search_nutrition_knowledge)
 - **toolNode**: Executes tool calls, loops back to agentNode
@@ -31,7 +34,7 @@ flowchart TD
 | File | Description |
 |------|-------------|
 | `state.ts` | Annotation.Root state schema (messages, user_id, classification, analysis) |
-| `nodes.ts` | classifyIntent, respondDecline, analyze, agentNode, toolNode |
+| `nodes.ts` | classifyIntent, respondDecline, chitchatNode, analyze, agentNode, toolNode |
 | `graph.ts` | StateGraph, edges, MemorySaver |
 | `tools.ts` | getUserProfile, searchNutritionKnowledge (RAG) |
 | `rag.ts` | Pinecone RAG (embeddings, retriever) |
