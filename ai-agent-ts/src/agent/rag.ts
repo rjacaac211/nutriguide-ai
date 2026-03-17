@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import { PineconeStore } from "@langchain/pinecone";
 import { Document } from "@langchain/core/documents";
 import { OpenAIEmbeddings } from "@langchain/openai";
@@ -9,6 +10,9 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load .env from project root (ai-agent-ts/../.env) so RAG works when imported from any entry point
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 const PINECONE_INDEX = process.env.PINECONE_INDEX;
 
@@ -83,7 +87,9 @@ export async function getRetriever() {
   });
 
   if (!PINECONE_INDEX) {
-    throw new Error("PINECONE_INDEX environment variable is required");
+    throw new Error(
+      "PINECONE_INDEX environment variable is required for RAG. Add it to your .env file in the project root (e.g. PINECONE_INDEX=nutriguide-app-knowledge). See .env.example."
+    );
   }
   const pinecone = new Pinecone();
   const pineconeIndex = pinecone.Index(PINECONE_INDEX);
@@ -99,7 +105,9 @@ export async function getRetriever() {
 /** Index knowledge files to Pinecone. Call from CI or manually when knowledge changes. */
 export async function indexKnowledgeToPinecone(): Promise<void> {
   if (!process.env.PINECONE_INDEX) {
-    throw new Error("PINECONE_INDEX environment variable is required");
+    throw new Error(
+      "PINECONE_INDEX environment variable is required. Add it to your .env file (e.g. PINECONE_INDEX=nutriguide-app-knowledge)."
+    );
   }
   const embeddings = new OpenAIEmbeddings({
     model: "text-embedding-3-small",

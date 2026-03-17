@@ -7,7 +7,7 @@ import express, { Request, Response } from "express";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { agent } from "./agent/index.js";
+import { graph } from "./agent/index.js";
 import { setUserProfiles } from "./agent/tools.js";
 import type { ChatRequest, ChatResponse } from "./types.js";
 
@@ -50,7 +50,9 @@ app.post("/chat", async (req: Request, res: Response) => {
 
     const config = { configurable: { thread_id } };
 
-    const state = (await agent.getState(config)) as { values?: { messages?: unknown[] } } | undefined;
+    const state = (await graph.getState(config)) as {
+      values?: { messages?: unknown[] };
+    } | undefined;
     const existingMessages = state?.values?.messages ?? [];
     const isNewThread = !existingMessages || existingMessages.length === 0;
 
@@ -63,7 +65,7 @@ app.post("/chat", async (req: Request, res: Response) => {
         ]
       : [new HumanMessage(message)];
 
-    const result = await agent.invoke({ messages }, config);
+    const result = await graph.invoke({ messages, user_id }, config);
     const resultMessages = (result?.messages ?? []) as Array<{ content?: unknown }>;
     const responseText = extractResponseText(resultMessages);
 
