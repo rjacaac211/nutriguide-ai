@@ -41,6 +41,7 @@ flowchart LR
 - GitHub repository with the NutriGuide-AI codebase
 - OpenAI API key
 - Pinecone account and index (create at [app.pinecone.io](https://app.pinecone.io)); add `PINECONE_API_KEY` to GitHub Secrets and `PINECONE_INDEX` to GitHub Variables (see [CICD.md](CICD.md))
+- USDA FoodData Central API key for food search; add `USDA_FDC_API_KEY` to GitHub Secrets (get at [api.data.gov/signup](https://api.data.gov/signup))
 - AWS RDS PostgreSQL instance (see [DATABASE_SETUP.md](DATABASE_SETUP.md)); add `DATABASE_URL` to GitHub Secrets
 - (Optional) LangSmith API key for tracing
 
@@ -59,6 +60,7 @@ If you already have AWS and EC2 set up:
 | Document | Description |
 |----------|-------------|
 | [DATABASE_SETUP.md](DATABASE_SETUP.md) | PostgreSQL setup (dev and prod, including RDS) |
+| [FOOD_LOGGING_TEST.md](FOOD_LOGGING_TEST.md) | Test food logging with USDA FDC |
 | [AWS-SETUP.md](AWS-SETUP.md) | Step-by-step AWS Console setup (ECR, IAM, EC2) |
 | [EC2-SETUP.md](EC2-SETUP.md) | Commands to run on a fresh EC2 instance |
 | [CICD.md](CICD.md) | GitHub Actions pipeline, secrets, variables |

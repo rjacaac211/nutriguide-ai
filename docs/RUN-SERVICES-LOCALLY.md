@@ -47,7 +47,7 @@ cd backend
 npm run dev
 ```
 
-Loads `AGENT_URL` and `PORT` from root `.env`.
+Loads `AGENT_URL`, `PORT`, `USDA_FDC_API_KEY`, and `DATABASE_URL` from root `.env`.
 
 ---
 

@@ -117,7 +117,7 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 2. Click **Create Account** to start the onboarding flow
 3. Answer the profile questions (goal, gender, birth date, height, weight, preferences, activity level, etc.)
 4. Enter your name and view your goal summary
-5. Use the **dashboard** to see calorie summary, meals logged, and activity
+5. Use the **dashboard** to see calorie summary (profile-based TDEE), date picker, meals logged (search/add/edit food via USDA FDC), and activity
 6. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
 
 **Session-scoped data:** User profiles are persisted in PostgreSQL. Conversation memory is session-scoped (per thread). Reloading the page generates a new sessionId, so you will need to create your profile again for a new session.
@@ -143,11 +143,12 @@ NutriGuide-AI/
 │   └── knowledge/     # Nutrition docs for RAG
 ├── backend/           # Express API ([README](backend/README.md))
 │   └── src/
-│       ├── routes/    # /chat, /users
+│       ├── routes/    # /chat, /users, /foods, food logs
+│       ├── services/  # fdc (USDA proxy), tdee
 │       └── index.js
 ├── frontend/          # React app ([README](frontend/README.md))
 │   └── src/
-│       ├── components/ # LandingStep, OnboardingWizard, QuestionSlide, Dashboard, ChatWidget, etc.
+│       ├── components/ # LandingStep, OnboardingWizard, Dashboard, MealsLogged, AddFoodModal, EditFoodModal, DatePicker, ChatWidget, etc.
 │       ├── config/    # onboardingQuestions
 │       ├── App.css    # Component styles, design tokens
 │       └── api/
@@ -161,6 +162,12 @@ NutriGuide-AI/
 - `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Extended schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`
+- `GET /api/users/:id/calorie-goal` — Get profile-based TDEE calorie goal. Returns `{ goalKcal, bmr, tdee }`
+- `GET /api/foods/search?q=...&limit=25` — Search foods via USDA FoodData Central (proxy)
+- `GET /api/users/:id/food-logs?date=YYYY-MM-DD` — List food logs for date
+- `POST /api/users/:id/food-logs` — Create food log. Body: `{ mealType, items, loggedAt }`
+- `PUT /api/users/:id/food-logs/:logId` — Update food log
+- `DELETE /api/users/:id/food-logs/:logId` — Delete food log
 
 ## Deployment
 
@@ -171,6 +178,7 @@ For AWS deployment (EC2, ECR, GitHub Actions, Docker Compose), see [docs/DEPLOYM
 | Doc | Description |
 |-----|-------------|
 | [DATABASE_SETUP.md](docs/DATABASE_SETUP.md) | PostgreSQL setup (dev and prod) |
+| [FOOD_LOGGING_TEST.md](docs/FOOD_LOGGING_TEST.md) | Test food logging with USDA FDC |
 | [RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) | Run each service separately for debugging |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | AWS deployment (EC2, ECR, GitHub Actions) |
 | [RUNBOOK.md](docs/RUNBOOK.md) | Operations runbook |

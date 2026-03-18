@@ -43,7 +43,7 @@ npm run preview
 - **Create Account** — Landing page with onboarding entry point
 - **Onboarding Wizard** — Multi-step questionnaire (goal, gender, birth date, height, weight, preferences, activity, speed of change)
 - **Loading & Summary** — Progress animation, name entry, goal summary with calculated target date
-- **Dashboard** — Calorie summary (eaten/remaining/burned), meals logged (Breakfast, Lunch, Dinner, Snack), activity section
+- **Dashboard** — Date picker, calorie summary (eaten/remaining/burned from profile-based TDEE), meals logged (Breakfast, Lunch, Dinner, Snack) with add/edit/delete via USDA food search, activity section
 - **Chat Widget** — Floating, collapsible AI chat (bottom-right) for nutrition Q&A; **New chat** starts a fresh conversation
 - **Chat display** — User message appears immediately when sent; NutriGuide shows "Thinking..." while the AI responds; only the final AI output is displayed (no internal tool outputs, profile dumps, or RAG labels)
 - **Session-scoped** — Profile and chat use `sessionId`; reload starts a new session (no persistence)
@@ -70,9 +70,10 @@ frontend/
 ├── src/
 │   ├── components/   # LandingStep, OnboardingWizard, QuestionSlide, LoadingScreen,
 │   │                 # EnterNameStep, GoalSummaryStep, Dashboard, CalorieSummary,
-│   │                 # MealsLogged, ActivitySection, ChatWidget, Chat
+│   │                 # MealsLogged, AddFoodModal, EditFoodModal, DatePicker,
+│   │                 # ActivitySection, ChatWidget, Chat
 │   ├── config/       # onboardingQuestions.js
-│   ├── api/          # API client
+│   ├── api/          # API client (profile, chat, foods, food logs)
 │   ├── App.css       # Component styles, design tokens
 │   ├── index.css     # Global styles
 │   └── ...

@@ -23,12 +23,14 @@ Create `.env` in the project root:
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide
 INTERNAL_API_KEY=your-internal-api-key
+USDA_FDC_API_KEY=your-data-gov-api-key
 PORT=3001
 AGENT_URL=http://localhost:8000
 ```
 
 - `DATABASE_URL` — PostgreSQL connection string (required)
 - `INTERNAL_API_KEY` — Secret for internal API (agent-backend auth; generate with `openssl rand -hex 32`)
+- `USDA_FDC_API_KEY` — USDA FoodData Central API key for food search (required for food logging; get at [api.data.gov/signup](https://api.data.gov/signup))
 - `PORT` — Server port (default: 3001)
 - `AGENT_URL` — AI agent base URL (default: http://localhost:8000)
 
@@ -59,6 +61,14 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | POST | `/api/chat` | Send message to agent. Body: `{ userId, message, threadId }` (userId = sessionId). Returns `{ response }` with the final AI output only. |
 | GET | `/api/users/:id/profile` | Get user profile (id = sessionId) |
 | PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }` |
+| GET | `/api/users/:id/calorie-goal` | Get profile-based TDEE calorie goal. Returns `{ goalKcal, bmr, tdee }` |
+| GET | `/api/foods/search?q=...&limit=25` | Search foods via USDA FoodData Central (proxy) |
+| GET | `/api/users/:id/food-logs?date=YYYY-MM-DD` | List food logs for date |
+| POST | `/api/users/:id/food-logs` | Create food log. Body: `{ mealType, items, loggedAt }` |
+| PUT | `/api/users/:id/food-logs/:logId` | Update food log |
+| DELETE | `/api/users/:id/food-logs/:logId` | Delete food log |
+| PATCH | `/api/users/:id/food-logs/:logId/items/:itemIndex` | Update single item (e.g. grams) |
+| DELETE | `/api/users/:id/food-logs/:logId/items/:itemIndex` | Delete single item |
 | GET | `/api/health` | Health check |
 
 **Note:** User profiles are persisted in PostgreSQL. Profiles are keyed by sessionId; reloading the frontend generates a new sessionId, so the previous profile is not accessible.
@@ -72,10 +82,16 @@ backend/
 │   └── migrations/
 ├── src/
 │   ├── db.js
+│   ├── env.js           # Load .env before routes
 │   ├── routes/
 │   │   ├── chat.js      # Proxies to AI agent
-│   │   ├── users.js     # Profile CRUD (PostgreSQL)
+│   │   ├── users.js     # Profile CRUD, calorie-goal
+│   │   ├── foods.js     # USDA FDC food search proxy
+│   │   ├── foodLogs.js  # Food log CRUD
 │   │   └── internal.js  # Internal API for agent (profile, behavioural)
+│   ├── services/
+│   │   ├── fdc.js       # USDA FoodData Central API proxy
+│   │   └── tdee.js      # TDEE calculation (Mifflin-St Jeor)
 │   └── index.js
 └── package.json
 ```

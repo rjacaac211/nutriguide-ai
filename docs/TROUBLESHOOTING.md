@@ -66,9 +66,15 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 ### Env vars missing
 
-- The deploy workflow writes `.env` on EC2. Verify GitHub Secrets (`OPENAI_API_KEY`, `PINECONE_API_KEY`, `DATABASE_URL`, `INTERNAL_API_KEY`) and Variables (`PINECONE_INDEX`, `LANGSMITH_*`) are set
+- The deploy workflow writes `.env` on EC2. Verify GitHub Secrets (`OPENAI_API_KEY`, `PINECONE_API_KEY`, `DATABASE_URL`, `INTERNAL_API_KEY`, `USDA_FDC_API_KEY`) and Variables (`PINECONE_INDEX`, `LANGSMITH_*`) are set
 - SSH to EC2 and run `cat /home/ubuntu/nutriguide/.env` to inspect
 - For database setup, see [DATABASE_SETUP.md](DATABASE_SETUP.md)
+
+### Food search returns 500 or 0 kcal
+
+- **"USDA_FDC_API_KEY is not configured"** — Add `USDA_FDC_API_KEY` to `.env` (dev) or GitHub Secrets (prod). Get a key at [api.data.gov/signup](https://api.data.gov/signup).
+
+- **0 kcal in search results** — Fixed in current code: FDC search API returns `value` instead of `amount` for nutrients; ensure backend uses the latest `fdc.js` that handles both.
 
 ### RAG returns empty or generic answers
 

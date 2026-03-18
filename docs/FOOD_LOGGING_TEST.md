@@ -149,3 +149,5 @@ Nutrient IDs used: 208 (kcal), 203 (protein), 205 (carbs), 204 (fat).
 | Calorie goal 404 | Complete onboarding so profile exists |
 | Empty food logs | Ensure `date` query param is YYYY-MM-DD |
 | No profile for TDEE | Profile needs `height_cm`, `weight_kg`, `age`, `gender` |
+
+**Note:** The USDA FDC search API returns nutrients with `value` instead of `amount` (see [USDA/USDA-APIs#102](https://github.com/USDA/USDA-APIs/issues/102)). The backend `fdc.js` service handles both for compatibility.

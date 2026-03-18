@@ -74,7 +74,7 @@ deploy
     |-- Add runner IP to EC2 security group (SSH port 22)
     |-- Copy docker-compose.prod.yml to EC2
     |-- SSH to EC2
-    |-- Write .env (OPENAI_API_KEY, PINECONE_*, DATABASE_URL, INTERNAL_API_KEY, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
+    |-- Write .env (OPENAI_API_KEY, PINECONE_*, DATABASE_URL, INTERNAL_API_KEY, USDA_FDC_API_KEY, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
     |-- aws ecr get-login-password | docker login
     |-- docker compose pull
     |-- docker compose up -d
@@ -94,6 +94,7 @@ Add these in **Settings > Secrets and variables > Actions > Secrets**:
 | `PINECONE_API_KEY` | Pinecone API key for RAG |
 | `DATABASE_URL` | PostgreSQL connection string (RDS). Include `?sslmode=require`. See [DATABASE_SETUP.md](DATABASE_SETUP.md) |
 | `INTERNAL_API_KEY` | Shared secret for backend–agent auth (generate with `openssl rand -hex 32`) |
+| `USDA_FDC_API_KEY` | USDA FoodData Central API key for food search (get at [api.data.gov/signup](https://api.data.gov/signup)) |
 | `LANGSMITH_API_KEY` | LangSmith API key (optional, for tracing) |
 
 ## GitHub Variables
