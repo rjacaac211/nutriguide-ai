@@ -96,10 +96,15 @@ Use **Easy create** (default) or **Full configuration** for full control over al
    - **DB subnet group**: Default for the selected VPC
    - **Public access**: No (recommended for security)
    - **VPC security group**: Create new — name it `nutriguide-rds-sg`
-9. **Database name**: In **Additional configuration**, set **Initial database name** to `nutriguide`. If using Easy create and this option is not shown, create the database manually after the instance is ready: connect via psql and run `CREATE DATABASE nutriguide;`
+9. **Additional configuration** (expand the section):
+   - **Initial database name**: `nutriguide` — required for the app connection string
+   - **Backup**: Enable automated backup; retention 1–7 days (1 day keeps costs minimal; 7 days is safer)
+   - **Backup window**: No preference
+   - **Encryption**: Enabled (AWS KMS default) — cannot be changed after creation
+   - **Maintenance**: Auto minor version upgrade enabled; window No preference
+   - **Deletion protection**: Optional (disabled for prototype/demo; enable for production)
 10. **Monitoring** (optional): Database Insights Standard, Performance Insights enabled (7 days retention)
-11. **Encryption**: AWS KMS (default) — enabled by default; cannot be changed after creation
-12. Create database
+11. Create database
 
 ### 2. Configure Security Group
 
