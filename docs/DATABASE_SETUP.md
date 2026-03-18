@@ -76,24 +76,29 @@ npm run dev
 
 ### 1. Create RDS Instance
 
+Use **Easy create** (default) or **Full configuration** for more control.
+
 1. Go to **RDS** in AWS Console > **Create database**
-2. **Engine**: PostgreSQL 16
+2. **Engine**: PostgreSQL (16+ or latest available; version varies by region)
 3. **Template**: Free tier (or dev/prod as needed)
 4. **Settings**:
    - DB instance identifier: `nutriguide-db`
    - Master username: `postgres` (or your choice)
-   - Master password: store securely
-5. **Instance configuration**: `db.t3.micro` (free tier eligible)
+   - Master password: Use **Auto generate password** and retrieve from "View credential details" in the creation banner, or set your own — store securely
+5. **Instance configuration**: `db.t4g.micro` (free tier, Graviton) or `db.t3.micro` (varies by region)
 6. **Storage**: 20 GB (default)
 7. **Connectivity**:
    - **VPC**: Same VPC as your EC2 instance
    - **Subnet**: Default
    - **Public access**: No (recommended for security)
    - **VPC security group**: Create new or use existing
-8. **Database name**: `nutriguide`
-9. Create database
+8. **Set up EC2 connection** (optional): Choose **Don't connect to an EC2 compute resource** to configure connectivity manually later (see step 2 below), or **Connect to an EC2 compute resource** to have AWS auto-configure the connection. You can also set this up after creation via Actions > Set up to EC2 connection.
+9. **Database name**: `nutriguide` — if using Easy create and this option is not shown, create the database manually after the instance is ready: connect via psql and run `CREATE DATABASE nutriguide;`
+10. Create database
 
 ### 2. Configure Security Group
+
+*Required if you chose "Don't connect to an EC2 compute resource" in step 8.*
 
 1. EC2 > **Security Groups** > select the RDS security group
 2. **Inbound rules** > **Edit inbound rules**
@@ -106,11 +111,11 @@ npm run dev
 ### 3. Get Connection Details
 
 1. RDS > **Databases** > select your instance
-2. Note the **Endpoint** (e.g. `nutriguide-db.xxxxx.us-east-1.rds.amazonaws.com`)
+2. Note the **Endpoint** (e.g. `nutriguide-db.xxxxx.ap-southeast-2.rds.amazonaws.com` for Sydney; region segment varies)
 3. Build connection string:
 
 ```
-postgresql://postgres:YOUR_PASSWORD@nutriguide-db.xxxxx.us-east-1.rds.amazonaws.com:5432/nutriguide?sslmode=require
+postgresql://postgres:YOUR_PASSWORD@nutriguide-db.xxxxx.ap-southeast-2.rds.amazonaws.com:5432/nutriguide?sslmode=require
 ```
 
 ### 4. Add to GitHub Secrets
