@@ -76,31 +76,36 @@ npm run dev
 
 ### 1. Create RDS Instance
 
-Use **Easy create** (default) or **Full configuration** for more control.
+Use **Easy create** (default) or **Full configuration** for full control over all options. The steps below follow **Full configuration**.
 
 1. Go to **RDS** in AWS Console > **Create database**
-2. **Engine**: PostgreSQL (16+ or latest available; version varies by region)
-3. **Template**: Free tier (or dev/prod as needed)
-4. **Settings**:
+2. **Creation method**: Full configuration
+3. **Engine**: PostgreSQL (16+ or latest available; version varies by region)
+4. **Template**: Free tier (or dev/prod as needed)
+5. **Settings**:
    - DB instance identifier: `nutriguide-db`
    - Master username: `postgres` (or your choice)
    - Master password: Use **Auto generate password** and retrieve from "View credential details" in the creation banner, or set your own — store securely
-5. **Instance configuration**: `db.t4g.micro` (free tier, Graviton) or `db.t3.micro` (varies by region)
-6. **Storage**: 20 GB (default)
-7. **Connectivity**:
-   - **VPC**: Same VPC as your EC2 instance
-   - **Subnet**: Default
+   - Database authentication: Password authentication
+6. **Instance configuration**: Burstable classes > `db.t4g.micro` (free tier, Graviton) or `db.t3.micro` (varies by region)
+7. **Storage**: General Purpose SSD (gp2), 20 GiB
+8. **Connectivity**:
+   - **Compute resource**: Don't connect to an EC2 compute resource (configure manually in step 2)
+   - **Network type**: IPv4
+   - **VPC**: Same VPC as your EC2 instance (e.g. Default VPC)
+   - **DB subnet group**: Default for the selected VPC
    - **Public access**: No (recommended for security)
-   - **VPC security group**: Create new or use existing
-8. **Set up EC2 connection** (optional): Choose **Don't connect to an EC2 compute resource** to configure connectivity manually later (see step 2 below), or **Connect to an EC2 compute resource** to have AWS auto-configure the connection. You can also set this up after creation via Actions > Set up to EC2 connection.
-9. **Database name**: `nutriguide` — if using Easy create and this option is not shown, create the database manually after the instance is ready: connect via psql and run `CREATE DATABASE nutriguide;`
-10. Create database
+   - **VPC security group**: Create new — name it `nutriguide-rds-sg`
+9. **Database name**: In **Additional configuration**, set **Initial database name** to `nutriguide`. If using Easy create and this option is not shown, create the database manually after the instance is ready: connect via psql and run `CREATE DATABASE nutriguide;`
+10. **Monitoring** (optional): Database Insights Standard, Performance Insights enabled (7 days retention)
+11. **Encryption**: AWS KMS (default) — enabled by default; cannot be changed after creation
+12. Create database
 
 ### 2. Configure Security Group
 
-*Required if you chose "Don't connect to an EC2 compute resource" in step 8.*
+*Required if you chose "Don't connect to an EC2 compute resource" in the Connectivity section.*
 
-1. EC2 > **Security Groups** > select the RDS security group
+1. EC2 > **Security Groups** > select `nutriguide-rds-sg` (the RDS security group)
 2. **Inbound rules** > **Edit inbound rules**
 3. Add rule:
    - Type: PostgreSQL
