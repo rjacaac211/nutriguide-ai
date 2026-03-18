@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export default function EnterNameStep({ onNext }) {
+export default function EnterNameStep({ onNext, error }) {
   const [name, setName] = useState("");
 
   const handleSubmit = (e) => {
@@ -20,6 +20,7 @@ export default function EnterNameStep({ onNext }) {
           className="enter-name-input"
           autoFocus
         />
+        {error && <p className="enter-name-error">{error}</p>}
         <button type="submit" className="enter-name-btn" disabled={!name.trim()}>
           NEXT
         </button>

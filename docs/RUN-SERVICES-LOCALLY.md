@@ -12,6 +12,7 @@ Use this guide to run each service in a separate terminal so you can see logs an
   - `PINECONE_INDEX=nutriguide-app-knowledge` (or your index name)
   - `DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide` (required for backend)
   - `INTERNAL_API_KEY` (required; backend and agent share this; generate with `openssl rand -hex 32`)
+  - `USDA_FDC_API_KEY` (required for food search; get at [api.data.gov/signup](https://api.data.gov/signup))
   - `PORT=3001` (backend)
   - `AGENT_URL=http://localhost:8000` (backend → AI agent)
   - `AGENT_PORT=8000` (required for AI agent)
@@ -46,7 +47,7 @@ cd backend
 npm run dev
 ```
 
-Loads `AGENT_URL` and `PORT` from root `.env`.
+Loads `AGENT_URL`, `PORT`, `USDA_FDC_API_KEY`, and `DATABASE_URL` from root `.env`.
 
 ---
 

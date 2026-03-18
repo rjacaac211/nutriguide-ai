@@ -1,5 +1,6 @@
 import express from "express";
 import { prisma } from "../db.js";
+import { calculateTDEE } from "../services/tdee.js";
 
 const router = express.Router();
 
@@ -39,6 +40,17 @@ function serializeProfile(profile) {
   };
 }
 
+router.get("/by-name", async (req, res) => {
+  const name = req.query.name?.trim();
+  if (!name) return res.status(400).json({ error: "Name is required" });
+  const profile = await prisma.profile.findFirst({
+    where: { name: { equals: name, mode: "insensitive" } },
+    include: { user: true },
+  });
+  if (!profile) return res.status(404).json({ error: "No account found with that name" });
+  res.json({ userId: profile.userId, profile: serializeProfile(profile) });
+});
+
 router.get("/:id/profile", async (req, res) => {
   try {
     const profile = await prisma.profile.findUnique({
@@ -51,6 +63,22 @@ router.get("/:id/profile", async (req, res) => {
   } catch (err) {
     console.error("Profile fetch error:", err);
     res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
+router.get("/:id/calorie-goal", async (req, res) => {
+  try {
+    const profile = await prisma.profile.findUnique({
+      where: { userId: req.params.id },
+    });
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    const { goalKcal, bmr, tdee } = calculateTDEE(profile);
+    res.json({ goalKcal, bmr, tdee });
+  } catch (err) {
+    console.error("Calorie goal error:", err);
+    res.status(500).json({ error: "Failed to get calorie goal" });
   }
 });
 
@@ -84,6 +112,18 @@ router.put("/:id/profile", async (req, res) => {
 
     const birthDateParsed = parseBirthDate(birth_date);
     const ageComputed = age ?? ageFromBirthDate(birthDateParsed);
+
+    if (name != null && String(name).trim()) {
+      const existing = await prisma.profile.findFirst({
+        where: {
+          name: { equals: String(name).trim(), mode: "insensitive" },
+          userId: { not: userId },
+        },
+      });
+      if (existing) {
+        return res.status(400).json({ error: "Name already taken" });
+      }
+    }
 
     await prisma.$transaction([
       prisma.user.upsert({

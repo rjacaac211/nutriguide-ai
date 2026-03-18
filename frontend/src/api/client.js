@@ -59,6 +59,107 @@ export async function updateProfile(userId, profile) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(profile),
   });
-  if (!res.ok) throw new Error("Failed to update profile");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to update profile");
+  }
   return res.json();
+}
+
+export async function loginByName(name) {
+  const res = await fetch(`${API_BASE}/users/by-name?name=${encodeURIComponent(name)}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Login failed");
+  }
+  return res.json();
+}
+
+export async function getCalorieGoal(userId) {
+  const res = await fetch(`${API_BASE}/users/${userId}/calorie-goal`);
+  if (!res.ok) {
+    if (res.status === 404) return { goalKcal: 2000 };
+    throw new Error("Failed to fetch calorie goal");
+  }
+  return res.json();
+}
+
+export async function searchFoods(query, limit = 25) {
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  const res = await fetch(`${API_BASE}/foods/search?${params}`);
+  if (!res.ok) throw new Error("Food search failed");
+  const data = await res.json();
+  return data.foods ?? [];
+}
+
+export async function getFoodLogs(userId, date) {
+  const dateStr = typeof date === "string" ? date : date.toISOString().slice(0, 10);
+  const res = await fetch(`${API_BASE}/users/${userId}/food-logs?date=${dateStr}`);
+  if (!res.ok) throw new Error("Failed to fetch food logs");
+  const data = await res.json();
+  return data.logs ?? [];
+}
+
+export async function createFoodLog(userId, { mealType, items, loggedAt }) {
+  const res = await fetch(`${API_BASE}/users/${userId}/food-logs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mealType, items, loggedAt }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to create food log");
+  }
+  return res.json();
+}
+
+export async function updateFoodLog(userId, logId, { mealType, items }) {
+  const res = await fetch(`${API_BASE}/users/${userId}/food-logs/${logId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mealType, items }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to update food log");
+  }
+  return res.json();
+}
+
+export async function deleteFoodLog(userId, logId) {
+  const res = await fetch(`${API_BASE}/users/${userId}/food-logs/${logId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to delete food log");
+  }
+}
+
+export async function updateFoodLogItem(userId, logId, itemIndex, patch) {
+  const res = await fetch(
+    `${API_BASE}/users/${userId}/food-logs/${logId}/items/${itemIndex}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to update item");
+  }
+  return res.json();
+}
+
+export async function deleteFoodLogItem(userId, logId, itemIndex) {
+  const res = await fetch(
+    `${API_BASE}/users/${userId}/food-logs/${logId}/items/${itemIndex}`,
+    { method: "DELETE" }
+  );
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to delete item");
+  }
 }

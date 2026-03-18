@@ -2,7 +2,7 @@
 
 A production-ready nutrition chatbot that helps users get personalized dietary advice through natural conversation. It combines an AI agent powered by LangGraph and RAG with a React frontend and Node.js/Express backend, demonstrating a full-stack architecture for AI-driven applications.
 
-Users complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base and maintains conversation context, so advice adapts to each user's profile and history.
+Users create an account (or log in by name) and complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base and maintains conversation context, so advice adapts to each user's profile and history.
 
 ## Tech Stack
 
@@ -10,7 +10,7 @@ Users complete a short onboarding flow (goals, body metrics, preferences, activi
 - **Node.js / Express**: Backend API, middleware, agent proxy
 - **RAG**: OpenAI embeddings + Pinecone for nutrition knowledge (cloud vector store)
 - **OpenAI**: GPT-4o-mini for the agent
-- **React**: Create Profile onboarding, dashboard, and AI chat widget (light theme, green/orange palette)
+- **React**: Landing (Create Account / Log in), onboarding, dashboard, and AI chat widget (light theme, green/orange palette)
 
 ## Prerequisites
 
@@ -40,6 +40,7 @@ PINECONE_API_KEY=your-pinecone-key
 PINECONE_INDEX=nutriguide-app-knowledge
 DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide
 INTERNAL_API_KEY=your-internal-api-key
+USDA_FDC_API_KEY=your-data-gov-api-key
 ```
 
 Optional (for LangSmith tracing):
@@ -113,13 +114,11 @@ For production deployment (ECR images), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT
 If the backend is not running, the chat will show "Thinking..." and then fail. Start the backend with `cd backend && npm run dev`.
 
 1. Open http://localhost:5173
-2. Click **Create Account** to start the onboarding flow
-3. Answer the profile questions (goal, gender, birth date, height, weight, preferences, activity level, etc.)
-4. Enter your name and view your goal summary
-5. Use the **dashboard** to see calorie summary, meals logged, and activity
-6. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
+2. **Create Account** or **Log in** — New users complete onboarding (goal, gender, birth date, height, weight, preferences, activity level, etc.), enter a unique name, and view the goal summary. Returning users click **Log in** and enter their name to access the dashboard.
+3. Use the **dashboard** to see calorie summary (profile-based TDEE), date picker, meals logged (search/add/edit food via USDA FDC API), and activity. Click **Log out** in the header to return to the landing page.
+4. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
 
-**Session-scoped data:** User profiles are persisted in PostgreSQL. Conversation memory is session-scoped (per thread). Reloading the page generates a new sessionId, so you will need to create your profile again for a new session.
+**Session-scoped data:** User profiles are persisted in PostgreSQL. Names must be unique. Conversation memory is session-scoped (per thread). Reloading the page clears the session; use **Log in** with your name to restore your profile.
 
 ## Project Structure
 
@@ -142,11 +141,12 @@ NutriGuide-AI/
 │   └── knowledge/     # Nutrition docs for RAG
 ├── backend/           # Express API ([README](backend/README.md))
 │   └── src/
-│       ├── routes/    # /chat, /users
+│       ├── routes/    # /chat, /users, /foods, food logs
+│       ├── services/  # fdc (USDA proxy), tdee
 │       └── index.js
 ├── frontend/          # React app ([README](frontend/README.md))
 │   └── src/
-│       ├── components/ # LandingStep, OnboardingWizard, QuestionSlide, Dashboard, ChatWidget, etc.
+│       ├── components/ # LandingStep, OnboardingWizard, Dashboard, MealsLogged, AddFoodModal, EditFoodModal, DatePicker, ChatWidget, etc.
 │       ├── config/    # onboardingQuestions
 │       ├── App.css    # Component styles, design tokens
 │       └── api/
@@ -158,8 +158,15 @@ NutriGuide-AI/
 - `GET /api/health` — Health check (returns `{ status: "ok" }`)
 - `GET /health` — Same, alternate path
 - `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
+- `GET /api/users/by-name?name=...` — Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for name-based login.
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
-- `PUT /api/users/:id/profile` — Update profile. Extended schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`
+- `PUT /api/users/:id/profile` — Update profile. Schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists.
+- `GET /api/users/:id/calorie-goal` — Get profile-based TDEE calorie goal. Returns `{ goalKcal, bmr, tdee }`
+- `GET /api/foods/search?q=...&limit=25` — Search foods via USDA FoodData Central (proxy)
+- `GET /api/users/:id/food-logs?date=YYYY-MM-DD` — List food logs for date
+- `POST /api/users/:id/food-logs` — Create food log. Body: `{ mealType, items, loggedAt }`
+- `PUT /api/users/:id/food-logs/:logId` — Update food log
+- `DELETE /api/users/:id/food-logs/:logId` — Delete food log
 
 ## Deployment
 
@@ -170,6 +177,7 @@ For AWS deployment (EC2, ECR, GitHub Actions, Docker Compose), see [docs/DEPLOYM
 | Doc | Description |
 |-----|-------------|
 | [DATABASE_SETUP.md](docs/DATABASE_SETUP.md) | PostgreSQL setup (dev and prod) |
+| [FOOD_LOGGING_TEST.md](docs/FOOD_LOGGING_TEST.md) | Test food logging with USDA FDC |
 | [RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) | Run each service separately for debugging |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | AWS deployment (EC2, ECR, GitHub Actions) |
 | [RUNBOOK.md](docs/RUNBOOK.md) | Operations runbook |

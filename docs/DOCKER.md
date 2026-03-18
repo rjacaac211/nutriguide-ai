@@ -14,7 +14,7 @@ Docker layout and how to run NutriGuide-AI locally vs production.
 | Service | Technology | Port | Description |
 |---------|------------|------|-------------|
 | frontend | React, Vite, Nginx | 80 | React UI, proxies /api to backend |
-| backend | Node.js, Express | 3001 | API, proxies chat to ai-agent |
+| backend | Node.js, Express | 3001 | API, proxies chat to ai-agent, food search (USDA FDC), food logs |
 | ai-agent | TypeScript, Express | 8000 | LangGraph.js agent, RAG (Pinecone), OpenAI |
 
 ## Local Development
@@ -25,7 +25,7 @@ docker compose up --build
 ```
 
 - Builds images from `./frontend`, `./backend`, `./ai-agent-ts`
-- Uses `.env` in project root for environment variables (including `DATABASE_URL`, `PINECONE_API_KEY`, `PINECONE_INDEX`)
+- Uses `.env` in project root for environment variables (including `DATABASE_URL`, `PINECONE_API_KEY`, `PINECONE_INDEX`, `USDA_FDC_API_KEY`)
 - **Database**: No PostgreSQL container. Backend connects to your local PostgreSQL via `DATABASE_URL`. Use `host.docker.internal` as host (see [DATABASE_SETUP.md](DATABASE_SETUP.md))
 - App available at http://localhost:80 (or http://localhost)
 
