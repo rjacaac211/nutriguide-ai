@@ -2,39 +2,52 @@ import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { searchNutritionKnowledge } from "./rag.js";
 
-export type UserProfile = Record<string, unknown>;
-
-let userProfiles: Record<string, UserProfile> = {};
-
-export function setUserProfiles(profiles: Record<string, UserProfile>): void {
-  userProfiles = profiles;
+const BACKEND_URL = process.env.BACKEND_URL;
+const INTERNAL_API_KEY = process.env.INTERNAL_API_KEY;
+if (!BACKEND_URL || !INTERNAL_API_KEY) {
+  throw new Error("BACKEND_URL and INTERNAL_API_KEY environment variables are not set");
 }
 
-export function getUserProfiles(): Record<string, UserProfile> {
-  return userProfiles;
+function formatProfileForLLM(profile: Record<string, unknown>): string {
+  const parts = [
+    `User profile: name=${profile.name ?? "unknown"}`,
+    `age=${profile.age ?? "unknown"}`,
+    `gender=${profile.gender ?? "unknown"}`,
+    `weight_kg=${profile.weightKg ?? "unknown"}`,
+    `height_cm=${profile.heightCm ?? "unknown"}`,
+    `goal=${profile.goal ?? "unknown"}`,
+    `goal_weight_kg=${profile.goalWeightKg ?? "unknown"}`,
+    `activity_level=${profile.activityLevel ?? "unknown"}`,
+    `speed_kg_per_week=${profile.speedKgPerWeek ?? "unknown"}`,
+    `dietary_restrictions=${JSON.stringify(profile.dietaryRestrictions ?? [])}`,
+    `preferences=${JSON.stringify(profile.preferences ?? [])}`,
+    `challenges=${JSON.stringify(profile.challenges ?? [])}`,
+  ];
+  return parts.join(", ");
 }
 
 export const getUserProfileTool = tool(
   async ({ user_id }: { user_id: string }) => {
-    const profile = userProfiles[user_id];
-    if (!profile) {
-      return `No profile found for user ${user_id}. User has not set up their profile yet.`;
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/internal/users/${user_id}/profile`,
+        {
+          headers: {
+            "X-Internal-API-Key": INTERNAL_API_KEY,
+          },
+        }
+      );
+      if (!res.ok) {
+        if (res.status === 404) {
+          return `No profile found for user ${user_id}. User has not set up their profile yet.`;
+        }
+        return `Could not fetch profile: ${res.status} ${res.statusText}`;
+      }
+      const profile = (await res.json()) as Record<string, unknown>;
+      return formatProfileForLLM(profile);
+    } catch (err) {
+      return `Error fetching profile: ${(err as Error).message}`;
     }
-    const parts = [
-      `User profile: name=${(profile as Record<string, unknown>).name ?? "unknown"}`,
-      `age=${(profile as Record<string, unknown>).age ?? "unknown"}`,
-      `gender=${(profile as Record<string, unknown>).gender ?? "unknown"}`,
-      `weight_kg=${(profile as Record<string, unknown>).weight_kg ?? "unknown"}`,
-      `height_cm=${(profile as Record<string, unknown>).height_cm ?? "unknown"}`,
-      `goal=${(profile as Record<string, unknown>).goal ?? "unknown"}`,
-      `goal_weight_kg=${(profile as Record<string, unknown>).goal_weight_kg ?? "unknown"}`,
-      `activity_level=${(profile as Record<string, unknown>).activity_level ?? "unknown"}`,
-      `speed_kg_per_week=${(profile as Record<string, unknown>).speed_kg_per_week ?? "unknown"}`,
-      `dietary_restrictions=${JSON.stringify((profile as Record<string, unknown>).dietary_restrictions ?? [])}`,
-      `preferences=${JSON.stringify((profile as Record<string, unknown>).preferences ?? [])}`,
-      `challenges=${JSON.stringify((profile as Record<string, unknown>).challenges ?? [])}`,
-    ];
-    return parts.join(", ");
   },
   {
     name: "get_user_profile",

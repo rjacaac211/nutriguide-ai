@@ -160,7 +160,12 @@ export default function QuestionSlide({ question, value, onChange, hint }) {
         );
 
       case QUESTION_TYPES.DATE:
-        const dateVal = localValue || "";
+        const dateVal = (() => {
+          const v = localValue || "";
+          if (!v) return "";
+          if (typeof v === "string" && v.includes("T")) return v.slice(0, 10);
+          return v;
+        })();
         return (
           <div className="question-date">
             <input

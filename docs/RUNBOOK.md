@@ -9,13 +9,14 @@ Complete these steps in order:
 | Step | Action |
 |------|--------|
 | 1 | Create 3 ECR repositories (nutriguide-frontend, nutriguide-backend, nutriguide-ai-agent). See [AWS-SETUP.md](AWS-SETUP.md) |
-| 2 | Create IAM user for GitHub Actions, save access keys |
-| 3 | Create IAM role for EC2 (AmazonEC2ContainerRegistryReadOnly) |
-| 4 | Launch EC2 instance with key pair, IAM role, security group (22, 80) |
-| 5 | SSH to EC2: install Docker, Docker Compose, AWS CLI; create `/home/ubuntu/nutriguide` |
-| 6 | Add `docker-compose.prod.yml` and `.github/workflows/deploy.yml` to repo |
-| 7 | Add GitHub Secrets and Variables (see [CICD.md](CICD.md)) |
-| 8 | Push to `main` to trigger deploy |
+| 2 | Create RDS PostgreSQL instance in same VPC as EC2. See [DATABASE_SETUP.md](DATABASE_SETUP.md) |
+| 3 | Create IAM user for GitHub Actions, save access keys |
+| 4 | Create IAM role for EC2 (AmazonEC2ContainerRegistryReadOnly) |
+| 5 | Launch EC2 instance with key pair, IAM role, security group (22, 80) |
+| 6 | SSH to EC2: install Docker, Docker Compose, AWS CLI; create `/home/ubuntu/nutriguide` |
+| 7 | Add `docker-compose.prod.yml` and `.github/workflows/deploy.yml` to repo |
+| 8 | Add GitHub Secrets and Variables (see [CICD.md](CICD.md)), including `DATABASE_URL` and `INTERNAL_API_KEY` |
+| 9 | Push to `main` to trigger deploy |
 
 ## Redeploy
 

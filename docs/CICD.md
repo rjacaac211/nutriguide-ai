@@ -74,7 +74,7 @@ deploy
     |-- Add runner IP to EC2 security group (SSH port 22)
     |-- Copy docker-compose.prod.yml to EC2
     |-- SSH to EC2
-    |-- Write .env (OPENAI_API_KEY, PINECONE_*, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
+    |-- Write .env (OPENAI_API_KEY, PINECONE_*, DATABASE_URL, INTERNAL_API_KEY, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
     |-- aws ecr get-login-password | docker login
     |-- docker compose pull
     |-- docker compose up -d
@@ -92,6 +92,8 @@ Add these in **Settings > Secrets and variables > Actions > Secrets**:
 | `EC2_SSH_KEY` | Full contents of the .pem file (including BEGIN/END lines) |
 | `OPENAI_API_KEY` | OpenAI API key for the AI agent |
 | `PINECONE_API_KEY` | Pinecone API key for RAG |
+| `DATABASE_URL` | PostgreSQL connection string (RDS). Include `?sslmode=require`. See [DATABASE_SETUP.md](DATABASE_SETUP.md) |
+| `INTERNAL_API_KEY` | Shared secret for backend–agent auth (generate with `openssl rand -hex 32`) |
 | `LANGSMITH_API_KEY` | LangSmith API key (optional, for tracing) |
 
 ## GitHub Variables
@@ -101,6 +103,7 @@ Add these in **Settings > Secrets and variables > Actions > Variables**:
 | Name | Description | Example |
 |------|-------------|---------|
 | `EC2_HOST` | EC2 public IP or DNS | `ec2-3-236-56-12.compute-1.amazonaws.com` |
+| `AGENT_PORT` | AI agent port (required for prod) | `8000` |
 | `PINECONE_INDEX` | Pinecone index name (not sensitive) | `nutriguide-app-knowledge` |
 | `ECR_REGISTRY` | ECR registry URI | `123456789012.dkr.ecr.us-east-1.amazonaws.com` |
 | `AWS_REGION` | AWS region | `us-east-1` |

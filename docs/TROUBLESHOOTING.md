@@ -59,10 +59,16 @@ Common issues and fixes for NutriGuide-AI deployment.
 - Verify frontend nginx proxies `/api` to backend. Check `frontend/nginx.conf`
 - Ensure backend container is running: `docker ps`
 
+### Database connection errors
+
+- **Dev**: Ensure PostgreSQL is running and `DATABASE_URL` in `.env` is correct. For Docker, use `host.docker.internal` as host. See [DATABASE_SETUP.md](DATABASE_SETUP.md)
+- **Prod**: Verify `DATABASE_URL` in GitHub Secrets. RDS must be in same VPC as EC2; security group must allow 5432 from EC2. Add `?sslmode=require` for RDS
+
 ### Env vars missing
 
-- The deploy workflow writes `.env` on EC2. Verify GitHub Secrets (`OPENAI_API_KEY`, `PINECONE_API_KEY`) and Variables (`PINECONE_INDEX`, `LANGSMITH_*`) are set
+- The deploy workflow writes `.env` on EC2. Verify GitHub Secrets (`OPENAI_API_KEY`, `PINECONE_API_KEY`, `DATABASE_URL`, `INTERNAL_API_KEY`) and Variables (`PINECONE_INDEX`, `LANGSMITH_*`) are set
 - SSH to EC2 and run `cat /home/ubuntu/nutriguide/.env` to inspect
+- For database setup, see [DATABASE_SETUP.md](DATABASE_SETUP.md)
 
 ### RAG returns empty or generic answers
 

@@ -17,6 +17,7 @@ Users complete a short onboarding flow (goals, body metrics, preferences, activi
 - Node.js 20+
 - OpenAI API key (required for the agent)
 - Pinecone account and index (required for RAG; create at [app.pinecone.io](https://app.pinecone.io))
+- PostgreSQL 15+ (required for backend; see [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md))
 - Docker and Docker Compose (optional, for Docker setup)
 
 ## Quick Reference
@@ -37,6 +38,8 @@ Copy [`.env.example`](.env.example) to `.env` in the project root and set your v
 OPENAI_API_KEY=sk-your-key-here
 PINECONE_API_KEY=your-pinecone-key
 PINECONE_INDEX=nutriguide-app-knowledge
+DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide
+INTERNAL_API_KEY=your-internal-api-key
 ```
 
 Optional (for LangSmith tracing):
@@ -47,9 +50,9 @@ LANGSMITH_API_KEY=your_langchain_api_key
 LANGSMITH_PROJECT=your_langchain_project_name
 ```
 
-Backend options: `PORT=3001`, `AGENT_URL=http://localhost:8000`
+Backend: `PORT=3001`, `AGENT_URL=http://localhost:8000`, `DATABASE_URL` (required). See [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) for database setup.
 
-AI agent options: `AGENT_PORT=8000` (optional; default 8000). Pinecone keys above are required for RAG.
+AI agent: `AGENT_PORT=8000` (required). Pinecone keys above are required for RAG.
 
 ### 2. AI Agent (TypeScript)
 
@@ -70,6 +73,7 @@ Runs on http://localhost:8000
 ```bash
 cd backend
 npm install
+npm run migrate dev   # Run migrations (requires PostgreSQL; see docs/DATABASE_SETUP.md)
 npm run dev
 ```
 
@@ -90,11 +94,11 @@ Runs on http://localhost:5173 (proxies `/api` to backend).
 Run all services with Docker:
 
 ```bash
-# From project root (ensure .env exists)
+# From project root (ensure .env exists with DATABASE_URL pointing to host PostgreSQL)
 docker compose up --build
 ```
 
-App available at http://localhost. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, and ai-agent (TypeScript). RAG uses Pinecone (cloud).
+App available at http://localhost. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, and ai-agent (TypeScript). Backend connects to your local PostgreSQL via `DATABASE_URL` (use `host.docker.internal` as host). RAG uses Pinecone (cloud). See [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md).
 
 For production deployment (ECR images), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
@@ -115,7 +119,7 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 5. Use the **dashboard** to see calorie summary, meals logged, and activity
 6. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
 
-**Session-scoped data:** Profile and conversation memory are stored in memory and are not persisted. Reloading the page starts a new session—you will need to create your profile again. This mirrors the LangGraph agent's session-scoped conversation memory.
+**Session-scoped data:** User profiles are persisted in PostgreSQL. Conversation memory is session-scoped (per thread). Reloading the page generates a new sessionId, so you will need to create your profile again for a new session.
 
 ## Project Structure
 
@@ -165,6 +169,7 @@ For AWS deployment (EC2, ECR, GitHub Actions, Docker Compose), see [docs/DEPLOYM
 
 | Doc | Description |
 |-----|-------------|
+| [DATABASE_SETUP.md](docs/DATABASE_SETUP.md) | PostgreSQL setup (dev and prod) |
 | [RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) | Run each service separately for debugging |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | AWS deployment (EC2, ECR, GitHub Actions) |
 | [RUNBOOK.md](docs/RUNBOOK.md) | Operations runbook |
