@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { searchFoods } from "../api/client";
 
 function useDebounce(value, delay) {
@@ -37,6 +37,15 @@ export default function AddFoodModal({ isOpen, onClose, mealType, onAdd, selecte
   const [error, setError] = useState(null);
 
   const debouncedQuery = useDebounce(query, 300);
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery("");
+      setSelected(null);
+      setGrams("");
+      setError(null);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!debouncedQuery || debouncedQuery.length < 2) {
@@ -153,12 +162,14 @@ export default function AddFoodModal({ isOpen, onClose, mealType, onAdd, selecte
                 required
               />
             </label>
-            {grams && Number(grams) > 0 && (
-              <p className="modal-preview">
-                ≈ {buildItem(selected, grams).calories} kcal, {buildItem(selected, grams).protein}g
-                protein
-              </p>
-            )}
+            {grams && Number(grams) > 0 && (() => {
+              const item = buildItem(selected, grams);
+              return (
+                <p className="modal-preview">
+                  ≈ {item.calories} kcal, {item.protein}g protein, {item.carbs}g carbs, {item.fat}g fat
+                </p>
+              );
+            })()}
             {error && <p className="modal-error">{error}</p>}
             <div className="modal-actions">
               <button type="button" className="modal-btn modal-btn-secondary" onClick={onClose}>
