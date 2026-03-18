@@ -351,6 +351,70 @@
   background: var(--color-cta-hover);
 }
 
+.landing-login-btn {
+  padding: 0.75rem 2rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.landing-login-btn:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+
+.landing-login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.landing-login-input {
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 280px;
+}
+
+.landing-login-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.landing-login-error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #dc2626;
+}
+
+.landing-login-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.landing-login-cancel {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.landing-login-cancel:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
+}
+
 /* Onboarding */
 .onboarding-wizard {
   max-width: 600px;
@@ -665,6 +729,12 @@
   cursor: not-allowed;
 }
 
+.enter-name-error {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #dc2626;
+}
+
 /* Goal summary */
 .goal-summary-step {
   max-width: 500px;
@@ -723,6 +793,33 @@
 
 .dashboard-header {
   margin-bottom: 1.5rem;
+}
+
+.dashboard-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-header-row h1 {
+  margin: 0;
+}
+
+.dashboard-logout-btn {
+  padding: 0.4rem 0.75rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.dashboard-logout-btn:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text);
 }
 
 .dashboard-header h1 {

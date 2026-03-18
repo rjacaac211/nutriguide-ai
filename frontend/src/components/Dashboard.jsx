@@ -19,7 +19,7 @@ function formatDateLabel(dateStr) {
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
-export default function Dashboard({ profile, userId }) {
+export default function Dashboard({ profile, userId, onLogout }) {
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [foodLogs, setFoodLogs] = useState([]);
   const [goalKcal, setGoalKcal] = useState(1625);
@@ -49,7 +49,14 @@ export default function Dashboard({ profile, userId }) {
   return (
     <div className="dashboard">
       <header className="dashboard-header">
-        <h1>NutriGuide AI</h1>
+        <div className="dashboard-header-row">
+          <h1>NutriGuide AI</h1>
+          {onLogout && (
+            <button type="button" className="dashboard-logout-btn" onClick={onLogout}>
+              Log out
+            </button>
+          )}
+        </div>
         <div className="dashboard-date-row">
           <DatePicker value={selectedDate} onChange={setSelectedDate} />
           <span className="dashboard-date-label">{formatDateLabel(selectedDate)}</span>

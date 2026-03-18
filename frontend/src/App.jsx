@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { checkBackendHealth, updateProfile } from "./api/client";
+import { checkBackendHealth, updateProfile, loginByName } from "./api/client";
 import LandingStep from "./components/LandingStep";
 import OnboardingWizard from "./components/OnboardingWizard";
 import LoadingScreen from "./components/LoadingScreen";
@@ -19,7 +19,7 @@ const PHASES = {
 };
 
 export default function App() {
-  const [sessionId] = useState(() => {
+  const [sessionId, setSessionId] = useState(() => {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
       return crypto.randomUUID();
     }
@@ -30,6 +30,7 @@ export default function App() {
   const [appPhase, setAppPhase] = useState(PHASES.LANDING);
   const [profile, setProfile] = useState({});
   const [backendOk, setBackendOk] = useState(null);
+  const [nameError, setNameError] = useState(null);
 
   useEffect(() => {
     checkBackendHealth().then(setBackendOk);
@@ -47,15 +48,38 @@ export default function App() {
     setAppPhase(PHASES.NAME);
   };
 
-  const handleNameSubmit = (name) => {
+  const handleNameSubmit = async (name) => {
+    setNameError(null);
     const fullProfile = { ...profile, name };
     setProfile(fullProfile);
-    setAppPhase(PHASES.SUMMARY);
-    updateProfile(sessionId, mapProfileToBackend(fullProfile)).catch(console.error);
+    try {
+      await updateProfile(sessionId, mapProfileToBackend(fullProfile));
+      setAppPhase(PHASES.SUMMARY);
+    } catch (err) {
+      setNameError(err.message || "Name already taken");
+    }
+  };
+
+  const handleLogin = ({ userId, profile: backendProfile }) => {
+    setSessionId(userId);
+    setProfile(backendProfile);
+    setAppPhase(PHASES.DASHBOARD);
   };
 
   const handleSummaryContinue = () => {
     setAppPhase(PHASES.DASHBOARD);
+  };
+
+  const handleLogout = () => {
+    setSessionId(
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/x/g, () =>
+            Math.floor(Math.random() * 16).toString(16)
+          )
+    );
+    setProfile({});
+    setAppPhase(PHASES.LANDING);
   };
 
   const mapProfileToBackend = (p) => ({
@@ -82,7 +106,10 @@ export default function App() {
       )}
 
       {appPhase === PHASES.LANDING && (
-        <LandingStep onStart={() => setAppPhase(PHASES.ONBOARDING)} />
+        <LandingStep
+          onStart={() => setAppPhase(PHASES.ONBOARDING)}
+          onLogin={handleLogin}
+        />
       )}
 
       {appPhase === PHASES.ONBOARDING && (
@@ -99,7 +126,7 @@ export default function App() {
       )}
 
       {appPhase === PHASES.NAME && (
-        <EnterNameStep onNext={handleNameSubmit} />
+        <EnterNameStep onNext={handleNameSubmit} error={nameError} />
       )}
 
       {appPhase === PHASES.SUMMARY && (
@@ -108,7 +135,7 @@ export default function App() {
 
       {appPhase === PHASES.DASHBOARD && (
         <>
-          <Dashboard profile={profile} userId={sessionId} />
+          <Dashboard profile={profile} userId={sessionId} onLogout={handleLogout} />
           <ChatWidget sessionId={sessionId} />
         </>
       )}

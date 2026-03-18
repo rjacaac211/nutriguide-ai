@@ -59,7 +59,20 @@ export async function updateProfile(userId, profile) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(profile),
   });
-  if (!res.ok) throw new Error("Failed to update profile");
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to update profile");
+  }
+  return res.json();
+}
+
+export async function loginByName(name) {
+  const res = await fetch(`${API_BASE}/users/by-name?name=${encodeURIComponent(name)}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Login failed");
+  }
   return res.json();
 }
 
