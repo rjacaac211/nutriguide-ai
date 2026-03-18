@@ -50,7 +50,7 @@ Open http://localhost (port 80)
 
 ## 2. UI Flow (End-to-End)
 
-1. **Complete onboarding** — Landing → Onboarding → Name → Summary → Dashboard. This creates a profile and user.
+1. **Create Account or Log in** — New users: Landing → Onboarding → Name → Summary → Dashboard. Returning users: click **Log in**, enter your name. This creates or restores a profile and user.
 
 2. **Dashboard** — You should see:
    - Date picker (default: today)
@@ -76,7 +76,7 @@ Open http://localhost (port 80)
 
 ## 3. API Testing (curl)
 
-Use a valid `userId` (e.g. from `sessionId` after onboarding, or any UUID).
+Use a valid `userId` (e.g. from session after onboarding, or from login by name).
 
 ### Food search (no auth)
 

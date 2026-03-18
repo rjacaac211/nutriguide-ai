@@ -1,6 +1,6 @@
 # NutriGuide Frontend
 
-React SPA with Create Profile onboarding flow, dashboard, and AI chat widget. Proxies `/api` requests to the backend.
+React SPA with landing (Create Account / Log in), onboarding flow, dashboard, and AI chat widget. Proxies `/api` requests to the backend.
 
 Part of [NutriGuide AI](../README.md).
 
@@ -40,13 +40,13 @@ npm run preview
 
 ## Features
 
-- **Create Account** — Landing page with onboarding entry point
+- **Landing** — Create Account (onboarding) or Log in (name-based, no password)
 - **Onboarding Wizard** — Multi-step questionnaire (goal, gender, birth date, height, weight, preferences, activity, speed of change)
-- **Loading & Summary** — Progress animation, name entry, goal summary with calculated target date
-- **Dashboard** — Date picker, calorie summary (eaten/remaining/burned from profile-based TDEE), meals logged (Breakfast, Lunch, Dinner, Snack) with add/edit/delete via USDA food search, activity section
+- **Loading & Summary** — Progress animation, name entry (unique names enforced), goal summary with calculated target date
+- **Dashboard** — Date picker, calorie summary (eaten/remaining/burned from profile-based TDEE), meals logged (Breakfast, Lunch, Dinner, Snack) with add/edit/delete via USDA food search, activity section, **Log out** button
 - **Chat Widget** — Floating, collapsible AI chat (bottom-right) for nutrition Q&A; **New chat** starts a fresh conversation
 - **Chat display** — User message appears immediately when sent; NutriGuide shows "Thinking..." while the AI responds; only the final AI output is displayed (no internal tool outputs, profile dumps, or RAG labels)
-- **Session-scoped** — Profile and chat use `sessionId`; reload starts a new session (no persistence)
+- **Session-scoped** — Profile and chat use `sessionId` (userId); reload clears session; users log in again with their name to restore access
 - **API Proxy** — `/api` requests forwarded to backend
 
 Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` with the final AI output; the frontend appends each user message and assistant response to local state.

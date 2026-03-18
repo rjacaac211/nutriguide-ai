@@ -59,8 +59,9 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
 | POST | `/api/chat` | Send message to agent. Body: `{ userId, message, threadId }` (userId = sessionId). Returns `{ response }` with the final AI output only. |
+| GET | `/api/users/by-name?name=...` | Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for login. |
 | GET | `/api/users/:id/profile` | Get user profile (id = sessionId) |
-| PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }` |
+| PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists. |
 | GET | `/api/users/:id/calorie-goal` | Get profile-based TDEE calorie goal. Returns `{ goalKcal, bmr, tdee }` |
 | GET | `/api/foods/search?q=...&limit=25` | Search foods via USDA FoodData Central (proxy) |
 | GET | `/api/users/:id/food-logs?date=YYYY-MM-DD` | List food logs for date |
@@ -71,7 +72,7 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | DELETE | `/api/users/:id/food-logs/:logId/items/:itemIndex` | Delete single item |
 | GET | `/api/health` | Health check |
 
-**Note:** User profiles are persisted in PostgreSQL. Profiles are keyed by sessionId; reloading the frontend generates a new sessionId, so the previous profile is not accessible.
+**Note:** User profiles are persisted in PostgreSQL. Profiles are keyed by userId; names must be unique. Users can log in by name via `GET /api/users/by-name`. Reloading the frontend clears the session; users log in again with their name to restore access.
 
 ## Structure
 

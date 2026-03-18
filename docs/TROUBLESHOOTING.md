@@ -44,6 +44,10 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 ## App
 
+### "Name already taken" when creating account
+
+- Names must be unique. If you see this error, another user has that name. Choose a different name or use **Log in** if it's your existing account.
+
 ### White screen
 
 - **crypto.randomUUID error**: The app uses `crypto.randomUUID()` which is not available over HTTP (non-secure context). The codebase includes a fallback; ensure you have the latest frontend build deployed.
