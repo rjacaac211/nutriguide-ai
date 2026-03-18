@@ -108,7 +108,7 @@ export default function App() {
 
       {appPhase === PHASES.DASHBOARD && (
         <>
-          <Dashboard profile={profile} />
+          <Dashboard profile={profile} userId={sessionId} />
           <ChatWidget sessionId={sessionId} />
         </>
       )}

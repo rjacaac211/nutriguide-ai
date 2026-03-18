@@ -1,5 +1,6 @@
 import express from "express";
 import { prisma } from "../db.js";
+import { calculateTDEE } from "../services/tdee.js";
 
 const router = express.Router();
 
@@ -51,6 +52,22 @@ router.get("/:id/profile", async (req, res) => {
   } catch (err) {
     console.error("Profile fetch error:", err);
     res.status(500).json({ error: "Failed to fetch profile" });
+  }
+});
+
+router.get("/:id/calorie-goal", async (req, res) => {
+  try {
+    const profile = await prisma.profile.findUnique({
+      where: { userId: req.params.id },
+    });
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    const { goalKcal, bmr, tdee } = calculateTDEE(profile);
+    res.json({ goalKcal, bmr, tdee });
+  } catch (err) {
+    console.error("Calorie goal error:", err);
+    res.status(500).json({ error: "Failed to get calorie goal" });
   }
 });
 

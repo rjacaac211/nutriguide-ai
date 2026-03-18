@@ -40,6 +40,7 @@ PINECONE_API_KEY=your-pinecone-key
 PINECONE_INDEX=nutriguide-app-knowledge
 DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide
 INTERNAL_API_KEY=your-internal-api-key
+USDA_FDC_API_KEY=your-data-gov-api-key
 ```
 
 Optional (for LangSmith tracing):
