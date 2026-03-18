@@ -117,7 +117,7 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 2. Click **Create Account** to start the onboarding flow
 3. Answer the profile questions (goal, gender, birth date, height, weight, preferences, activity level, etc.)
 4. Enter your name and view your goal summary
-5. Use the **dashboard** to see calorie summary (profile-based TDEE), date picker, meals logged (search/add/edit food via USDA FDC), and activity
+5. Use the **dashboard** to see calorie summary (profile-based TDEE), date picker, meals logged (search/add/edit food via USDA FDC API), and activity
 6. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
 
 **Session-scoped data:** User profiles are persisted in PostgreSQL. Conversation memory is session-scoped (per thread). Reloading the page generates a new sessionId, so you will need to create your profile again for a new session.
