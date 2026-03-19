@@ -3,6 +3,7 @@ import { prisma } from "../db.js";
 import { searchFoods } from "../services/fdc.js";
 import { calculateTDEE } from "../services/tdee.js";
 import { appendFoodLog } from "../services/foodLogs.js";
+import { getCurrentWeight } from "../services/weightLogs.js";
 
 const router = express.Router();
 
@@ -59,11 +60,18 @@ router.get("/users/:id/behavioural", async (req, res) => {
     const days = parseInt(req.query.days, 10) || 7;
     const since = new Date();
     since.setDate(since.getDate() - days);
+    const to = new Date();
 
-    const foodLogs = await prisma.foodLog.findMany({
-      where: { userId, loggedAt: { gte: since } },
-      orderBy: { loggedAt: "desc" },
-    });
+    const [foodLogs, weightLogs] = await Promise.all([
+      prisma.foodLog.findMany({
+        where: { userId, loggedAt: { gte: since } },
+        orderBy: { loggedAt: "desc" },
+      }),
+      prisma.weightLog.findMany({
+        where: { userId, date: { gte: since, lte: to } },
+        orderBy: { date: "asc" },
+      }),
+    ]);
 
     const toNum = (v) =>
       v != null && typeof v === "object" && "toNumber" in v ? v.toNumber() : v;
@@ -79,7 +87,12 @@ router.get("/users/:id/behavioural", async (req, res) => {
       totalFat: toNum(log.totalFat),
     }));
 
-    res.json({ food_logs: serializedLogs, weight_trend: [] });
+    const weight_trend = weightLogs.map((log) => ({
+      date: log.date instanceof Date ? log.date.toISOString().slice(0, 10) : log.date,
+      weightKg: toNum(log.weightKg),
+    }));
+
+    res.json({ food_logs: serializedLogs, weight_trend });
   } catch (err) {
     console.error("Internal behavioural fetch error:", err);
     res.status(500).json({ error: "Failed to fetch behavioural data" });
@@ -113,13 +126,16 @@ router.get("/foods/search", async (req, res) => {
  */
 router.get("/users/:id/calorie-goal", async (req, res) => {
   try {
+    const userId = req.params.id;
     const profile = await prisma.profile.findUnique({
-      where: { userId: req.params.id },
+      where: { userId },
     });
     if (!profile) {
       return res.status(404).json({ error: "Profile not found" });
     }
-    const { goalKcal, bmr, tdee } = calculateTDEE(profile);
+    const currentWeight = await getCurrentWeight(userId);
+    const profileForTDEE = { ...profile, weightKg: currentWeight ?? profile.weightKg };
+    const { goalKcal, bmr, tdee } = calculateTDEE(profileForTDEE);
     res.json({ goalKcal, bmr, tdee });
   } catch (err) {
     console.error("Internal calorie goal error:", err);

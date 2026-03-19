@@ -1,6 +1,7 @@
 import express from "express";
 import { prisma } from "../db.js";
 import { calculateTDEE } from "../services/tdee.js";
+import { getCurrentWeight } from "../services/weightLogs.js";
 
 const router = express.Router();
 
@@ -68,13 +69,16 @@ router.get("/:id/profile", async (req, res) => {
 
 router.get("/:id/calorie-goal", async (req, res) => {
   try {
+    const userId = req.params.id;
     const profile = await prisma.profile.findUnique({
-      where: { userId: req.params.id },
+      where: { userId },
     });
     if (!profile) {
       return res.status(404).json({ error: "Profile not found" });
     }
-    const { goalKcal, bmr, tdee } = calculateTDEE(profile);
+    const currentWeight = await getCurrentWeight(userId);
+    const profileForTDEE = { ...profile, weightKg: currentWeight ?? profile.weightKg };
+    const { goalKcal, bmr, tdee } = calculateTDEE(profileForTDEE);
     res.json({ goalKcal, bmr, tdee });
   } catch (err) {
     console.error("Calorie goal error:", err);
@@ -125,47 +129,66 @@ router.put("/:id/profile", async (req, res) => {
       }
     }
 
-    await prisma.$transaction([
-      prisma.user.upsert({
+    const profile = await prisma.$transaction(async (tx) => {
+      await tx.user.upsert({
         where: { id: userId },
         create: { id: userId },
         update: {},
-      }),
-    ]);
+      });
 
-    const profile = await prisma.profile.upsert({
-      where: { userId },
-      create: {
-        userId,
-        name: name ?? null,
-        gender: gender ?? null,
-        birthDate: birthDateParsed,
-        age: ageComputed,
-        heightCm: height_cm ?? null,
-        weightKg: weight_kg ?? null,
-        goalWeightKg: goal_weight_kg ?? null,
-        goal: goal ?? "maintain",
-        activityLevel: activity_level ?? "moderate",
-        speedKgPerWeek: speed_kg_per_week ?? null,
-        preferences: preferences || [],
-        challenges: challenges || [],
-        dietaryRestrictions: dietary_restrictions || [],
-      },
-      update: {
-        name: name ?? null,
-        gender: gender ?? null,
-        birthDate: birthDateParsed,
-        age: ageComputed,
-        heightCm: height_cm ?? null,
-        weightKg: weight_kg ?? null,
-        goalWeightKg: goal_weight_kg ?? null,
-        goal: goal ?? "maintain",
-        activityLevel: activity_level ?? "moderate",
-        speedKgPerWeek: speed_kg_per_week ?? null,
-        preferences: preferences || [],
-        challenges: challenges || [],
-        dietaryRestrictions: dietary_restrictions || [],
-      },
+      const updated = await tx.profile.upsert({
+        where: { userId },
+        create: {
+          userId,
+          name: name ?? null,
+          gender: gender ?? null,
+          birthDate: birthDateParsed,
+          age: ageComputed,
+          heightCm: height_cm ?? null,
+          weightKg: weight_kg ?? null,
+          goalWeightKg: goal_weight_kg ?? null,
+          goal: goal ?? "maintain",
+          activityLevel: activity_level ?? "moderate",
+          speedKgPerWeek: speed_kg_per_week ?? null,
+          preferences: preferences || [],
+          challenges: challenges || [],
+          dietaryRestrictions: dietary_restrictions || [],
+        },
+        update: {
+          name: name ?? null,
+          gender: gender ?? null,
+          birthDate: birthDateParsed,
+          age: ageComputed,
+          heightCm: height_cm ?? null,
+          weightKg: weight_kg ?? null,
+          goalWeightKg: goal_weight_kg ?? null,
+          goal: goal ?? "maintain",
+          activityLevel: activity_level ?? "moderate",
+          speedKgPerWeek: speed_kg_per_week ?? null,
+          preferences: preferences || [],
+          challenges: challenges || [],
+          dietaryRestrictions: dietary_restrictions || [],
+        },
+      });
+
+      // Seed initial weight log when profile has weight_kg and user has no weight logs
+      const weightNum = weight_kg != null ? parseFloat(weight_kg) : NaN;
+      if (!isNaN(weightNum) && weightNum > 0) {
+        const count = await tx.weightLog.count({ where: { userId } });
+        if (count === 0) {
+          const today = new Date();
+          const dateObj = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+          await tx.weightLog.create({
+            data: {
+              userId,
+              weightKg: weightNum,
+              date: dateObj,
+            },
+          });
+        }
+      }
+
+      return updated;
     });
 
     res.json(serializeProfile(profile));

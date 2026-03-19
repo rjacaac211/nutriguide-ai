@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from "react";
 import CalorieSummary from "./CalorieSummary";
 import MealsLogged from "./MealsLogged";
 import ActivitySection from "./ActivitySection";
+import WeightSection from "./WeightSection";
 import DatePicker from "./DatePicker";
 import { getCalorieGoal, getFoodLogs } from "../api/client";
 
 function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function formatDateLabel(dateStr) {
@@ -20,7 +22,7 @@ function formatDateLabel(dateStr) {
 }
 
 export default function Dashboard({ profile, userId, onLogout }) {
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedDate, setSelectedDate] = useState(todayStr());
   const [foodLogs, setFoodLogs] = useState([]);
   const [goalKcal, setGoalKcal] = useState(1625);
 
@@ -75,6 +77,7 @@ export default function Dashboard({ profile, userId, onLogout }) {
           logs={foodLogs}
           onRefresh={refresh}
         />
+        <WeightSection userId={userId} selectedDate={selectedDate} onRefresh={refresh} />
         <ActivitySection burned={0} />
       </div>
       <footer className="dashboard-footer">

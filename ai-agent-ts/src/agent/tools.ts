@@ -38,22 +38,30 @@ function formatBehaviouralForLLM(data: {
     totalCarbs?: number;
     totalFat?: number;
   }>;
-  weight_trend: unknown[];
+  weight_trend?: Array<{ date: string; weightKg: number }>;
 }): string {
+  const sections: string[] = [];
   const logs = data.food_logs ?? [];
   if (logs.length === 0) {
-    return "No food logs in the last 7 days. User has not logged any meals yet.";
+    sections.push("No food logs in the last 7 days. User has not logged any meals yet.");
+  } else {
+    const parts = logs.map((log) => {
+      const date = new Date(log.loggedAt).toISOString().split("T")[0];
+      const meal = log.mealType ?? "meal";
+      const items = (log.items ?? []) as Array<{ description?: string; grams?: number; calories?: number }>;
+      const itemStr = items
+        .map((i) => `${i.description ?? "?"} (${i.grams ?? 0}g, ${i.calories ?? 0} cal)`)
+        .join("; ");
+      return `[${date}] ${meal}: ${itemStr} | Total: ${log.totalCal ?? 0} cal, ${log.totalProtein ?? 0}g protein, ${log.totalCarbs ?? 0}g carbs, ${log.totalFat ?? 0}g fat`;
+    });
+    sections.push(`Recent food logs:\n${parts.join("\n")}`);
   }
-  const parts = logs.map((log) => {
-    const date = new Date(log.loggedAt).toISOString().split("T")[0];
-    const meal = log.mealType ?? "meal";
-    const items = (log.items ?? []) as Array<{ description?: string; grams?: number; calories?: number }>;
-    const itemStr = items
-      .map((i) => `${i.description ?? "?"} (${i.grams ?? 0}g, ${i.calories ?? 0} cal)`)
-      .join("; ");
-    return `[${date}] ${meal}: ${itemStr} | Total: ${log.totalCal ?? 0} cal, ${log.totalProtein ?? 0}g protein, ${log.totalCarbs ?? 0}g carbs, ${log.totalFat ?? 0}g fat`;
-  });
-  return `Recent food logs:\n${parts.join("\n")}`;
+  const weightTrend = (data.weight_trend ?? []) as Array<{ date: string; weightKg: number }>;
+  if (weightTrend.length > 0) {
+    const weightParts = weightTrend.map((w) => `[${w.date}] ${w.weightKg} kg`);
+    sections.push(`Weight trend (last ${weightTrend.length} day(s)):\n${weightParts.join("\n")}`);
+  }
+  return sections.join("\n\n");
 }
 
 function formatFoodsForLLM(foods: Array<{
@@ -147,7 +155,7 @@ export const getUserBehaviouralTool = tool(
           totalCarbs?: number;
           totalFat?: number;
         }>;
-        weight_trend: unknown[];
+        weight_trend?: Array<{ date: string; weightKg: number }>;
       };
       return formatBehaviouralForLLM(data);
     } catch (err) {

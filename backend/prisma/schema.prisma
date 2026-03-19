@@ -8,11 +8,12 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  profile   Profile?
-  foodLogs  FoodLog[]
+  id         String      @id @default(uuid())
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+  profile    Profile?
+  foodLogs   FoodLog[]
+  weightLogs WeightLog[]
 
   @@map("users")
 }
@@ -54,4 +55,18 @@ model FoodLog {
 
   @@index([userId, loggedAt(sort: Desc)])
   @@map("food_log")
+}
+
+model WeightLog {
+  id       String   @id @default(uuid())
+  userId   String   @map("user_id")
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weightKg Decimal  @map("weight_kg") @db.Decimal(5, 2)
+  date     DateTime @db.Date
+  loggedAt DateTime @default(now()) @map("logged_at")
+  notes    String?  @map("notes")
+
+  @@unique([userId, date])
+  @@index([userId, date(sort: Desc)])
+  @@map("weight_log")
 }

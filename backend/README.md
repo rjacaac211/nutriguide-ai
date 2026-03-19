@@ -62,7 +62,7 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | GET | `/api/users/by-name?name=...` | Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for login. |
 | GET | `/api/users/:id/profile` | Get user profile (id = sessionId) |
 | PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists. |
-| GET | `/api/users/:id/calorie-goal` | Get profile-based TDEE calorie goal. Returns `{ goalKcal, bmr, tdee }` |
+| GET | `/api/users/:id/calorie-goal` | Get TDEE calorie goal. Uses latest WeightLog weight when available, else profile. Returns `{ goalKcal, bmr, tdee }` |
 | GET | `/api/foods/search?q=...&limit=25` | Search foods via USDA FoodData Central (proxy) |
 | GET | `/api/users/:id/food-logs?date=YYYY-MM-DD` | List food logs for date |
 | POST | `/api/users/:id/food-logs` | Create food log. Body: `{ mealType, items, loggedAt }` |
@@ -70,6 +70,10 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | DELETE | `/api/users/:id/food-logs/:logId` | Delete food log |
 | PATCH | `/api/users/:id/food-logs/:logId/items/:itemIndex` | Update single item (e.g. grams) |
 | DELETE | `/api/users/:id/food-logs/:logId/items/:itemIndex` | Delete single item |
+| GET | `/api/users/:id/weight-logs?from=YYYY-MM-DD&to=YYYY-MM-DD` | List weight logs (default: last 30 days) |
+| POST | `/api/users/:id/weight-logs` | Create or replace weight log for date. Body: `{ weightKg, date, notes? }` |
+| PUT | `/api/users/:id/weight-logs/:logId` | Update weight log. Body: `{ weightKg?, notes? }` |
+| DELETE | `/api/users/:id/weight-logs/:logId` | Delete weight log |
 | GET | `/api/health` | Health check |
 
 **Internal API (agent only)** — Requires `X-Internal-API-Key` header:
@@ -77,7 +81,7 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
 | GET | `/api/internal/users/:id/profile` | User profile for personalization |
-| GET | `/api/internal/users/:id/behavioural?days=7` | Recent food logs and weight trend |
+| GET | `/api/internal/users/:id/behavioural?days=7` | Recent food logs and weight trend (weight_trend from WeightLog) |
 | GET | `/api/internal/users/:id/calorie-goal` | TDEE-based calorie goal |
 | GET | `/api/internal/foods/search?q=...&limit=25` | USDA FDC food search proxy |
 | POST | `/api/internal/users/:id/food-logs/append` | Append items to existing log or create new one (agent use) |
@@ -98,11 +102,14 @@ backend/
 │   │   ├── chat.js      # Proxies to AI agent
 │   │   ├── users.js     # Profile CRUD, calorie-goal
 │   │   ├── foods.js     # USDA FDC food search proxy
-│   │   ├── foodLogs.js  # Food log CRUD
-│   │   └── internal.js  # Internal API for agent (profile, behavioural, foods/search)
+│   │   ├── foodLogs.js   # Food log CRUD
+│   │   ├── weightLogs.js # Weight log CRUD
+│   │   └── internal.js   # Internal API for agent (profile, behavioural, foods/search)
 │   ├── services/
-│   │   ├── fdc.js       # USDA FoodData Central API proxy
-│   │   └── tdee.js      # TDEE calculation (Mifflin-St Jeor)
+│   │   ├── fdc.js        # USDA FoodData Central API proxy
+│   │   ├── tdee.js       # TDEE calculation (Mifflin-St Jeor)
+│   │   ├── foodLogs.js   # Food log service
+│   │   └── weightLogs.js # Weight log service, getCurrentWeight (used by calorie-goal)
 │   └── index.js
 └── package.json
 ```
