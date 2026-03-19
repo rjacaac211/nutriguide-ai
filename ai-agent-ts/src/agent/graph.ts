@@ -5,6 +5,7 @@ import {
   classifyIntent,
   respondDecline,
   chitchatNode,
+  logFoodNode,
   analyze,
   agentNode,
   toolNode,
@@ -13,10 +14,11 @@ import {
 
 function routeAfterClassify(
   state: { classification?: { intent?: string } }
-): "respondDecline" | "chitchatNode" | "analyze" {
+): "respondDecline" | "chitchatNode" | "logFoodNode" | "analyze" {
   const intent = state.classification?.intent;
   if (intent === "off_topic") return "respondDecline";
   if (intent === "chitchat") return "chitchatNode";
+  if (intent === "log_food") return "logFoodNode";
   return "analyze";
 }
 
@@ -24,6 +26,7 @@ const workflow = new StateGraph(NutriGuideState)
   .addNode("classifyIntent", classifyIntent)
   .addNode("respondDecline", respondDecline)
   .addNode("chitchatNode", chitchatNode)
+  .addNode("logFoodNode", logFoodNode)
   .addNode("analyze", analyze)
   .addNode("agentNode", agentNode)
   .addNode("toolNode", toolNode)
@@ -31,10 +34,12 @@ const workflow = new StateGraph(NutriGuideState)
   .addConditionalEdges("classifyIntent", routeAfterClassify, [
     "respondDecline",
     "chitchatNode",
+    "logFoodNode",
     "analyze",
   ])
   .addEdge("respondDecline", END)
   .addEdge("chitchatNode", END)
+  .addEdge("logFoodNode", END)
   .addEdge("analyze", "agentNode")
   .addConditionalEdges("agentNode", shouldContinue, ["toolNode", END])
   .addEdge("toolNode", "agentNode");

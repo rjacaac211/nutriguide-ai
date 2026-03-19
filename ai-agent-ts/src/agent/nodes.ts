@@ -15,7 +15,7 @@ import {
   searchNutritionKnowledgeTool,
   searchFoodsTool,
   getCalorieGoalTool,
-  createFoodLogTool,
+  requestFoodLogConfirmationTool,
 } from "./tools.js";
 
 const model = new ChatOpenAI({
@@ -28,15 +28,15 @@ const tools = [
   getUserProfileTool,
   getUserBehaviouralTool,
   searchNutritionKnowledgeTool,
-  searchFoodsTool,
   getCalorieGoalTool,
-  createFoodLogTool,
+  requestFoodLogConfirmationTool,
+  searchFoodsTool,
 ];
 const toolsByName = Object.fromEntries(tools.map((t) => [t.name, t]));
 const modelWithTools = model.bindTools(tools);
 
 const CLASSIFY_SCHEMA = z.object({
-  intent: z.enum(["nutrition", "chitchat", "off_topic"]),
+  intent: z.enum(["nutrition", "chitchat", "off_topic", "log_food"]),
 });
 
 const classifyLlm = model.withStructuredOutput(CLASSIFY_SCHEMA);
@@ -63,13 +63,8 @@ Before giving recommendations:
 2. Use get_calorie_goal when discussing calorie targets, deficits, or daily intake—it returns their TDEE-based goal.
 3. Use get_user_behavioural when discussing recent eating habits, calorie/macro intake, or meal patterns—it returns their food logs.
 4. Use search_nutrition_knowledge to look up evidence-based nutrition information for their questions.
-5. Use search_foods when suggesting specific foods or answering "what should I eat?"—it searches USDA FoodData Central.
-
-Food logging (create_food_log): When the user wants to log a food (e.g. "log 100g hotdog for breakfast"):
-- First use search_foods to find options. Present them as "1) Food A... 2) Food B... Reply with 1 or 2 to log, or say cancel."
-- Only call create_food_log AFTER the user confirms (e.g. "1", "the first one"). Never log without confirmation.
-- If the user says "actually 150g" or "the second one" before confirming, use that. Support edits like "150g instead."
-- After logging, say "Logged X for Y." If they say cancel, acknowledge and do not log.
+5. Use search_foods ONLY for suggestions (e.g. "what should I eat?", "high-protein foods")—never for logging.
+6. Food logging: When the user wants to LOG a food (e.g. "log 100g chicken for lunch", "add 50g oatmeal for breakfast"), you MUST call request_food_log_confirmation with search_query, meal_type, and grams. This is the ONLY way to log food. Do NOT use search_foods for logging—it will break the flow when the user replies "1" or "2".
 
 Always personalize your advice based on the user's profile. Respect dietary restrictions (e.g., vegetarian, gluten-free, allergies). Be concise but helpful. If you don't have specific knowledge, say so and give general guidance.
 
@@ -92,11 +87,12 @@ export const classifyIntent = async (
         : "";
   const result = await classifyLlm.invoke(
     `Classify this user message into exactly one intent:
-- nutrition: diet, fitness, macros, meal planning, weight management, health, dietary restrictions
+- log_food: user wants to LOG or ADD a food to their diary (e.g. "log 100g chicken for lunch", "add 50g oatmeal for breakfast", "record 200g rice for dinner")
+- nutrition: diet, fitness, macros, meal planning, weight management, health, dietary restrictions (but NOT logging)
 - chitchat: greetings (hi, hello, hey), thanks, how are you, small talk, casual conversation
 - off_topic: politics, weather, tech support, unrelated topics, anything not nutrition or chitchat
 
-Reply with intent: "nutrition", "chitchat", or "off_topic".
+Reply with intent: "log_food", "nutrition", "chitchat", or "off_topic".
 
 User: ${text}`
   );
@@ -163,6 +159,50 @@ export const chitchatNode = async (state: NutriGuideStateType) => {
   };
 };
 
+const LOG_FOOD_REGEX = /(?:log|add|record)\s+(\d+)\s*g\s+(?:of\s+)?(.+?)(?:\s+for\s+(breakfast|lunch|dinner|snack))?$/i;
+
+function parseLogFoodMessage(text: string): { search_query: string; grams: number; meal_type: string } | null {
+  const m = text.trim().match(LOG_FOOD_REGEX);
+  if (!m) return null;
+  const grams = parseInt(m[1], 10);
+  const search_query = m[2].trim();
+  const meal_type = (m[3] ?? "lunch").toLowerCase();
+  if (!search_query || isNaN(grams) || grams <= 0) return null;
+  return { search_query, grams, meal_type };
+}
+
+export const logFoodNode = async (state: NutriGuideStateType) => {
+  const messages = Array.isArray(state.messages) ? state.messages : [];
+  const lastMsg = messages.at(-1);
+  const text =
+    typeof lastMsg?.content === "string"
+      ? lastMsg.content
+      : Array.isArray(lastMsg?.content)
+        ? (lastMsg.content as { text?: string }[])
+            .map((c) => (typeof c === "string" ? c : c?.text ?? ""))
+            .join(" ")
+        : "";
+  const parsed = parseLogFoodMessage(text);
+  if (!parsed || !state.user_id) {
+    return {
+      messages: [
+        new AIMessage({
+          content: "I couldn't parse that. Try: 'log 100g chicken for lunch' or 'add 50g oatmeal for breakfast'.",
+        }),
+      ],
+    };
+  }
+  const result = await (requestFoodLogConfirmationTool as { invoke: (input: unknown) => Promise<unknown> }).invoke({
+    user_id: state.user_id,
+    search_query: parsed.search_query,
+    meal_type: parsed.meal_type,
+    grams: parsed.grams,
+  });
+  return {
+    messages: [new AIMessage({ content: typeof result === "string" ? result : String(result) })],
+  };
+};
+
 export const analyze = async (state: NutriGuideStateType) => {
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const lastMsg = messages.at(-1);
@@ -192,7 +232,7 @@ export const analyze = async (state: NutriGuideStateType) => {
 export const agentNode = async (state: NutriGuideStateType) => {
   const systemParts = [
     AGENT_SYSTEM_PROMPT,
-    `Current user ID for this conversation: ${state.user_id}. Use this ID when calling get_user_profile, get_user_behavioural, get_calorie_goal, or create_food_log.`,
+    `Current user ID for this conversation: ${state.user_id}. Use this ID when calling get_user_profile, get_user_behavioural, get_calorie_goal, or request_food_log_confirmation.`,
   ];
   if (state.analysis) {
     systemParts.push(`\nAnalysis of the user's question:\n${state.analysis}`);

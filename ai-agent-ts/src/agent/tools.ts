@@ -1,5 +1,6 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
+import { interrupt, isGraphInterrupt } from "@langchain/langgraph";
 import { searchNutritionKnowledge } from "./rag.js";
 
 const BACKEND_URL = process.env.BACKEND_URL;
@@ -194,7 +195,7 @@ export const searchFoodsTool = tool(
   {
     name: "search_foods",
     description:
-      "Search USDA FoodData Central for foods by name. Use when the user asks 'what should I eat?', 'suggest high-protein foods', or wants specific food options. Also use when the user wants to log a food—search first, present options, then use create_food_log after they confirm. Returns nutrient info per 100g.",
+      "Search USDA FoodData Central for foods by name. Use ONLY for suggestions: 'what should I eat?', 'suggest high-protein foods', 'what foods have X?'. Do NOT use when the user wants to LOG a food—use request_food_log_confirmation instead.",
     schema: z.object({
       query: z.string().describe("The search query for food name or type"),
       limit: z.number().optional().describe("Max results to return (default 10, max 25)"),
@@ -239,45 +240,99 @@ export const getCalorieGoalTool = tool(
   }
 );
 
-const foodLogItemSchema = z.object({
-  fdcId: z.number(),
-  description: z.string(),
-  referenceGrams: z.number(),
-  grams: z.number(),
-  calories: z.number(),
-  protein: z.number(),
-  carbs: z.number(),
-  fat: z.number(),
-});
+function parseSelectionToIndex(resumeValue: unknown, optionCount: number): number | null {
+  if (resumeValue == null) return null;
+  const s = String(resumeValue).trim().toLowerCase();
+  if (
+    s === "cancel" ||
+    s === "never mind" ||
+    s === "nevermind" ||
+    s === "no" ||
+    s === "stop"
+  ) {
+    return -1;
+  }
+  const num = parseInt(s, 10);
+  if (!isNaN(num) && num >= 1 && num <= optionCount) {
+    return num - 1;
+  }
+  if (s === "1" || s === "first" || s === "the first one") return 0;
+  if (s === "2" || s === "second" || s === "the second one") return 1;
+  if (s === "3" || s === "third" || s === "the third one") return 2;
+  return null;
+}
 
-export const createFoodLogTool = tool(
+export const requestFoodLogConfirmationTool = tool(
   async ({
     user_id,
+    search_query,
     meal_type,
-    items,
+    grams,
     logged_at,
   }: {
     user_id: string;
+    search_query: string;
     meal_type: string;
-    items: Array<{
-      fdcId: number;
-      description: string;
-      referenceGrams: number;
-      grams: number;
-      calories: number;
-      protein: number;
-      carbs: number;
-      fat: number;
-    }>;
+    grams: number;
     logged_at?: string;
   }) => {
     try {
+      const url = `${BACKEND_URL}/api/internal/foods/search?q=${encodeURIComponent(search_query.trim())}&limit=10`;
+      const res = await fetch(url, {
+        headers: { "X-Internal-API-Key": INTERNAL_API_KEY },
+      });
+      if (!res.ok) {
+        return `Could not search foods: ${res.status} ${res.statusText}`;
+      }
+      const { foods } = (await res.json()) as {
+        foods: Array<{
+          fdcId: number;
+          description: string;
+          brandOwner?: string | null;
+          referenceGrams: number;
+          per100g: { calories: number; protein: number; carbs: number; fat: number };
+        }>;
+      };
+      const options = foods ?? [];
+      if (options.length === 0) {
+        return "No foods found for that search.";
+      }
+
+      const resumeValue = interrupt({
+        type: "food_log_confirmation",
+        options,
+        mealType: meal_type,
+        grams,
+      });
+
+      const index = parseSelectionToIndex(resumeValue, options.length);
+      if (index === -1) {
+        return "Logging cancelled.";
+      }
+      if (index === null || index < 0 || index >= options.length) {
+        return `Could not understand selection. Please reply with a number (1-${options.length}) or say cancel.`;
+      }
+
+      const selected = options[index];
+      const p = selected.per100g;
+      const ratio = grams / 100;
+      const item = {
+        fdcId: selected.fdcId,
+        description: selected.description,
+        referenceGrams: 100,
+        grams,
+        calories: Math.round(p.calories * ratio * 10) / 10,
+        protein: Math.round(p.protein * ratio * 10) / 10,
+        carbs: Math.round(p.carbs * ratio * 10) / 10,
+        fat: Math.round(p.fat * ratio * 10) / 10,
+      };
+
       const body = {
         mealType: meal_type,
-        items,
+        items: [item],
         ...(logged_at ? { loggedAt: logged_at } : {}),
       };
-      const res = await fetch(
+      const createRes = await fetch(
         `${BACKEND_URL}/api/internal/users/${user_id}/food-logs`,
         {
           method: "POST",
@@ -288,11 +343,11 @@ export const createFoodLogTool = tool(
           body: JSON.stringify(body),
         }
       );
-      if (!res.ok) {
-        const errData = (await res.json().catch(() => ({}))) as { error?: string };
-        return `Could not create food log: ${errData.error ?? res.statusText}`;
+      if (!createRes.ok) {
+        const errData = (await createRes.json().catch(() => ({}))) as { error?: string };
+        return `Could not create food log: ${errData.error ?? createRes.statusText}`;
       }
-      const log = (await res.json()) as {
+      const log = (await createRes.json()) as {
         mealType: string;
         items: Array<{ description: string; grams: number; calories: number }>;
         totalCal?: number;
@@ -302,21 +357,21 @@ export const createFoodLogTool = tool(
         .join(", ");
       return `Logged for ${log.mealType}: ${itemStr}. Total: ${log.totalCal ?? 0} cal.`;
     } catch (err) {
-      return `Error creating food log: ${(err as Error).message}`;
+      if (isGraphInterrupt(err)) throw err;
+      return `Error: ${(err as Error).message}`;
     }
   },
   {
-    name: "create_food_log",
+    name: "request_food_log_confirmation",
     description:
-      "Create a food log entry for the user. Call ONLY after the user has confirmed which food to log (e.g. replied '1' or 'the first one' to your options). Requires meal_type (breakfast, lunch, dinner, snack) and items with fdcId, description, referenceGrams, grams, calories, protein, carbs, fat. Build items from search_foods results: referenceGrams=100, grams=user amount, nutrients = (per100g/100)*grams.",
+      "LOG FOOD: Use this when the user wants to LOG or ADD a food to their diary (e.g. 'log 100g chicken for lunch', 'add 50g oatmeal for breakfast'). Pass search_query, meal_type (breakfast/lunch/dinner/snack), and grams. The tool searches, shows options, pauses for user to reply 1/2/3, then creates the log. Do NOT use search_foods for logging—search_foods is for suggestions only.",
     schema: z.object({
       user_id: z.string().describe("The user ID from the conversation context"),
+      search_query: z.string().describe("The food to search for (e.g. chicken, oatmeal)"),
       meal_type: z
         .enum(["breakfast", "lunch", "dinner", "snack"])
         .describe("Meal type for the log"),
-      items: z
-        .array(foodLogItemSchema)
-        .describe("Food items to log (from search_foods, with user-confirmed grams)"),
+      grams: z.number().describe("Amount in grams the user wants to log"),
       logged_at: z
         .string()
         .optional()
