@@ -11,7 +11,9 @@ import type { NutriGuideStateType } from "./state.js";
 import { NutriGuideState } from "./state.js";
 import {
   getUserProfileTool,
+  getUserBehaviouralTool,
   searchNutritionKnowledgeTool,
+  searchFoodsTool,
 } from "./tools.js";
 
 const model = new ChatOpenAI({
@@ -20,7 +22,12 @@ const model = new ChatOpenAI({
   maxTokens: 1000,
 });
 
-const tools = [getUserProfileTool, searchNutritionKnowledgeTool];
+const tools = [
+  getUserProfileTool,
+  getUserBehaviouralTool,
+  searchNutritionKnowledgeTool,
+  searchFoodsTool,
+];
 const toolsByName = Object.fromEntries(tools.map((t) => [t.name, t]));
 const modelWithTools = model.bindTools(tools);
 
@@ -49,7 +56,9 @@ const AGENT_SYSTEM_PROMPT = `You are NutriGuide, a friendly and knowledgeable nu
 
 Before giving recommendations:
 1. Use get_user_profile to fetch the user's age, weight, goal, dietary restrictions, and activity level when relevant.
-2. Use search_nutrition_knowledge to look up evidence-based nutrition information for their questions.
+2. Use get_user_behavioural when discussing recent eating habits, calorie/macro intake, or meal patterns—it returns their food logs.
+3. Use search_nutrition_knowledge to look up evidence-based nutrition information for their questions.
+4. Use search_foods when suggesting specific foods or answering "what should I eat?"—it searches USDA FoodData Central.
 
 Always personalize your advice based on the user's profile. Respect dietary restrictions (e.g., vegetarian, gluten-free, allergies). Be concise but helpful. If you don't have specific knowledge, say so and give general guidance.
 
@@ -172,7 +181,7 @@ export const analyze = async (state: NutriGuideStateType) => {
 export const agentNode = async (state: NutriGuideStateType) => {
   const systemParts = [
     AGENT_SYSTEM_PROMPT,
-    `Current user ID for this conversation: ${state.user_id}. Use this ID when calling get_user_profile.`,
+    `Current user ID for this conversation: ${state.user_id}. Use this ID when calling get_user_profile or get_user_behavioural.`,
   ];
   if (state.analysis) {
     systemParts.push(`\nAnalysis of the user's question:\n${state.analysis}`);
