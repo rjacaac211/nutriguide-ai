@@ -59,16 +59,17 @@ Open http://localhost (port 80)
    - Weight: current weight for selected date, add/edit/delete weight logs
 
 3. **Add food** — Click "+" on any meal:
-   - Search: type "chicken" or "apple" (min 2 chars)
+   - Search: type "chicken", "milk", or "apple" (min 2 chars)
    - Wait for results (debounced 300ms)
    - Click a food item
-   - Enter grams (e.g. 150)
+   - Select unit (Grams, or portions like "1 cup (236 ml)", "1 serving", etc.)
+   - Enter amount (e.g. 150 for grams, 1 for 1 cup)
    - Click "Add"
 
-4. **Verify** — The meal card should show the logged item and calories. The summary "Eaten" should update.
+4. **Verify** — The meal card should show the logged item and calories (e.g. "Milk (1 × 1 cup (236 ml))"). The summary "Eaten" should update.
 
 5. **Edit** — Click "Edit" on a logged item:
-   - Change grams
+   - Change unit and/or amount
    - Click "Save" or "Remove"
 
 6. **Date picker** — Change the date to view logs for other days.
@@ -77,12 +78,12 @@ Open http://localhost (port 80)
 
 You can also log food through the chat widget:
 
-1. Open the chat widget and say e.g. **"log 100g chicken for lunch"**
+1. Open the chat widget and say e.g. **"log 100g chicken for lunch"**, **"add 1 cup rice for dinner"**, or **"log 2 servings oatmeal for breakfast"**
 2. The agent searches and shows numbered options (1, 2, 3, …)
 3. Reply with a number (e.g. **"1"**) to select and log, or **"cancel"** to abort
 4. The agent confirms the log was created
 
-The agent uses LangGraph interrupts so your reply ("1", "2", etc.) is treated as a selection, not a new message. You can log multiple foods for the same meal (e.g. chicken then rice for lunch); they are merged into one log.
+The agent accepts grams (e.g. 100g) or amount+unit (e.g. 1 cup, 2 servings). It uses LangGraph interrupts so your reply ("1", "2", etc.) is treated as a selection, not a new message. You can log multiple foods for the same meal (e.g. chicken then rice for lunch); they are merged into one log.
 
 ---
 
@@ -90,11 +91,14 @@ The agent uses LangGraph interrupts so your reply ("1", "2", etc.) is treated as
 
 Use a valid `userId` (e.g. from session after onboarding, or from login by name).
 
-### Food search (no auth)
+### Food search and details (no auth)
 
 ```powershell
-# Replace YOUR_API_KEY with your USDA key, or use backend proxy:
+# Search foods
 curl "http://localhost:3001/api/foods/search?q=cheddar&limit=5"
+
+# Fetch full food details including portions (cups, servings, etc.)
+curl "http://localhost:3001/api/foods/1909132"
 ```
 
 ### Calorie goal (requires profile)
@@ -109,7 +113,7 @@ curl "http://localhost:3001/api/users/YOUR_USER_ID/calorie-goal"
 # List logs for date
 curl "http://localhost:3001/api/users/YOUR_USER_ID/food-logs?date=2025-03-18"
 
-# Create log
+# Create log (items may include optional portionDescription, portionAmount for display)
 curl -X POST "http://localhost:3001/api/users/YOUR_USER_ID/food-logs" `
   -H "Content-Type: application/json" `
   -d '{
@@ -185,4 +189,4 @@ Nutrient IDs used: 208 (kcal), 203 (protein), 205 (carbs), 204 (fat).
 | Empty food logs | Ensure `date` query param is YYYY-MM-DD |
 | No profile for TDEE | Profile needs `height_cm`, `weight_kg` (or WeightLog), `age`, `gender` |
 
-**Note:** The USDA FDC search API returns nutrients with `value` instead of `amount` (see [USDA/USDA-APIs#102](https://github.com/USDA/USDA-APIs/issues/102)). The backend `fdc.js` service handles both for compatibility.
+**Note:** The USDA FDC search API returns nutrients with `value` instead of `amount` (see [USDA/USDA-APIs#102](https://github.com/USDA/USDA-APIs/issues/102)). The full food details API (`GET /food/{fdcId}`) returns `foodNutrients` with `nutrient.number` as a string. The backend `fdc.js` service handles both formats and falls back to `labelNutrients` when `foodNutrients` is empty.

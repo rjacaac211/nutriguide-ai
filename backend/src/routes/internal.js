@@ -1,6 +1,6 @@
 import express from "express";
 import { prisma } from "../db.js";
-import { searchFoods } from "../services/fdc.js";
+import { searchFoods, getFoodDetails, convertToGrams } from "../services/fdc.js";
 import { calculateTDEE } from "../services/tdee.js";
 import { appendFoodLog } from "../services/foodLogs.js";
 import { getCurrentWeight } from "../services/weightLogs.js";
@@ -117,6 +117,49 @@ router.get("/foods/search", async (req, res) => {
   } catch (err) {
     console.error("Internal food search error:", err);
     res.status(500).json({ error: err.message || "Food search failed" });
+  }
+});
+
+/**
+ * GET /api/internal/foods/:fdcId
+ * Fetches full food details including portions for agent use.
+ */
+router.get("/foods/:fdcId", async (req, res) => {
+  try {
+    const fdcId = parseInt(req.params.fdcId, 10);
+    if (isNaN(fdcId) || fdcId <= 0) {
+      return res.status(400).json({ error: "Invalid fdcId" });
+    }
+    const food = await getFoodDetails(fdcId);
+    if (!food) {
+      return res.status(404).json({ error: "Food not found" });
+    }
+    res.json(food);
+  } catch (err) {
+    console.error("Internal food details error:", err);
+    res.status(500).json({ error: err.message || "Failed to fetch food details" });
+  }
+});
+
+/**
+ * POST /api/internal/foods/convert
+ * Body: { food: { portions, per100g, ... }, amount: number, unit: string }
+ * Converts amount+unit to grams using food portions. Returns { grams, portionDescription?, portionAmount? }.
+ */
+router.post("/foods/convert", async (req, res) => {
+  try {
+    const { food, amount, unit } = req.body;
+    if (!food || amount == null || !unit) {
+      return res.status(400).json({ error: "Requires food, amount, and unit" });
+    }
+    const result = convertToGrams(food, amount, unit);
+    if (!result) {
+      return res.status(400).json({ error: "Unit not available for this food" });
+    }
+    res.json(result);
+  } catch (err) {
+    console.error("Internal food convert error:", err);
+    res.status(500).json({ error: err.message || "Conversion failed" });
   }
 });
 

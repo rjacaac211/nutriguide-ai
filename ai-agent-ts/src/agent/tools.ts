@@ -48,9 +48,21 @@ function formatBehaviouralForLLM(data: {
     const parts = logs.map((log) => {
       const date = new Date(log.loggedAt).toISOString().split("T")[0];
       const meal = log.mealType ?? "meal";
-      const items = (log.items ?? []) as Array<{ description?: string; grams?: number; calories?: number }>;
+      const items = (log.items ?? []) as Array<{
+        description?: string;
+        grams?: number;
+        calories?: number;
+        portionDescription?: string;
+        portionAmount?: number;
+      }>;
       const itemStr = items
-        .map((i) => `${i.description ?? "?"} (${i.grams ?? 0}g, ${i.calories ?? 0} cal)`)
+        .map((i) => {
+          const amt =
+            i.portionDescription != null && i.portionAmount != null
+              ? `${i.portionAmount} × ${i.portionDescription}`
+              : `${i.grams ?? 0}g`;
+          return `${i.description ?? "?"} (${amt}, ${i.calories ?? 0} cal)`;
+        })
         .join("; ");
       return `[${date}] ${meal}: ${itemStr} | Total: ${log.totalCal ?? 0} cal, ${log.totalProtein ?? 0}g protein, ${log.totalCarbs ?? 0}g carbs, ${log.totalFat ?? 0}g fat`;
     });
@@ -275,13 +287,17 @@ export const requestFoodLogConfirmationTool = tool(
     user_id,
     search_query,
     meal_type,
-    grams,
+    grams: gramsArg,
+    amount: amountArg,
+    unit: unitArg,
     logged_at,
   }: {
     user_id: string;
     search_query: string;
     meal_type: string;
-    grams: number;
+    grams?: number;
+    amount?: number;
+    unit?: string;
     logged_at?: string;
   }) => {
     try {
@@ -310,7 +326,9 @@ export const requestFoodLogConfirmationTool = tool(
         type: "food_log_confirmation",
         options,
         mealType: meal_type,
-        grams,
+        grams: gramsArg,
+        amount: amountArg,
+        unit: unitArg,
       });
 
       const index = parseSelectionToIndex(resumeValue, options.length);
@@ -322,18 +340,70 @@ export const requestFoodLogConfirmationTool = tool(
       }
 
       const selected = options[index];
-      const p = selected.per100g;
+      let grams: number;
+      let portionDescription: string | undefined;
+      let portionAmount: number | undefined;
+
+      if (gramsArg != null && gramsArg > 0) {
+        grams = gramsArg;
+      } else if (amountArg != null && unitArg && amountArg > 0) {
+        const detailsRes = await fetch(
+          `${BACKEND_URL}/api/internal/foods/${selected.fdcId}`,
+          { headers: { "X-Internal-API-Key": INTERNAL_API_KEY } }
+        );
+        if (!detailsRes.ok) {
+          return `Could not fetch food details for unit conversion. Try logging in grams instead.`;
+        }
+        const foodDetails = (await detailsRes.json()) as {
+          portions?: Array<{ gramWeight: number; portionDescription: string; measureUnit?: { abbreviation?: string; name?: string } }>;
+          per100g?: { calories: number; protein: number; carbs: number; fat: number };
+        };
+        const convertUrl = `${BACKEND_URL}/api/internal/foods/convert`;
+        const convertRes = await fetch(convertUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Internal-API-Key": INTERNAL_API_KEY,
+          },
+          body: JSON.stringify({
+            food: foodDetails,
+            amount: amountArg,
+            unit: unitArg,
+          }),
+        });
+        if (!convertRes.ok) {
+          const errData = (await convertRes.json().catch(() => ({}))) as { error?: string };
+          return `Could not convert unit: ${errData.error ?? "Unit not available for this food"}. Try logging in grams.`;
+        }
+        const converted = (await convertRes.json()) as {
+          grams: number;
+          portionDescription?: string;
+          portionAmount?: number;
+        };
+        grams = converted.grams;
+        portionDescription = converted.portionDescription;
+        portionAmount = converted.portionAmount;
+      } else {
+        return "Please provide either grams or amount+unit (e.g. grams: 100, or amount: 1, unit: cup).";
+      }
+
+      const p = selected.per100g ?? { calories: 0, protein: 0, carbs: 0, fat: 0 };
       const ratio = grams / 100;
-      const item = {
+      const item: Record<string, unknown> = {
         fdcId: selected.fdcId,
         description: selected.description,
-        referenceGrams: 100,
+        brandOwner: selected.brandOwner ?? null,
+        referenceGrams: selected.referenceGrams ?? 100,
         grams,
         calories: Math.round(p.calories * ratio * 10) / 10,
         protein: Math.round(p.protein * ratio * 10) / 10,
         carbs: Math.round(p.carbs * ratio * 10) / 10,
         fat: Math.round(p.fat * ratio * 10) / 10,
       };
+      if (portionDescription != null && portionAmount != null) {
+        item.portionDescription = portionDescription;
+        item.portionAmount = portionAmount;
+      }
 
       const body = {
         mealType: meal_type,
@@ -357,11 +427,16 @@ export const requestFoodLogConfirmationTool = tool(
       }
       const log = (await createRes.json()) as {
         mealType: string;
-        items: Array<{ description: string; grams: number; calories: number }>;
+        items: Array<{ description: string; grams: number; calories: number; portionDescription?: string; portionAmount?: number }>;
         totalCal?: number;
       };
       const itemStr = (log.items ?? [])
-        .map((i) => `${i.description} (${i.grams}g, ${i.calories} cal)`)
+        .map((i) => {
+          const amt = i.portionDescription != null && i.portionAmount != null
+            ? `${i.portionAmount} × ${i.portionDescription}`
+            : `${i.grams}g`;
+          return `${i.description} (${amt}, ${i.calories} cal)`;
+        })
         .join(", ");
       return `Logged for ${log.mealType}: ${itemStr}. Total: ${log.totalCal ?? 0} cal.`;
     } catch (err) {
@@ -372,14 +447,19 @@ export const requestFoodLogConfirmationTool = tool(
   {
     name: "request_food_log_confirmation",
     description:
-      "LOG FOOD: Use this when the user wants to LOG or ADD a food to their diary (e.g. 'log 100g chicken for lunch', 'add 50g oatmeal for breakfast'). Pass search_query, meal_type (breakfast/lunch/dinner/snack), and grams. The tool searches, shows options, pauses for user to reply 1/2/3, then creates the log. Do NOT use search_foods for logging—search_foods is for suggestions only.",
+      "LOG FOOD: Use when the user wants to LOG or ADD a food (e.g. 'log 100g chicken for lunch', 'add 1 cup rice for dinner', 'log 2 servings oatmeal for breakfast'). Pass search_query, meal_type, and either grams OR amount+unit. The tool searches, shows options, pauses for user to reply 1/2/3, then creates the log. Do NOT use search_foods for logging.",
     schema: z.object({
       user_id: z.string().describe("The user ID from the conversation context"),
       search_query: z.string().describe("The food to search for (e.g. chicken, oatmeal)"),
       meal_type: z
         .enum(["breakfast", "lunch", "dinner", "snack"])
         .describe("Meal type for the log"),
-      grams: z.number().describe("Amount in grams the user wants to log"),
+      grams: z.number().optional().describe("Amount in grams (use when user says e.g. 100g)"),
+      amount: z.number().optional().describe("Amount for portion (use with unit, e.g. 1 for 1 cup)"),
+      unit: z
+        .string()
+        .optional()
+        .describe("Unit for portion (cup, cups, serving, servings, oz, tbsp, tsp, piece, slice, etc.)"),
       logged_at: z
         .string()
         .optional()

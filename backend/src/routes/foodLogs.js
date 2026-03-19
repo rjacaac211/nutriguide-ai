@@ -141,7 +141,7 @@ router.delete("/:id/food-logs/:logId", async (req, res) => {
 
 /**
  * PATCH /api/users/:id/food-logs/:logId/items/:itemIndex
- * Body: { grams?, calories?, protein?, carbs?, fat? } - or full item
+ * Body: { grams?, calories?, protein?, carbs?, fat?, portionDescription?, portionAmount? } - or full item
  */
 router.patch("/:id/food-logs/:logId/items/:itemIndex", async (req, res) => {
   try {
@@ -173,6 +173,10 @@ router.patch("/:id/food-logs/:logId/items/:itemIndex", async (req, res) => {
       updated.protein = Math.round((current.protein ?? 0) * ratio * 10) / 10;
       updated.carbs = Math.round((current.carbs ?? 0) * ratio * 10) / 10;
       updated.fat = Math.round((current.fat ?? 0) * ratio * 10) / 10;
+      if (patch.portionDescription === undefined && patch.portionAmount === undefined) {
+        delete updated.portionDescription;
+        delete updated.portionAmount;
+      }
     }
 
     items[itemIndex] = updated;

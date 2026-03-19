@@ -23,7 +23,7 @@ flowchart TD
 - **classifyIntent**: Routes to respondDecline (off-topic), chitchatNode (greetings/small talk), logFoodNode (log/add food), or analyze (nutrition)
 - **respondDecline**: Polite decline for non-nutrition questions
 - **chitchatNode**: Short friendly reply for greetings and small talk (no tools, no RAG)
-- **logFoodNode**: Direct path for food logging (e.g. "log 100g chicken for lunch"). Uses `request_food_log_confirmation` with LangGraph interrupt—pauses for user to reply "1"/"2"/"cancel", then appends to or creates the log. Multiple foods for the same meal are merged into one log.
+- **logFoodNode**: Direct path for food logging (e.g. "log 100g chicken for lunch", "add 1 cup rice for dinner", "log 2 servings oatmeal for breakfast"). Uses `request_food_log_confirmation` with LangGraph interrupt—pauses for user to reply "1"/"2"/"cancel", then appends to or creates the log. Accepts grams or amount+unit (cup, cups, serving, servings, oz, tbsp, tsp, piece, slice). Multiple foods for the same meal are merged into one log.
 - **analyze**: Multi-step reasoning before agent (what user needs, search focus)
 - **agentNode**: LLM with tools (get_user_profile, get_user_behavioural, get_calorie_goal, search_nutrition_knowledge, search_foods, request_food_log_confirmation)
 - **toolNode**: Executes tool calls, loops back to agentNode
@@ -39,7 +39,7 @@ flowchart TD
 | `state.ts` | Annotation.Root state schema (messages, user_id, classification, analysis) |
 | `nodes.ts` | classifyIntent, respondDecline, chitchatNode, logFoodNode, analyze, agentNode, toolNode |
 | `graph.ts` | StateGraph, edges, MemorySaver |
-| `tools.ts` | getUserProfile, getUserBehavioural (food logs + weight trend), getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), requestFoodLogConfirmation (interrupt-based logging) |
+| `tools.ts` | getUserProfile, getUserBehavioural (food logs + weight trend), getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), requestFoodLogConfirmation (interrupt-based logging; accepts grams or amount+unit) |
 | `rag.ts` | Pinecone RAG (embeddings, retriever) |
 | `index.ts` | Exports graph and tools |
 | `scripts/test-chat-direct.ts` | Direct agent test (bypasses HTTP); run with `npm run test:chat` |
@@ -74,7 +74,7 @@ Or use the project's `docker-compose.yml` which includes the agent.
 npm run test:chat
 ```
 
-Runs a two-turn test: "log 100g chicken for lunch" → interrupt → resume with "1" → logs food. Useful for verifying the interrupt flow without the UI.
+Runs a two-turn test: "log 100g chicken for lunch" → interrupt → resume with "1" → logs food. Useful for verifying the interrupt flow without the UI. The agent also supports amount+unit (e.g. "log 1 cup rice for dinner").
 
 ## Environment
 

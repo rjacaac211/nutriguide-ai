@@ -75,7 +75,11 @@ export default function MealsLogged({ userId, selectedDate, logs, onRefresh }) {
                       <div key={idx} className="meal-item-row">
                         <span className="meal-item-name">
                           {it.description}
-                          {it.grams ? ` (${it.grams}g)` : ""}
+                          {it.portionDescription != null && it.portionAmount != null
+                            ? ` (${it.portionAmount} × ${it.portionDescription})`
+                            : it.grams
+                              ? ` (${it.grams}g)`
+                              : ""}
                         </span>
                         <span className="meal-item-cal">{Math.round(it.calories ?? 0)} kcal</span>
                         <button
