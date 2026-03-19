@@ -16,6 +16,7 @@ Use this guide to run each service in a separate terminal so you can see logs an
   - `PORT=3001` (backend)
   - `AGENT_URL=http://localhost:8000` (backend → AI agent)
   - `AGENT_PORT=8000` (required for AI agent)
+  - `BACKEND_URL=http://localhost:3001` (agent → backend for profile, behavioural, food search)
 - Node.js 20+
 - Internet connection (Pinecone is cloud-only)
 
@@ -36,7 +37,7 @@ cd ai-agent-ts
 npm run dev
 ```
 
-Loads `PINECONE_API_KEY`, `PINECONE_INDEX`, `PORT`, and `OPENAI_API_KEY` from root `.env`. You should see: `NutriGuide AI Agent listening on port 8000`
+Loads `PINECONE_API_KEY`, `PINECONE_INDEX`, `PORT`, `OPENAI_API_KEY`, `BACKEND_URL`, and `INTERNAL_API_KEY` from root `.env`. The agent uses these to fetch profiles, behavioural data, and food search from the backend. You should see: `NutriGuide AI Agent listening on port 8000`
 
 ---
 

@@ -72,6 +72,14 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | DELETE | `/api/users/:id/food-logs/:logId/items/:itemIndex` | Delete single item |
 | GET | `/api/health` | Health check |
 
+**Internal API (agent only)** — Requires `X-Internal-API-Key` header:
+
+| Method | Endpoint | Description |
+| ------ | -------- | ----------- |
+| GET | `/api/internal/users/:id/profile` | User profile for personalization |
+| GET | `/api/internal/users/:id/behavioural?days=7` | Recent food logs and weight trend |
+| GET | `/api/internal/foods/search?q=...&limit=25` | USDA FDC food search proxy |
+
 **Note:** User profiles are persisted in PostgreSQL. Profiles are keyed by userId; names must be unique. Users can log in by name via `GET /api/users/by-name`. Reloading the frontend clears the session; users log in again with their name to restore access.
 
 ## Structure
@@ -89,7 +97,7 @@ backend/
 │   │   ├── users.js     # Profile CRUD, calorie-goal
 │   │   ├── foods.js     # USDA FDC food search proxy
 │   │   ├── foodLogs.js  # Food log CRUD
-│   │   └── internal.js  # Internal API for agent (profile, behavioural)
+│   │   └── internal.js  # Internal API for agent (profile, behavioural, foods/search)
 │   ├── services/
 │   │   ├── fdc.js       # USDA FoodData Central API proxy
 │   │   └── tdee.js      # TDEE calculation (Mifflin-St Jeor)

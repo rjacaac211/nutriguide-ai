@@ -2,7 +2,7 @@
 
 A production-ready nutrition chatbot that helps users get personalized dietary advice through natural conversation. It combines an AI agent powered by LangGraph and RAG with a React frontend and Node.js/Express backend, demonstrating a full-stack architecture for AI-driven applications.
 
-Users create an account (or log in by name) and complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base and maintains conversation context, so advice adapts to each user's profile and history.
+Users create an account (or log in by name) and complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base, fetches user profiles and recent food logs from the backend, and can search USDA FoodData Central for food suggestions. It maintains conversation context so advice adapts to each user's profile and history.
 
 ## Tech Stack
 
