@@ -2,15 +2,61 @@
 
 A production-ready nutrition chatbot that helps users get personalized dietary advice through natural conversation. It combines an AI agent powered by LangGraph and RAG with a React frontend and Node.js/Express backend, demonstrating a full-stack architecture for AI-driven applications.
 
-Users create an account (or log in by name) and complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base, fetches user profiles and recent food logs from the backend, and can search USDA FoodData Central for food suggestions. It maintains conversation context so advice adapts to each user's profile and history.
+Users create an account (or log in by name) and complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base, fetches user profiles and recent food logs from the backend, and can search USDA FoodData Central for food suggestions. It maintains **stateful conversation context** so advice adapts to each user's profile and history.
+
+## Highlights for Employers
+
+| Area | Technologies & Approaches |
+|------|---------------------------|
+| **AI / Agent** | LangGraph (StateGraph), multi-step reasoning, stateful conversations, LangChain tools |
+| **RAG** | OpenAI embeddings, Pinecone vector store, Markdown knowledge base |
+| **Observability** | LangSmith tracing (optional) |
+| **Stack** | Full stack: React (Vite), Node.js/Express, TypeScript AI agent |
+| **Deployment** | Docker, AWS (EC2, ECR), GitHub Actions CI/CD |
+| **APIs** | Internal APIs (agent ↔ backend), external APIs (USDA FoodData Central) |
+| **Data** | PostgreSQL (Prisma), Pinecone (vector DB) |
 
 ## Tech Stack
 
-- **TypeScript / LangGraph.js / LangChain**: Custom LangGraph StateGraph with routing, multi-step reasoning, tools, and RAG
-- **Node.js / Express**: Backend API, middleware, agent proxy
-- **RAG**: OpenAI embeddings + Pinecone for nutrition knowledge (cloud vector store)
-- **OpenAI**: GPT-4o-mini for the agent
-- **React**: Landing (Create Account / Log in), onboarding, dashboard, and AI chat widget (light theme, green/orange palette)
+- **TypeScript / LangGraph.js / LangChain**: Custom LangGraph StateGraph with intent routing, multi-step reasoning (classify → analyze → agent loop), tools, and RAG. Session-scoped memory via MemorySaver; LangGraph interrupts for food-log confirmation flows.
+- **Node.js / Express**: Backend API, middleware, agent proxy, internal API (`X-Internal-API-Key`) for agent-only endpoints.
+- **RAG**: OpenAI embeddings (text-embedding-3-small) + Pinecone for nutrition knowledge (cloud vector store).
+- **OpenAI**: GPT-4o-mini for the agent.
+- **React / Vite**: Landing (Create Account / Log in), onboarding, dashboard, and AI chat widget (light theme, green/orange palette).
+- **Database**: PostgreSQL 15+ with Prisma ORM (users, profiles, food logs, weight logs).
+- **External APIs**: USDA FoodData Central (food search, nutrition data).
+- **Deployment**: Docker Compose (local + prod), AWS EC2 + ECR, GitHub Actions CI/CD (build → push → deploy on push to main).
+- **Observability**: Optional LangSmith tracing for agent debugging.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client
+        FE[React Frontend]
+    end
+
+    subgraph Backend
+        API[Express API]
+    end
+
+    subgraph Agent
+        AG[LangGraph Agent]
+    end
+
+    subgraph Data
+        DB[(PostgreSQL)]
+        PC[Pinecone RAG]
+        USDA[USDA FoodData Central]
+    end
+
+    FE -->|/api/*| API
+    API -->|/chat| AG
+    AG -->|Internal API| API
+    API --> DB
+    API -->|food search| USDA
+    AG --> PC
+```
 
 ## Prerequisites
 
@@ -175,7 +221,31 @@ NutriGuide-AI/
 
 ## Deployment
 
-For AWS deployment (EC2, ECR, GitHub Actions, Docker Compose), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+Push to `main` triggers GitHub Actions to build Docker images, push to AWS ECR, and deploy to EC2 via SSH. The EC2 instance runs `docker compose` with frontend, backend, and ai-agent containers.
+
+```mermaid
+flowchart LR
+    subgraph GitHub
+        Repo[GitHub Repo]
+        Actions[GitHub Actions]
+    end
+
+    subgraph AWS
+        ECR[ECR Registry]
+        EC2[EC2 Instance]
+        Docker[Docker Compose]
+        RDS[(RDS PostgreSQL)]
+    end
+
+    Repo -->|push| Actions
+    Actions -->|build & push| ECR
+    Actions -->|SSH deploy| EC2
+    EC2 -->|pull| ECR
+    EC2 -->|runs| Docker
+    EC2 -->|DATABASE_URL| RDS
+```
+
+For full setup (EC2, ECR, secrets, RDS), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Documentation
 
