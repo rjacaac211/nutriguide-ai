@@ -64,7 +64,7 @@ Before giving recommendations:
 3. Use get_user_behavioural when discussing recent eating habits, calorie/macro intake, or meal patterns—it returns their food logs.
 4. Use search_nutrition_knowledge to look up evidence-based nutrition information for their questions.
 5. Use search_foods ONLY for suggestions (e.g. "what should I eat?", "high-protein foods")—never for logging.
-6. Food logging: When the user wants to LOG a food (e.g. "log 100g chicken for lunch", "add 50g oatmeal for breakfast"), you MUST call request_food_log_confirmation with search_query, meal_type, and grams. This is the ONLY way to log food. Do NOT use search_foods for logging—it will break the flow when the user replies "1" or "2".
+6. Food logging: When the user wants to LOG a food (e.g. "log 100g chicken for lunch", "add 1 cup rice for dinner", "log 2 servings oatmeal for breakfast"), you MUST call request_food_log_confirmation with search_query, meal_type, and either grams OR amount+unit. This is the ONLY way to log food. Do NOT use search_foods for logging—it will break the flow when the user replies "1" or "2".
 
 Always personalize your advice based on the user's profile. Respect dietary restrictions (e.g., vegetarian, gluten-free, allergies). Be concise but helpful. If you don't have specific knowledge, say so and give general guidance.
 
@@ -87,7 +87,7 @@ export const classifyIntent = async (
         : "";
   const result = await classifyLlm.invoke(
     `Classify this user message into exactly one intent:
-- log_food: user wants to LOG or ADD a food to their diary (e.g. "log 100g chicken for lunch", "add 50g oatmeal for breakfast", "record 200g rice for dinner")
+- log_food: user wants to LOG or ADD a food to their diary (e.g. "log 100g chicken for lunch", "add 1 cup rice for dinner", "record 2 servings oatmeal for breakfast")
 - nutrition: diet, fitness, macros, meal planning, weight management, health, dietary restrictions (but NOT logging)
 - chitchat: greetings (hi, hello, hey), thanks, how are you, small talk, casual conversation
 - off_topic: politics, weather, tech support, unrelated topics, anything not nutrition or chitchat
@@ -159,16 +159,34 @@ export const chitchatNode = async (state: NutriGuideStateType) => {
   };
 };
 
-const LOG_FOOD_REGEX = /(?:log|add|record)\s+(\d+)\s*g\s+(?:of\s+)?(.+?)(?:\s+for\s+(breakfast|lunch|dinner|snack))?$/i;
+const LOG_FOOD_GRAMS_REGEX = /(?:log|add|record)\s+(\d+)\s*g\s+(?:of\s+)?(.+?)(?:\s+for\s+(breakfast|lunch|dinner|snack))?$/i;
+const LOG_FOOD_PORTION_REGEX =
+  /(?:log|add|record)\s+(\d+(?:\.\d+)?)\s+(cup|cups|serving|servings|oz|tbsp|tsp|piece|pieces|slice|slices)\s+(?:of\s+)?(.+?)(?:\s+for\s+(breakfast|lunch|dinner|snack))?$/i;
 
-function parseLogFoodMessage(text: string): { search_query: string; grams: number; meal_type: string } | null {
-  const m = text.trim().match(LOG_FOOD_REGEX);
-  if (!m) return null;
-  const grams = parseInt(m[1], 10);
-  const search_query = m[2].trim();
-  const meal_type = (m[3] ?? "lunch").toLowerCase();
-  if (!search_query || isNaN(grams) || grams <= 0) return null;
-  return { search_query, grams, meal_type };
+type ParsedLogFood =
+  | { search_query: string; grams: number; meal_type: string }
+  | { search_query: string; amount: number; unit: string; meal_type: string };
+
+function parseLogFoodMessage(text: string): ParsedLogFood | null {
+  const t = text.trim();
+  const gramsMatch = t.match(LOG_FOOD_GRAMS_REGEX);
+  if (gramsMatch) {
+    const grams = parseInt(gramsMatch[1], 10);
+    const search_query = gramsMatch[2].trim();
+    const meal_type = (gramsMatch[3] ?? "lunch").toLowerCase();
+    if (!search_query || isNaN(grams) || grams <= 0) return null;
+    return { search_query, grams, meal_type };
+  }
+  const portionMatch = t.match(LOG_FOOD_PORTION_REGEX);
+  if (portionMatch) {
+    const amount = parseFloat(portionMatch[1]);
+    const unit = portionMatch[2].toLowerCase();
+    const search_query = portionMatch[3].trim();
+    const meal_type = (portionMatch[4] ?? "lunch").toLowerCase();
+    if (!search_query || isNaN(amount) || amount <= 0) return null;
+    return { search_query, amount, unit, meal_type };
+  }
+  return null;
 }
 
 export const logFoodNode = async (state: NutriGuideStateType) => {
@@ -187,17 +205,26 @@ export const logFoodNode = async (state: NutriGuideStateType) => {
     return {
       messages: [
         new AIMessage({
-          content: "I couldn't parse that. Try: 'log 100g chicken for lunch' or 'add 50g oatmeal for breakfast'.",
+          content:
+            "I couldn't parse that. Try: 'log 100g chicken for lunch', 'add 1 cup rice for dinner', or 'log 2 servings oatmeal for breakfast'.",
         }),
       ],
     };
   }
-  const result = await (requestFoodLogConfirmationTool as { invoke: (input: unknown) => Promise<unknown> }).invoke({
+  const toolArgs: Record<string, unknown> = {
     user_id: state.user_id,
     search_query: parsed.search_query,
     meal_type: parsed.meal_type,
-    grams: parsed.grams,
-  });
+  };
+  if ("grams" in parsed) {
+    toolArgs.grams = parsed.grams;
+  } else {
+    toolArgs.amount = parsed.amount;
+    toolArgs.unit = parsed.unit;
+  }
+  const result = await (requestFoodLogConfirmationTool as { invoke: (input: unknown) => Promise<unknown> }).invoke(
+    toolArgs
+  );
   return {
     messages: [new AIMessage({ content: typeof result === "string" ? result : String(result) })],
   };

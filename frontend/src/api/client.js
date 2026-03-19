@@ -93,6 +93,15 @@ export async function searchFoods(query, limit = 25) {
   return data.foods ?? [];
 }
 
+export async function getFoodDetails(fdcId) {
+  const res = await fetch(`${API_BASE}/foods/${fdcId}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error("Failed to fetch food details");
+  }
+  return res.json();
+}
+
 export async function getFoodLogs(userId, date) {
   const dateStr = typeof date === "string" ? date : date.toISOString().slice(0, 10);
   const res = await fetch(`${API_BASE}/users/${userId}/food-logs?date=${dateStr}`);

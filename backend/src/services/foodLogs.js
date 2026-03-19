@@ -29,6 +29,10 @@ export function computeTotals(items) {
   );
 }
 
+/**
+ * Validates a food log item. Required: fdcId, description, referenceGrams, grams, calories, protein, carbs, fat.
+ * Optional (for display): portionDescription, portionAmount.
+ */
 export function validateItem(item) {
   if (!item || typeof item !== "object") return false;
   const { fdcId, description, referenceGrams, grams, calories, protein, carbs, fat } = item;
