@@ -157,7 +157,7 @@ NutriGuide-AI/
 
 - `GET /api/health` — Health check (returns `{ status: "ok" }`)
 - `GET /health` — Same, alternate path
-- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
+- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation (e.g. user said "log 100g chicken for lunch"—reply with "1" or "2" in a follow-up request using the same threadId). The response contains the final AI output only (no intermediate tool outputs or internal details).
 - `GET /api/users/by-name?name=...` — Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for name-based login.
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists.

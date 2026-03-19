@@ -72,6 +72,17 @@ Open http://localhost (port 80)
 
 6. **Date picker** — Change the date to view logs for other days.
 
+### Chat flow (food logging via AI)
+
+You can also log food through the chat widget:
+
+1. Open the chat widget and say e.g. **"log 100g chicken for lunch"**
+2. The agent searches and shows numbered options (1, 2, 3, …)
+3. Reply with a number (e.g. **"1"**) to select and log, or **"cancel"** to abort
+4. The agent confirms the log was created
+
+The agent uses LangGraph interrupts so your reply ("1", "2", etc.) is treated as a selection, not a new message.
+
 ---
 
 ## 3. API Testing (curl)
