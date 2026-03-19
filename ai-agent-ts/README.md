@@ -22,7 +22,7 @@ flowchart TD
 - **respondDecline**: Polite decline for non-nutrition questions
 - **chitchatNode**: Short friendly reply for greetings and small talk (no tools, no RAG)
 - **analyze**: Multi-step reasoning before agent (what user needs, search focus)
-- **agentNode**: LLM with tools (get_user_profile, get_user_behavioural, search_nutrition_knowledge, search_foods)
+- **agentNode**: LLM with tools (get_user_profile, get_user_behavioural, get_calorie_goal, search_nutrition_knowledge, search_foods, create_food_log)
 - **toolNode**: Executes tool calls, loops back to agentNode
 
 ## Chat API
@@ -36,7 +36,7 @@ flowchart TD
 | `state.ts` | Annotation.Root state schema (messages, user_id, classification, analysis) |
 | `nodes.ts` | classifyIntent, respondDecline, chitchatNode, analyze, agentNode, toolNode |
 | `graph.ts` | StateGraph, edges, MemorySaver |
-| `tools.ts` | getUserProfile, getUserBehavioural, searchNutritionKnowledge (RAG), searchFoods (USDA FDC) |
+| `tools.ts` | getUserProfile, getUserBehavioural, getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), createFoodLog |
 | `rag.ts` | Pinecone RAG (embeddings, retriever) |
 | `index.ts` | Exports graph and tools |
 

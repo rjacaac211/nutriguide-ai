@@ -194,10 +194,133 @@ export const searchFoodsTool = tool(
   {
     name: "search_foods",
     description:
-      "Search USDA FoodData Central for foods by name. Use when the user asks 'what should I eat?', 'suggest high-protein foods', or wants specific food options. Returns nutrient info per 100g.",
+      "Search USDA FoodData Central for foods by name. Use when the user asks 'what should I eat?', 'suggest high-protein foods', or wants specific food options. Also use when the user wants to log a food—search first, present options, then use create_food_log after they confirm. Returns nutrient info per 100g.",
     schema: z.object({
       query: z.string().describe("The search query for food name or type"),
       limit: z.number().optional().describe("Max results to return (default 10, max 25)"),
+    }),
+  }
+);
+
+export const getCalorieGoalTool = tool(
+  async ({ user_id }: { user_id: string }) => {
+    try {
+      const res = await fetch(
+        `${BACKEND_URL}/api/internal/users/${user_id}/calorie-goal`,
+        {
+          headers: {
+            "X-Internal-API-Key": INTERNAL_API_KEY,
+          },
+        }
+      );
+      if (!res.ok) {
+        if (res.status === 404) {
+          return `No profile found for user ${user_id}. User has not set up their profile yet.`;
+        }
+        return `Could not fetch calorie goal: ${res.status} ${res.statusText}`;
+      }
+      const data = (await res.json()) as { goalKcal: number; bmr: number | null; tdee: number | null };
+      const { goalKcal, bmr, tdee } = data;
+      if (bmr != null && tdee != null) {
+        return `Calorie goal: ${goalKcal} kcal/day (TDEE: ${tdee}, BMR: ${bmr})`;
+      }
+      return `Calorie goal: ${goalKcal} kcal/day (profile incomplete for TDEE/BMR)`;
+    } catch (err) {
+      return `Error fetching calorie goal: ${(err as Error).message}`;
+    }
+  },
+  {
+    name: "get_calorie_goal",
+    description:
+      "Fetch the user's daily calorie goal based on their profile (TDEE, BMR, goal). Use when discussing calorie targets, deficits, or daily intake. Call with the user_id from the conversation context.",
+    schema: z.object({
+      user_id: z.string().describe("The user ID from the conversation context"),
+    }),
+  }
+);
+
+const foodLogItemSchema = z.object({
+  fdcId: z.number(),
+  description: z.string(),
+  referenceGrams: z.number(),
+  grams: z.number(),
+  calories: z.number(),
+  protein: z.number(),
+  carbs: z.number(),
+  fat: z.number(),
+});
+
+export const createFoodLogTool = tool(
+  async ({
+    user_id,
+    meal_type,
+    items,
+    logged_at,
+  }: {
+    user_id: string;
+    meal_type: string;
+    items: Array<{
+      fdcId: number;
+      description: string;
+      referenceGrams: number;
+      grams: number;
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+    }>;
+    logged_at?: string;
+  }) => {
+    try {
+      const body = {
+        mealType: meal_type,
+        items,
+        ...(logged_at ? { loggedAt: logged_at } : {}),
+      };
+      const res = await fetch(
+        `${BACKEND_URL}/api/internal/users/${user_id}/food-logs`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Internal-API-Key": INTERNAL_API_KEY,
+          },
+          body: JSON.stringify(body),
+        }
+      );
+      if (!res.ok) {
+        const errData = (await res.json().catch(() => ({}))) as { error?: string };
+        return `Could not create food log: ${errData.error ?? res.statusText}`;
+      }
+      const log = (await res.json()) as {
+        mealType: string;
+        items: Array<{ description: string; grams: number; calories: number }>;
+        totalCal?: number;
+      };
+      const itemStr = (log.items ?? [])
+        .map((i) => `${i.description} (${i.grams}g, ${i.calories} cal)`)
+        .join(", ");
+      return `Logged for ${log.mealType}: ${itemStr}. Total: ${log.totalCal ?? 0} cal.`;
+    } catch (err) {
+      return `Error creating food log: ${(err as Error).message}`;
+    }
+  },
+  {
+    name: "create_food_log",
+    description:
+      "Create a food log entry for the user. Call ONLY after the user has confirmed which food to log (e.g. replied '1' or 'the first one' to your options). Requires meal_type (breakfast, lunch, dinner, snack) and items with fdcId, description, referenceGrams, grams, calories, protein, carbs, fat. Build items from search_foods results: referenceGrams=100, grams=user amount, nutrients = (per100g/100)*grams.",
+    schema: z.object({
+      user_id: z.string().describe("The user ID from the conversation context"),
+      meal_type: z
+        .enum(["breakfast", "lunch", "dinner", "snack"])
+        .describe("Meal type for the log"),
+      items: z
+        .array(foodLogItemSchema)
+        .describe("Food items to log (from search_foods, with user-confirmed grams)"),
+      logged_at: z
+        .string()
+        .optional()
+        .describe("Date for the log (YYYY-MM-DD); defaults to today"),
     }),
   }
 );

@@ -14,6 +14,8 @@ import {
   getUserBehaviouralTool,
   searchNutritionKnowledgeTool,
   searchFoodsTool,
+  getCalorieGoalTool,
+  createFoodLogTool,
 } from "./tools.js";
 
 const model = new ChatOpenAI({
@@ -27,6 +29,8 @@ const tools = [
   getUserBehaviouralTool,
   searchNutritionKnowledgeTool,
   searchFoodsTool,
+  getCalorieGoalTool,
+  createFoodLogTool,
 ];
 const toolsByName = Object.fromEntries(tools.map((t) => [t.name, t]));
 const modelWithTools = model.bindTools(tools);
@@ -56,9 +60,16 @@ const AGENT_SYSTEM_PROMPT = `You are NutriGuide, a friendly and knowledgeable nu
 
 Before giving recommendations:
 1. Use get_user_profile to fetch the user's age, weight, goal, dietary restrictions, and activity level when relevant.
-2. Use get_user_behavioural when discussing recent eating habits, calorie/macro intake, or meal patterns—it returns their food logs.
-3. Use search_nutrition_knowledge to look up evidence-based nutrition information for their questions.
-4. Use search_foods when suggesting specific foods or answering "what should I eat?"—it searches USDA FoodData Central.
+2. Use get_calorie_goal when discussing calorie targets, deficits, or daily intake—it returns their TDEE-based goal.
+3. Use get_user_behavioural when discussing recent eating habits, calorie/macro intake, or meal patterns—it returns their food logs.
+4. Use search_nutrition_knowledge to look up evidence-based nutrition information for their questions.
+5. Use search_foods when suggesting specific foods or answering "what should I eat?"—it searches USDA FoodData Central.
+
+Food logging (create_food_log): When the user wants to log a food (e.g. "log 100g hotdog for breakfast"):
+- First use search_foods to find options. Present them as "1) Food A... 2) Food B... Reply with 1 or 2 to log, or say cancel."
+- Only call create_food_log AFTER the user confirms (e.g. "1", "the first one"). Never log without confirmation.
+- If the user says "actually 150g" or "the second one" before confirming, use that. Support edits like "150g instead."
+- After logging, say "Logged X for Y." If they say cancel, acknowledge and do not log.
 
 Always personalize your advice based on the user's profile. Respect dietary restrictions (e.g., vegetarian, gluten-free, allergies). Be concise but helpful. If you don't have specific knowledge, say so and give general guidance.
 
@@ -181,7 +192,7 @@ export const analyze = async (state: NutriGuideStateType) => {
 export const agentNode = async (state: NutriGuideStateType) => {
   const systemParts = [
     AGENT_SYSTEM_PROMPT,
-    `Current user ID for this conversation: ${state.user_id}. Use this ID when calling get_user_profile or get_user_behavioural.`,
+    `Current user ID for this conversation: ${state.user_id}. Use this ID when calling get_user_profile, get_user_behavioural, get_calorie_goal, or create_food_log.`,
   ];
   if (state.analysis) {
     systemParts.push(`\nAnalysis of the user's question:\n${state.analysis}`);

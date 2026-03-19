@@ -1,54 +1,15 @@
 import express from "express";
 import { prisma } from "../db.js";
 import { Prisma } from "@prisma/client";
+import {
+  createFoodLog,
+  MEAL_TYPES,
+  validateItem,
+  computeTotals,
+  serializeLog,
+} from "../services/foodLogs.js";
 
 const router = express.Router();
-
-const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"];
-
-function toNum(v) {
-  if (v == null) return null;
-  if (typeof v === "number" && !isNaN(v)) return v;
-  if (typeof v === "object" && "toNumber" in v) return v.toNumber();
-  const n = parseFloat(v);
-  return isNaN(n) ? null : n;
-}
-
-function computeTotals(items) {
-  if (!Array.isArray(items)) return { cal: 0, protein: 0, carbs: 0, fat: 0 };
-  return items.reduce(
-    (acc, it) => ({
-      cal: acc.cal + (Number(it.calories) || 0),
-      protein: acc.protein + (Number(it.protein) || 0),
-      carbs: acc.carbs + (Number(it.carbs) || 0),
-      fat: acc.fat + (Number(it.fat) || 0),
-    }),
-    { cal: 0, protein: 0, carbs: 0, fat: 0 }
-  );
-}
-
-function validateItem(item) {
-  if (!item || typeof item !== "object") return false;
-  const { fdcId, description, referenceGrams, grams, calories, protein, carbs, fat } = item;
-  if (fdcId == null || !description || referenceGrams == null || grams == null) return false;
-  if (typeof grams !== "number" || grams <= 0) return false;
-  return true;
-}
-
-function serializeLog(log) {
-  return {
-    id: log.id,
-    userId: log.userId,
-    loggedAt: log.loggedAt,
-    mealType: log.mealType,
-    items: log.items ?? [],
-    totalCal: toNum(log.totalCal),
-    totalProtein: toNum(log.totalProtein),
-    totalCarbs: toNum(log.totalCarbs),
-    totalFat: toNum(log.totalFat),
-    createdAt: log.createdAt,
-  };
-}
 
 /**
  * GET /api/users/:id/food-logs?date=YYYY-MM-DD
@@ -91,47 +52,12 @@ router.post("/:id/food-logs", async (req, res) => {
     const userId = req.params.id;
     const { mealType, items, loggedAt } = req.body;
 
-    if (!mealType || !MEAL_TYPES.includes(mealType)) {
-      return res.status(400).json({ error: "mealType must be one of: breakfast, lunch, dinner, snack" });
-    }
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: "items must be a non-empty array" });
-    }
-    for (const it of items) {
-      if (!validateItem(it)) {
-        return res.status(400).json({ error: "Invalid item: requires fdcId, description, referenceGrams, grams, calories, protein, carbs, fat" });
-      }
-    }
-
-    const totals = computeTotals(items);
-    let logDate = new Date();
-    if (loggedAt) {
-      const d = new Date(loggedAt);
-      if (!isNaN(d.getTime())) logDate = d;
-    }
-    logDate.setUTCHours(0, 0, 0, 0);
-
-    await prisma.user.upsert({
-      where: { id: userId },
-      create: { id: userId },
-      update: {},
-    });
-
-    const log = await prisma.foodLog.create({
-      data: {
-        userId,
-        mealType,
-        items,
-        loggedAt: logDate,
-        totalCal: new Prisma.Decimal(totals.cal),
-        totalProtein: new Prisma.Decimal(totals.protein),
-        totalCarbs: new Prisma.Decimal(totals.carbs),
-        totalFat: new Prisma.Decimal(totals.fat),
-      },
-    });
-
-    res.status(201).json(serializeLog(log));
+    const log = await createFoodLog(userId, { mealType, items, loggedAt });
+    res.status(201).json(log);
   } catch (err) {
+    if (err.message?.includes("mealType") || err.message?.includes("items") || err.message?.includes("Invalid item")) {
+      return res.status(400).json({ error: err.message });
+    }
     console.error("Food log create error:", err);
     res.status(500).json({ error: "Failed to create food log" });
   }

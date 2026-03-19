@@ -1,6 +1,8 @@
 import express from "express";
 import { prisma } from "../db.js";
 import { searchFoods } from "../services/fdc.js";
+import { calculateTDEE } from "../services/tdee.js";
+import { createFoodLog } from "../services/foodLogs.js";
 
 const router = express.Router();
 
@@ -102,6 +104,47 @@ router.get("/foods/search", async (req, res) => {
   } catch (err) {
     console.error("Internal food search error:", err);
     res.status(500).json({ error: err.message || "Food search failed" });
+  }
+});
+
+/**
+ * GET /api/internal/users/:id/calorie-goal
+ * Returns user's daily calorie goal (TDEE, BMR).
+ */
+router.get("/users/:id/calorie-goal", async (req, res) => {
+  try {
+    const profile = await prisma.profile.findUnique({
+      where: { userId: req.params.id },
+    });
+    if (!profile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+    const { goalKcal, bmr, tdee } = calculateTDEE(profile);
+    res.json({ goalKcal, bmr, tdee });
+  } catch (err) {
+    console.error("Internal calorie goal error:", err);
+    res.status(500).json({ error: "Failed to get calorie goal" });
+  }
+});
+
+/**
+ * POST /api/internal/users/:id/food-logs
+ * Body: { mealType, items, loggedAt? }
+ * Creates food log for agent use.
+ */
+router.post("/users/:id/food-logs", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { mealType, items, loggedAt } = req.body;
+
+    const log = await createFoodLog(userId, { mealType, items, loggedAt });
+    res.status(201).json(log);
+  } catch (err) {
+    if (err.message?.includes("mealType") || err.message?.includes("items") || err.message?.includes("Invalid item")) {
+      return res.status(400).json({ error: err.message });
+    }
+    console.error("Internal food log create error:", err);
+    res.status(500).json({ error: "Failed to create food log" });
   }
 });
 
