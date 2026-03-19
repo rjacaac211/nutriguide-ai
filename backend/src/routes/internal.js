@@ -2,7 +2,7 @@ import express from "express";
 import { prisma } from "../db.js";
 import { searchFoods } from "../services/fdc.js";
 import { calculateTDEE } from "../services/tdee.js";
-import { createFoodLog, appendFoodLog } from "../services/foodLogs.js";
+import { appendFoodLog } from "../services/foodLogs.js";
 
 const router = express.Router();
 
@@ -145,27 +145,6 @@ router.post("/users/:id/food-logs/append", async (req, res) => {
     }
     console.error("Internal food log append error:", err);
     res.status(500).json({ error: "Failed to append food log" });
-  }
-});
-
-/**
- * POST /api/internal/users/:id/food-logs
- * Body: { mealType, items, loggedAt? }
- * Creates food log for agent use.
- */
-router.post("/users/:id/food-logs", async (req, res) => {
-  try {
-    const userId = req.params.id;
-    const { mealType, items, loggedAt } = req.body;
-
-    const log = await createFoodLog(userId, { mealType, items, loggedAt });
-    res.status(201).json(log);
-  } catch (err) {
-    if (err.message?.includes("mealType") || err.message?.includes("items") || err.message?.includes("Invalid item")) {
-      return res.status(400).json({ error: err.message });
-    }
-    console.error("Internal food log create error:", err);
-    res.status(500).json({ error: "Failed to create food log" });
   }
 });
 
