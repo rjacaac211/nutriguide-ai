@@ -14,7 +14,7 @@ Docker layout and how to run NutriGuide-AI locally vs production.
 | Service | Technology | Port | Description |
 |---------|------------|------|-------------|
 | frontend | React, Vite, Nginx | 80 | React UI, proxies /api to backend |
-| backend | Node.js, Express | 3001 | API, proxies chat to ai-agent, food search (USDA FDC), food logs, weight logs |
+| backend | Node.js, Express | 3001 | API, proxies chat to ai-agent, food search & details (USDA FDC), food logs, weight logs |
 | ai-agent | TypeScript, Express | 8000 | LangGraph.js agent, RAG (Pinecone), OpenAI |
 
 ## Local Development

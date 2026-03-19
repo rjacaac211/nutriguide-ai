@@ -157,12 +157,13 @@ NutriGuide-AI/
 
 - `GET /api/health` — Health check (returns `{ status: "ok" }`)
 - `GET /health` — Same, alternate path
-- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation (e.g. user said "log 100g chicken for lunch"—reply with "1" or "2" in a follow-up request using the same threadId). The response contains the final AI output only (no intermediate tool outputs or internal details).
+- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation (e.g. user said "log 100g chicken for lunch" or "add 1 cup rice for dinner"—reply with "1" or "2" in a follow-up request using the same threadId). The response contains the final AI output only (no intermediate tool outputs or internal details).
 - `GET /api/users/by-name?name=...` — Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for name-based login.
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists.
 - `GET /api/users/:id/calorie-goal` — Get TDEE calorie goal (uses latest WeightLog or profile). Returns `{ goalKcal, bmr, tdee }`
 - `GET /api/foods/search?q=...&limit=25` — Search foods via USDA FoodData Central (proxy)
+- `GET /api/foods/:fdcId` — Fetch full food details including portions (cups, servings, etc.)
 - `GET /api/users/:id/food-logs?date=YYYY-MM-DD` — List food logs for date
 - `POST /api/users/:id/food-logs` — Create food log. Body: `{ mealType, items, loggedAt }`
 - `PUT /api/users/:id/food-logs/:logId` — Update food log
