@@ -9,6 +9,7 @@ import userRoutes from "./routes/users.js";
 import internalRoutes from "./routes/internal.js";
 import foodsRoutes from "./routes/foods.js";
 import foodLogsRoutes from "./routes/foodLogs.js";
+import weightLogsRoutes from "./routes/weightLogs.js";
 
 const app = express();
 const PORT = process.env.PORT;
@@ -25,6 +26,7 @@ app.use("/api/chat", chatRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/foods", foodsRoutes);
 app.use("/api/users", foodLogsRoutes);
+app.use("/api/users", weightLogsRoutes);
 app.use("/api/internal", internalRoutes);
 
 app.get("/api/health", (req, res) => {

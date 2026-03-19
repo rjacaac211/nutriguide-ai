@@ -2,7 +2,7 @@
 
 A production-ready nutrition chatbot that helps users get personalized dietary advice through natural conversation. It combines an AI agent powered by LangGraph and RAG with a React frontend and Node.js/Express backend, demonstrating a full-stack architecture for AI-driven applications.
 
-Users create an account (or log in by name) and complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base and maintains conversation context, so advice adapts to each user's profile and history.
+Users create an account (or log in by name) and complete a short onboarding flow (goals, body metrics, preferences, activity level), then chat with the agent to ask nutrition questions, log meals, and receive tailored recommendations. The agent uses a curated knowledge base, fetches user profiles and recent food logs from the backend, and can search USDA FoodData Central for food suggestions. It maintains conversation context so advice adapts to each user's profile and history.
 
 ## Tech Stack
 
@@ -115,7 +115,7 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 
 1. Open http://localhost:5173
 2. **Create Account** or **Log in** — New users complete onboarding (goal, gender, birth date, height, weight, preferences, activity level, etc.), enter a unique name, and view the goal summary. Returning users click **Log in** and enter their name to access the dashboard.
-3. Use the **dashboard** to see calorie summary (profile-based TDEE), date picker, meals logged (search/add/edit food via USDA FDC API), and activity. Click **Log out** in the header to return to the landing page.
+3. Use the **dashboard** to see calorie summary (TDEE from latest weight log or profile), date picker, meals logged (search/add/edit food via USDA FDC API), weight tracking (add/edit/delete weight logs), and activity. Click **Log out** in the header to return to the landing page.
 4. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
 
 **Session-scoped data:** User profiles are persisted in PostgreSQL. Names must be unique. Conversation memory is session-scoped (per thread). Reloading the page clears the session; use **Log in** with your name to restore your profile.
@@ -141,12 +141,12 @@ NutriGuide-AI/
 │   └── knowledge/     # Nutrition docs for RAG
 ├── backend/           # Express API ([README](backend/README.md))
 │   └── src/
-│       ├── routes/    # /chat, /users, /foods, food logs
-│       ├── services/  # fdc (USDA proxy), tdee
+│       ├── routes/    # /chat, /users, /foods, food logs, weight logs
+│       ├── services/  # fdc (USDA proxy), tdee, foodLogs, weightLogs
 │       └── index.js
 ├── frontend/          # React app ([README](frontend/README.md))
 │   └── src/
-│       ├── components/ # LandingStep, OnboardingWizard, Dashboard, MealsLogged, AddFoodModal, EditFoodModal, DatePicker, ChatWidget, etc.
+│       ├── components/ # LandingStep, OnboardingWizard, Dashboard, MealsLogged, WeightSection, AddFoodModal, AddWeightModal, EditFoodModal, DatePicker, ChatWidget, etc.
 │       ├── config/    # onboardingQuestions
 │       ├── App.css    # Component styles, design tokens
 │       └── api/
@@ -157,16 +157,20 @@ NutriGuide-AI/
 
 - `GET /api/health` — Health check (returns `{ status: "ok" }`)
 - `GET /health` — Same, alternate path
-- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
+- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation (e.g. user said "log 100g chicken for lunch"—reply with "1" or "2" in a follow-up request using the same threadId). The response contains the final AI output only (no intermediate tool outputs or internal details).
 - `GET /api/users/by-name?name=...` — Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for name-based login.
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists.
-- `GET /api/users/:id/calorie-goal` — Get profile-based TDEE calorie goal. Returns `{ goalKcal, bmr, tdee }`
+- `GET /api/users/:id/calorie-goal` — Get TDEE calorie goal (uses latest WeightLog or profile). Returns `{ goalKcal, bmr, tdee }`
 - `GET /api/foods/search?q=...&limit=25` — Search foods via USDA FoodData Central (proxy)
 - `GET /api/users/:id/food-logs?date=YYYY-MM-DD` — List food logs for date
 - `POST /api/users/:id/food-logs` — Create food log. Body: `{ mealType, items, loggedAt }`
 - `PUT /api/users/:id/food-logs/:logId` — Update food log
 - `DELETE /api/users/:id/food-logs/:logId` — Delete food log
+- `GET /api/users/:id/weight-logs?from=YYYY-MM-DD&to=YYYY-MM-DD` — List weight logs (default: last 30 days)
+- `POST /api/users/:id/weight-logs` — Create or replace weight log. Body: `{ weightKg, date, notes? }`
+- `PUT /api/users/:id/weight-logs/:logId` — Update weight log. Body: `{ weightKg?, notes? }`
+- `DELETE /api/users/:id/weight-logs/:logId` — Delete weight log
 
 ## Deployment
 
@@ -177,7 +181,7 @@ For AWS deployment (EC2, ECR, GitHub Actions, Docker Compose), see [docs/DEPLOYM
 | Doc | Description |
 |-----|-------------|
 | [DATABASE_SETUP.md](docs/DATABASE_SETUP.md) | PostgreSQL setup (dev and prod) |
-| [FOOD_LOGGING_TEST.md](docs/FOOD_LOGGING_TEST.md) | Test food logging with USDA FDC |
+| [FOOD_LOGGING_TEST.md](docs/FOOD_LOGGING_TEST.md) | Test food logging (USDA FDC) and weight logging |
 | [RUN-SERVICES-LOCALLY.md](docs/RUN-SERVICES-LOCALLY.md) | Run each service separately for debugging |
 | [DEPLOYMENT.md](docs/DEPLOYMENT.md) | AWS deployment (EC2, ECR, GitHub Actions) |
 | [RUNBOOK.md](docs/RUNBOOK.md) | Operations runbook |

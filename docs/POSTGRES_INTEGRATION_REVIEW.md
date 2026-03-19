@@ -54,7 +54,9 @@ Technical review of the PostgreSQL integration. For setup steps (dev and prod), 
 
 ### Agent Tools
 
-- **Profile fetch**: Uses `BACKEND_URL` and `INTERNAL_API_KEY` from `process.env`
+- **Profile fetch**: Uses `BACKEND_URL` and `INTERNAL_API_KEY` from `process.env`; calls `GET /api/internal/users/:id/profile`
+- **Behavioural fetch**: Calls `GET /api/internal/users/:id/behavioural?days=7`; returns food logs and weight trend
+- **Food search**: Calls `GET /api/internal/foods/search?q=...&limit=...`; backend proxies to USDA FDC
 - **Format**: Maps internal API camelCase (weightKg, etc.) to LLM string format – correct
 
 ---

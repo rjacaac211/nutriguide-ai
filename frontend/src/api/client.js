@@ -163,3 +163,50 @@ export async function deleteFoodLogItem(userId, logId, itemIndex) {
     throw new Error(err.error || "Failed to delete item");
   }
 }
+
+export async function getWeightLogs(userId, from, to) {
+  const params = new URLSearchParams();
+  if (from) params.set("from", typeof from === "string" ? from : from.toISOString().slice(0, 10));
+  if (to) params.set("to", typeof to === "string" ? to : to.toISOString().slice(0, 10));
+  const qs = params.toString();
+  const res = await fetch(`${API_BASE}/users/${userId}/weight-logs${qs ? `?${qs}` : ""}`);
+  if (!res.ok) throw new Error("Failed to fetch weight logs");
+  const data = await res.json();
+  return data.logs ?? [];
+}
+
+export async function createWeightLog(userId, { weightKg, date, notes }) {
+  const res = await fetch(`${API_BASE}/users/${userId}/weight-logs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ weightKg, date, notes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to create weight log");
+  }
+  return res.json();
+}
+
+export async function updateWeightLog(userId, logId, { weightKg, notes }) {
+  const res = await fetch(`${API_BASE}/users/${userId}/weight-logs/${logId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ weightKg, notes }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to update weight log");
+  }
+  return res.json();
+}
+
+export async function deleteWeightLog(userId, logId) {
+  const res = await fetch(`${API_BASE}/users/${userId}/weight-logs/${logId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to delete weight log");
+  }
+}

@@ -43,13 +43,13 @@ npm run preview
 - **Landing** — Create Account (onboarding) or Log in (name-based, no password)
 - **Onboarding Wizard** — Multi-step questionnaire (goal, gender, birth date, height, weight, preferences, activity, speed of change)
 - **Loading & Summary** — Progress animation, name entry (unique names enforced), goal summary with calculated target date
-- **Dashboard** — Date picker, calorie summary (eaten/remaining/burned from profile-based TDEE), meals logged (Breakfast, Lunch, Dinner, Snack) with add/edit/delete via USDA food search, activity section, **Log out** button
+- **Dashboard** — Date picker, calorie summary (eaten/remaining/burned from TDEE using latest weight log or profile), meals logged (Breakfast, Lunch, Dinner, Snack) with add/edit/delete via USDA food search, weight section (add/edit/delete weight logs for selected date), activity section, **Log out** button
 - **Chat Widget** — Floating, collapsible AI chat (bottom-right) for nutrition Q&A; **New chat** starts a fresh conversation
 - **Chat display** — User message appears immediately when sent; NutriGuide shows "Thinking..." while the AI responds; only the final AI output is displayed (no internal tool outputs, profile dumps, or RAG labels)
 - **Session-scoped** — Profile and chat use `sessionId` (userId); reload clears session; users log in again with their name to restore access
 - **API Proxy** — `/api` requests forwarded to backend
 
-Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` with the final AI output; the frontend appends each user message and assistant response to local state.
+Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation; the frontend appends each user message and assistant response to local state.
 
 ## UI / Design
 
@@ -70,10 +70,10 @@ frontend/
 ├── src/
 │   ├── components/   # LandingStep, OnboardingWizard, QuestionSlide, LoadingScreen,
 │   │                 # EnterNameStep, GoalSummaryStep, Dashboard, CalorieSummary,
-│   │                 # MealsLogged, AddFoodModal, EditFoodModal, DatePicker,
-│   │                 # ActivitySection, ChatWidget, Chat
+│   │                 # MealsLogged, WeightSection, AddFoodModal, AddWeightModal,
+│   │                 # EditFoodModal, DatePicker, ActivitySection, ChatWidget, Chat
 │   ├── config/       # onboardingQuestions.js
-│   ├── api/          # API client (profile, chat, foods, food logs)
+│   ├── api/          # API client (profile, chat, foods, food logs, weight logs)
 │   ├── App.css       # Component styles, design tokens
 │   ├── index.css     # Global styles
 │   └── ...

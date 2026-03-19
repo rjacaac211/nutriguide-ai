@@ -6,4 +6,5 @@ export interface ChatRequest {
 
 export interface ChatResponse {
   response: string;
+  interrupted?: boolean;
 }

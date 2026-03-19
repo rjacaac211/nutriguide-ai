@@ -54,8 +54,9 @@ Open http://localhost (port 80)
 
 2. **Dashboard** — You should see:
    - Date picker (default: today)
-   - Calorie summary (Eaten, Goal, Burned)
+   - Calorie summary (Eaten, Goal, Burned; goal from TDEE using latest weight log or profile)
    - Meals: Breakfast, Lunch, Dinner, Snack with "+" buttons
+   - Weight: current weight for selected date, add/edit/delete weight logs
 
 3. **Add food** — Click "+" on any meal:
    - Search: type "chicken" or "apple" (min 2 chars)
@@ -71,6 +72,17 @@ Open http://localhost (port 80)
    - Click "Save" or "Remove"
 
 6. **Date picker** — Change the date to view logs for other days.
+
+### Chat flow (food logging via AI)
+
+You can also log food through the chat widget:
+
+1. Open the chat widget and say e.g. **"log 100g chicken for lunch"**
+2. The agent searches and shows numbered options (1, 2, 3, …)
+3. Reply with a number (e.g. **"1"**) to select and log, or **"cancel"** to abort
+4. The agent confirms the log was created
+
+The agent uses LangGraph interrupts so your reply ("1", "2", etc.) is treated as a selection, not a new message. You can log multiple foods for the same meal (e.g. chicken then rice for lunch); they are merged into one log.
 
 ---
 
@@ -125,6 +137,29 @@ curl -X PUT "http://localhost:3001/api/users/YOUR_USER_ID/food-logs/LOG_ID" `
 curl -X DELETE "http://localhost:3001/api/users/YOUR_USER_ID/food-logs/LOG_ID"
 ```
 
+### Weight logs
+
+```powershell
+# List weight logs (default: last 30 days)
+curl "http://localhost:3001/api/users/YOUR_USER_ID/weight-logs"
+
+# List for date range
+curl "http://localhost:3001/api/users/YOUR_USER_ID/weight-logs?from=2025-03-01&to=2025-03-19"
+
+# Create or replace weight log for date
+curl -X POST "http://localhost:3001/api/users/YOUR_USER_ID/weight-logs" `
+  -H "Content-Type: application/json" `
+  -d '{"weightKg": 70, "date": "2025-03-19", "notes": "morning"}'
+
+# Update weight log
+curl -X PUT "http://localhost:3001/api/users/YOUR_USER_ID/weight-logs/LOG_ID" `
+  -H "Content-Type: application/json" `
+  -d '{"weightKg": 71, "notes": "updated"}'
+
+# Delete weight log
+curl -X DELETE "http://localhost:3001/api/users/YOUR_USER_ID/weight-logs/LOG_ID"
+```
+
 ---
 
 ## 4. USDA FDC API Reference
@@ -148,6 +183,6 @@ Nutrient IDs used: 208 (kcal), 203 (protein), 205 (carbs), 204 (fat).
 | Food search returns 500 | Verify API key is valid; check backend logs |
 | Calorie goal 404 | Complete onboarding so profile exists |
 | Empty food logs | Ensure `date` query param is YYYY-MM-DD |
-| No profile for TDEE | Profile needs `height_cm`, `weight_kg`, `age`, `gender` |
+| No profile for TDEE | Profile needs `height_cm`, `weight_kg` (or WeightLog), `age`, `gender` |
 
 **Note:** The USDA FDC search API returns nutrients with `value` instead of `amount` (see [USDA/USDA-APIs#102](https://github.com/USDA/USDA-APIs/issues/102)). The backend `fdc.js` service handles both for compatibility.
