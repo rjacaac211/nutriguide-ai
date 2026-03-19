@@ -23,7 +23,7 @@ flowchart TD
 - **classifyIntent**: Routes to respondDecline (off-topic), chitchatNode (greetings/small talk), logFoodNode (log/add food), or analyze (nutrition)
 - **respondDecline**: Polite decline for non-nutrition questions
 - **chitchatNode**: Short friendly reply for greetings and small talk (no tools, no RAG)
-- **logFoodNode**: Direct path for food logging (e.g. "log 100g chicken for lunch"). Uses `request_food_log_confirmation` with LangGraph interrupt—pauses for user to reply "1"/"2"/"cancel", then creates the log
+- **logFoodNode**: Direct path for food logging (e.g. "log 100g chicken for lunch"). Uses `request_food_log_confirmation` with LangGraph interrupt—pauses for user to reply "1"/"2"/"cancel", then appends to or creates the log. Multiple foods for the same meal are merged into one log.
 - **analyze**: Multi-step reasoning before agent (what user needs, search focus)
 - **agentNode**: LLM with tools (get_user_profile, get_user_behavioural, get_calorie_goal, search_nutrition_knowledge, search_foods, request_food_log_confirmation)
 - **toolNode**: Executes tool calls, loops back to agentNode

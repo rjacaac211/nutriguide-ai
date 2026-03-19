@@ -81,7 +81,7 @@ You can also log food through the chat widget:
 3. Reply with a number (e.g. **"1"**) to select and log, or **"cancel"** to abort
 4. The agent confirms the log was created
 
-The agent uses LangGraph interrupts so your reply ("1", "2", etc.) is treated as a selection, not a new message.
+The agent uses LangGraph interrupts so your reply ("1", "2", etc.) is treated as a selection, not a new message. You can log multiple foods for the same meal (e.g. chicken then rice for lunch); they are merged into one log.
 
 ---
 

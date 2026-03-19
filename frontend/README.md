@@ -49,7 +49,7 @@ npm run preview
 - **Session-scoped** — Profile and chat use `sessionId` (userId); reload clears session; users log in again with their name to restore access
 - **API Proxy** — `/api` requests forwarded to backend
 
-Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` with the final AI output; the frontend appends each user message and assistant response to local state.
+Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation; the frontend appends each user message and assistant response to local state.
 
 ## UI / Design
 
