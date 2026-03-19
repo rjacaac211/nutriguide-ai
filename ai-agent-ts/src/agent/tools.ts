@@ -333,7 +333,7 @@ export const requestFoodLogConfirmationTool = tool(
         ...(logged_at ? { loggedAt: logged_at } : {}),
       };
       const createRes = await fetch(
-        `${BACKEND_URL}/api/internal/users/${user_id}/food-logs`,
+        `${BACKEND_URL}/api/internal/users/${user_id}/food-logs/append`,
         {
           method: "POST",
           headers: {

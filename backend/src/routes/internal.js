@@ -2,7 +2,7 @@ import express from "express";
 import { prisma } from "../db.js";
 import { searchFoods } from "../services/fdc.js";
 import { calculateTDEE } from "../services/tdee.js";
-import { createFoodLog } from "../services/foodLogs.js";
+import { createFoodLog, appendFoodLog } from "../services/foodLogs.js";
 
 const router = express.Router();
 
@@ -124,6 +124,27 @@ router.get("/users/:id/calorie-goal", async (req, res) => {
   } catch (err) {
     console.error("Internal calorie goal error:", err);
     res.status(500).json({ error: "Failed to get calorie goal" });
+  }
+});
+
+/**
+ * POST /api/internal/users/:id/food-logs/append
+ * Body: { mealType, items, loggedAt? }
+ * Appends items to existing log for date+mealType, or creates new one. Used by agent.
+ */
+router.post("/users/:id/food-logs/append", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const { mealType, items, loggedAt } = req.body;
+
+    const log = await appendFoodLog(userId, { mealType, items, loggedAt });
+    res.status(200).json(log);
+  } catch (err) {
+    if (err.message?.includes("mealType") || err.message?.includes("items") || err.message?.includes("Invalid item")) {
+      return res.status(400).json({ error: err.message });
+    }
+    console.error("Internal food log append error:", err);
+    res.status(500).json({ error: "Failed to append food log" });
   }
 });
 
