@@ -59,7 +59,7 @@ cd backend
 npm run migrate dev
 ```
 
-This applies Prisma migrations and creates the schema (User, Profile, FoodLog, etc.).
+This applies Prisma migrations and creates the schema (User, Profile, FoodLog, WeightLog, etc.).
 
 ### 5. Verify
 

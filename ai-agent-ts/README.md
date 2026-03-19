@@ -39,7 +39,7 @@ flowchart TD
 | `state.ts` | Annotation.Root state schema (messages, user_id, classification, analysis) |
 | `nodes.ts` | classifyIntent, respondDecline, chitchatNode, logFoodNode, analyze, agentNode, toolNode |
 | `graph.ts` | StateGraph, edges, MemorySaver |
-| `tools.ts` | getUserProfile, getUserBehavioural, getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), requestFoodLogConfirmation (interrupt-based logging) |
+| `tools.ts` | getUserProfile, getUserBehavioural (food logs + weight trend), getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), requestFoodLogConfirmation (interrupt-based logging) |
 | `rag.ts` | Pinecone RAG (embeddings, retriever) |
 | `index.ts` | Exports graph and tools |
 | `scripts/test-chat-direct.ts` | Direct agent test (bypasses HTTP); run with `npm run test:chat` |

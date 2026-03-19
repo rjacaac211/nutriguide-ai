@@ -61,7 +61,7 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | POST | `/api/chat` | Send message to agent. Body: `{ userId, message, threadId }` (userId = sessionId). Returns `{ response }` with the final AI output only. |
 | GET | `/api/users/by-name?name=...` | Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for login. |
 | GET | `/api/users/:id/profile` | Get user profile (id = sessionId) |
-| PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists. |
+| PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists. When `weight_kg` is provided and the user has no weight logs, seeds an initial WeightLog for today. |
 | GET | `/api/users/:id/calorie-goal` | Get TDEE calorie goal. Uses latest WeightLog weight when available, else profile. Returns `{ goalKcal, bmr, tdee }` |
 | GET | `/api/foods/search?q=...&limit=25` | Search foods via USDA FoodData Central (proxy) |
 | GET | `/api/users/:id/food-logs?date=YYYY-MM-DD` | List food logs for date |
@@ -87,6 +87,8 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | POST | `/api/internal/users/:id/food-logs/append` | Append items to existing log or create new one (agent use) |
 
 **Note:** User profiles are persisted in PostgreSQL. Profiles are keyed by userId; names must be unique. Users can log in by name via `GET /api/users/by-name`. Reloading the frontend clears the session; users log in again with their name to restore access.
+
+**Weight logs:** WeightLog is the source of truth for current weight. `profile.weight_kg` is synced to the latest WeightLog on create/update/delete. Calorie goal uses latest WeightLog when available, else profile.
 
 ## Structure
 

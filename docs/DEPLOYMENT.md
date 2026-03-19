@@ -60,7 +60,7 @@ If you already have AWS and EC2 set up:
 | Document | Description |
 |----------|-------------|
 | [DATABASE_SETUP.md](DATABASE_SETUP.md) | PostgreSQL setup (dev and prod, including RDS) |
-| [FOOD_LOGGING_TEST.md](FOOD_LOGGING_TEST.md) | Test food logging with USDA FDC |
+| [FOOD_LOGGING_TEST.md](FOOD_LOGGING_TEST.md) | Test food logging (USDA FDC) and weight logging |
 | [AWS-SETUP.md](AWS-SETUP.md) | Step-by-step AWS Console setup (ECR, IAM, EC2) |
 | [EC2-SETUP.md](EC2-SETUP.md) | Commands to run on a fresh EC2 instance |
 | [CICD.md](CICD.md) | GitHub Actions pipeline, secrets, variables |
