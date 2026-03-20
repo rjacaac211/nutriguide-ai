@@ -8,6 +8,3 @@ dist/
 *.log
 .DS_Store
 .ipynb_checkpoints/
-
-# Temporary reference (do not commit)
-GOALS.md
