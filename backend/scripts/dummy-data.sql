@@ -43,7 +43,7 @@ VALUES (
   NOW()
 );
 
--- 3. Food logs (last 30 days, ~115 meals with varied foods)
+-- 3. Food logs (last 30 days, ~115 meals, last 7 days ~2120 kcal/day)
 INSERT INTO food_log (id, user_id, logged_at, meal_type, items, total_cal, total_protein, total_carbs, total_fat, created_at)
 VALUES
   -- Day -30
@@ -358,91 +358,41 @@ VALUES
   (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 7) + TIME '19:00', 'dinner',
    '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 170, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4}]'::jsonb,
    353.60, 34.68, 0, 22.78, NOW()),
-  -- Day -6
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 6) + TIME '08:00', 'breakfast',
-   '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 150, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1}]'::jsonb,
-   358.50, 40.95, 0, 21.15, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 6) + TIME '12:30', 'lunch',
-   '[{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 200, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb,
-   260.00, 4.80, 56.40, 0.60, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 6) + TIME '15:30', 'snack',
-   '[{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb,
-   105.02, 1.30, 26.90, 0.35, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 6) + TIME '18:30', 'dinner',
-   '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 170, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4}]'::jsonb,
-   353.60, 34.68, 0, 22.78, NOW()),
-  -- Day -5
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 5) + TIME '07:45', 'breakfast',
-   '[{"fdcId": 173410, "description": "Oatmeal, regular, cooked", "referenceGrams": 100, "grams": 234, "calories": 68, "protein": 2.4, "carbs": 12, "fat": 1.4}]'::jsonb,
-   159.12, 5.62, 28.08, 3.28, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 5) + TIME '12:15', 'lunch',
-   '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 180, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 150, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb,
-   524.20, 54.04, 42.30, 25.69, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 5) + TIME '16:00', 'snack',
-   '[{"fdcId": 172421, "description": "Almonds", "referenceGrams": 100, "grams": 28, "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9}]'::jsonb,
-   162.12, 5.94, 6.05, 13.97, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 5) + TIME '19:00', 'dinner',
-   '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 170, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4}]'::jsonb,
-   353.60, 34.68, 0, 22.78, NOW()),
-  -- Day -4
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 4) + TIME '08:00', 'breakfast',
-   '[{"fdcId": 171688, "description": "Egg, whole, cooked, scrambled", "referenceGrams": 100, "grams": 100, "calories": 149, "protein": 10.1, "carbs": 1.6, "fat": 11.2}]'::jsonb,
-   149.00, 10.10, 1.60, 11.20, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 4) + TIME '12:00', 'lunch',
-   '[{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 150, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3},{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 100, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1}]'::jsonb,
-   434.00, 29.70, 42.30, 14.40, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 4) + TIME '15:30', 'snack',
-   '[{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb,
-   105.02, 1.30, 26.90, 0.35, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 4) + TIME '18:30', 'dinner',
-   '[{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 180, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3},{"fdcId": 170288, "description": "Broccoli, raw", "referenceGrams": 100, "grams": 150, "calories": 34, "protein": 2.8, "carbs": 7, "fat": 0.4}]'::jsonb,
-   271.20, 7.80, 56.60, 1.05, NOW()),
-  -- Day -3
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 3) + TIME '08:15', 'breakfast',
-   '[{"fdcId": 173410, "description": "Oatmeal, regular, cooked", "referenceGrams": 100, "grams": 234, "calories": 68, "protein": 2.4, "carbs": 12, "fat": 1.4},{"fdcId": 171688, "description": "Egg, whole, cooked, scrambled", "referenceGrams": 100, "grams": 100, "calories": 149, "protein": 10.1, "carbs": 1.6, "fat": 11.2}]'::jsonb,
-   308.12, 12.50, 29.68, 14.54, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 3) + TIME '12:45', 'lunch',
-   '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 120, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4}]'::jsonb,
-   249.60, 24.48, 0, 16.08, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 3) + TIME '18:30', 'dinner',
-   '[{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 180, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3},{"fdcId": 170288, "description": "Broccoli, raw", "referenceGrams": 100, "grams": 150, "calories": 34, "protein": 2.8, "carbs": 7, "fat": 0.4}]'::jsonb,
-   271.20, 7.80, 56.60, 1.05, NOW()),
-  -- Day -2
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 2) + TIME '07:30', 'breakfast',
-   '[{"fdcId": 171688, "description": "Egg, whole, cooked, scrambled", "referenceGrams": 100, "grams": 120, "calories": 149, "protein": 10.1, "carbs": 1.6, "fat": 11.2}]'::jsonb,
-   178.80, 12.12, 1.92, 13.44, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 2) + TIME '12:30', 'lunch',
-   '[{"fdcId": 175169, "description": "Tuna, canned light", "referenceGrams": 100, "grams": 150, "calories": 116, "protein": 25.5, "carbs": 0, "fat": 0.8}]'::jsonb,
-   174.00, 38.25, 0, 1.20, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 2) + TIME '16:00', 'snack',
-   '[{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb,
-   105.02, 1.30, 26.90, 0.35, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 2) + TIME '19:00', 'dinner',
-   '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 200, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 150, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb,
-   568.50, 57.18, 42.30, 28.65, NOW()),
-  -- Day -1
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 1) + TIME '08:00', 'breakfast',
-   '[{"fdcId": 174270, "description": "Greek yogurt, plain, nonfat", "referenceGrams": 100, "grams": 170, "calories": 59, "protein": 10.2, "carbs": 3.6, "fat": 0.7}]'::jsonb,
-   100.30, 17.34, 6.12, 1.19, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 1) + TIME '12:00', 'lunch',
-   '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 200, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1}]'::jsonb,
-   478.00, 54.60, 0, 28.20, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 1) + TIME '19:15', 'dinner',
-   '[{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 200, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3},{"fdcId": 170288, "description": "Broccoli, raw", "referenceGrams": 100, "grams": 100, "calories": 34, "protein": 2.8, "carbs": 7, "fat": 0.4}]'::jsonb,
-   328.00, 8.00, 63.40, 0.70, NOW()),
-  -- Day 0 (today)
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', CURRENT_DATE + TIME '08:00', 'breakfast',
-   '[{"fdcId": 173410, "description": "Oatmeal, regular, cooked", "referenceGrams": 100, "grams": 234, "calories": 68, "protein": 2.4, "carbs": 12, "fat": 1.4}]'::jsonb,
-   159.12, 5.62, 28.08, 3.28, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', CURRENT_DATE + TIME '12:30', 'lunch',
-   '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 150, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4}]'::jsonb,
-   312.00, 30.60, 0, 20.10, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', CURRENT_DATE + TIME '16:00', 'snack',
-   '[{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb,
-   105.02, 1.30, 26.90, 0.35, NOW()),
-  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', CURRENT_DATE + TIME '19:00', 'dinner',
-   '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 150, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 150, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb,
-   553.50, 44.55, 42.30, 21.60, NOW());
+  -- Day -6 (~2120 kcal)
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 6) + TIME '08:00', 'breakfast', '[{"fdcId": 173410, "description": "Oatmeal, regular, cooked", "referenceGrams": 100, "grams": 350, "calories": 68, "protein": 2.4, "carbs": 12, "fat": 1.4},{"fdcId": 171688, "description": "Egg, whole, cooked, scrambled", "referenceGrams": 100, "grams": 100, "calories": 149, "protein": 10.1, "carbs": 1.6, "fat": 11.2},{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 100, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb, 437.00, 18.00, 44.80, 15.90, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 6) + TIME '12:30', 'lunch', '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 200, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3},{"fdcId": 170288, "description": "Broccoli, raw", "referenceGrams": 100, "grams": 100, "calories": 34, "protein": 2.8, "carbs": 7, "fat": 0.4}]'::jsonb, 649.00, 58.80, 77.50, 35.85, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 6) + TIME '15:30', 'snack', '[{"fdcId": 172421, "description": "Almonds", "referenceGrams": 100, "grams": 28, "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9}]'::jsonb, 162.12, 5.94, 6.05, 13.97, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 6) + TIME '19:00', 'dinner', '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 250, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 845.00, 57.00, 70.50, 33.50, NOW()),
+  -- Day -5 (~2120 kcal)
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 5) + TIME '08:00', 'breakfast', '[{"fdcId": 174270, "description": "Greek yogurt, plain, nonfat", "referenceGrams": 100, "grams": 200, "calories": 59, "protein": 10.2, "carbs": 3.6, "fat": 0.7},{"fdcId": 172421, "description": "Almonds", "referenceGrams": 100, "grams": 28, "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9},{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb, 322.00, 24.00, 37.20, 15.50, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 5) + TIME '12:00', 'lunch', '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 200, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 676.00, 56.40, 70.50, 26.80, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 5) + TIME '16:00', 'snack', '[{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb, 105.02, 1.30, 26.90, 0.35, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 5) + TIME '19:00', 'dinner', '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 250, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 300, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 987.50, 70.35, 84.60, 35.55, NOW()),
+  -- Day -4 (~2120 kcal)
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 4) + TIME '08:00', 'breakfast', '[{"fdcId": 171688, "description": "Egg, whole, cooked, scrambled", "referenceGrams": 100, "grams": 120, "calories": 149, "protein": 10.1, "carbs": 1.6, "fat": 11.2},{"fdcId": 172422, "description": "Whole wheat bread", "referenceGrams": 100, "grams": 80, "calories": 247, "protein": 12.5, "carbs": 41.3, "fat": 3.4}]'::jsonb, 394.96, 22.12, 35.44, 14.18, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 4) + TIME '12:30', 'lunch', '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 200, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 763.00, 59.40, 70.50, 35.55, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 4) + TIME '15:30', 'snack', '[{"fdcId": 174270, "description": "Greek yogurt, plain, nonfat", "referenceGrams": 100, "grams": 150, "calories": 59, "protein": 10.2, "carbs": 3.6, "fat": 0.7}]'::jsonb, 88.50, 15.30, 5.40, 1.05, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 4) + TIME '19:00', 'dinner', '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 250, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 300, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 814.00, 55.20, 84.60, 33.50, NOW()),
+  -- Day -3 (~2120 kcal)
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 3) + TIME '08:00', 'breakfast', '[{"fdcId": 173410, "description": "Oatmeal, regular, cooked", "referenceGrams": 100, "grams": 350, "calories": 68, "protein": 2.4, "carbs": 12, "fat": 1.4},{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb, 346.00, 8.95, 56.90, 5.50, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 3) + TIME '12:00', 'lunch', '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 200, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 676.00, 56.40, 70.50, 26.80, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 3) + TIME '16:00', 'snack', '[{"fdcId": 172421, "description": "Almonds", "referenceGrams": 100, "grams": 28, "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9}]'::jsonb, 162.12, 5.94, 6.05, 13.97, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 3) + TIME '19:00', 'dinner', '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 250, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 922.50, 74.25, 70.50, 35.55, NOW()),
+  -- Day -2 (~2120 kcal)
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 2) + TIME '08:00', 'breakfast', '[{"fdcId": 171688, "description": "Egg, whole, cooked, scrambled", "referenceGrams": 100, "grams": 120, "calories": 149, "protein": 10.1, "carbs": 1.6, "fat": 11.2},{"fdcId": 172422, "description": "Whole wheat bread", "referenceGrams": 100, "grams": 80, "calories": 247, "protein": 12.5, "carbs": 41.3, "fat": 3.4}]'::jsonb, 394.96, 22.12, 35.44, 14.18, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 2) + TIME '12:30', 'lunch', '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 200, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 763.00, 59.40, 70.50, 35.55, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 2) + TIME '15:30', 'snack', '[{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3}]'::jsonb, 105.02, 1.30, 26.90, 0.35, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 2) + TIME '19:00', 'dinner', '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 250, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 845.00, 57.00, 70.50, 33.50, NOW()),
+  -- Day -1 (~2120 kcal)
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 1) + TIME '08:00', 'breakfast', '[{"fdcId": 173410, "description": "Oatmeal, regular, cooked", "referenceGrams": 100, "grams": 350, "calories": 68, "protein": 2.4, "carbs": 12, "fat": 1.4},{"fdcId": 171688, "description": "Egg, whole, cooked, scrambled", "referenceGrams": 100, "grams": 100, "calories": 149, "protein": 10.1, "carbs": 1.6, "fat": 11.2}]'::jsonb, 487.00, 12.50, 44.80, 15.90, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 1) + TIME '12:00', 'lunch', '[{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3},{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 200, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1}]'::jsonb, 763.00, 59.40, 70.50, 35.55, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 1) + TIME '16:00', 'snack', '[{"fdcId": 172421, "description": "Almonds", "referenceGrams": 100, "grams": 28, "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9}]'::jsonb, 162.12, 5.94, 6.05, 13.97, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', (CURRENT_DATE - 1) + TIME '19:00', 'dinner', '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 220, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 150, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 721.00, 62.46, 42.30, 31.02, NOW()),
+  -- Day 0 (today, ~2120 kcal)
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', CURRENT_DATE + TIME '08:00', 'breakfast', '[{"fdcId": 174270, "description": "Greek yogurt, plain, nonfat", "referenceGrams": 100, "grams": 200, "calories": 59, "protein": 10.2, "carbs": 3.6, "fat": 0.7},{"fdcId": 173944, "description": "Banana, raw", "referenceGrams": 100, "grams": 118, "calories": 89, "protein": 1.1, "carbs": 22.8, "fat": 0.3},{"fdcId": 172421, "description": "Almonds", "referenceGrams": 100, "grams": 28, "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9}]'::jsonb, 395.02, 27.56, 37.25, 15.97, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', CURRENT_DATE + TIME '12:30', 'lunch', '[{"fdcId": 175168, "description": "Salmon, Atlantic, cooked", "referenceGrams": 100, "grams": 200, "calories": 208, "protein": 20.4, "carbs": 0, "fat": 13.4},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 676.00, 56.40, 70.50, 26.80, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', CURRENT_DATE + TIME '16:00', 'snack', '[{"fdcId": 172421, "description": "Almonds", "referenceGrams": 100, "grams": 28, "calories": 579, "protein": 21.2, "carbs": 21.6, "fat": 49.9}]'::jsonb, 162.12, 5.94, 6.05, 13.97, NOW()),
+  (gen_random_uuid(), '11111111-1111-1111-1111-111111111111', CURRENT_DATE + TIME '19:00', 'dinner', '[{"fdcId": 171705, "description": "Chicken, broiler, roasted", "referenceGrams": 100, "grams": 250, "calories": 239, "protein": 27.3, "carbs": 0, "fat": 14.1},{"fdcId": 169098, "description": "Rice, white, cooked", "referenceGrams": 100, "grams": 250, "calories": 130, "protein": 2.4, "carbs": 28.2, "fat": 0.3}]'::jsonb, 922.50, 74.25, 70.50, 35.55, NOW());
 
 -- 4. Weight logs (last 30 days, trending 83 → 80 kg)
 INSERT INTO weight_log (id, user_id, weight_kg, date, logged_at, notes)
