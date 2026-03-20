@@ -32,17 +32,21 @@ flowchart TD
 
 `POST /chat` — Request: `{ user_id, message, thread_id }`. Returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation. The response contains the final AI output (extracted from the last assistant message; intermediate tool outputs, user profile dumps, and RAG content are not included). When `interrupted` is true, the client should display the options and send the user's next reply (e.g. "1" or "2") in a follow-up request with the same `thread_id`—the agent resumes with that value and creates the log. The user ID is passed to the agent via a system message so it never appears in chat bubbles.
 
-## Project structure (src/agent/)
+## Project structure (src/)
 
-| File | Description |
+| Path | Description |
 |------|-------------|
-| `state.ts` | Annotation.Root state schema (messages, user_id, classification, analysis) |
-| `nodes.ts` | classifyIntent, respondDecline, chitchatNode, logFoodNode, analyze, agentNode, toolNode |
-| `graph.ts` | StateGraph, edges, MemorySaver |
-| `tools.ts` | getUserProfile, getUserBehavioural (food logs + weight trend), getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), requestFoodLogConfirmation (interrupt-based logging; accepts grams or amount+unit) |
-| `rag.ts` | Pinecone RAG (embeddings, retriever) |
-| `index.ts` | Exports graph and tools |
+| `agent/state.ts` | Annotation.Root state schema (messages, user_id, classification, analysis) |
+| `agent/nodes.ts` | classifyIntent, respondDecline, chitchatNode, logFoodNode, analyze, agentNode, toolNode |
+| `agent/graph.ts` | StateGraph, edges, MemorySaver |
+| `agent/tools.ts` | getUserProfile, getUserBehavioural (food logs + weight trend), getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), requestFoodLogConfirmation (interrupt-based logging; accepts grams or amount+unit) |
+| `agent/rag.ts` | Pinecone RAG (embeddings, retriever) |
+| `agent/index.ts` | Exports graph and tools |
+| `eval/dataset.ts` | Evaluation examples (intent, off-topic, chitchat, log-food, nutrition) |
+| `eval/target.ts` | Target function that invokes the graph for evaluation |
+| `eval/evaluators.ts` | Code evaluators (intent, off-topic, chitchat, log-food, tools, response quality) |
 | `scripts/test-chat-direct.ts` | Direct agent test (bypasses HTTP); run with `npm run test:chat` |
+| `scripts/run-eval.ts` | Offline evaluation runner; run with `npm run eval` |
 
 ## Setup
 
@@ -75,6 +79,29 @@ npm run test:chat
 ```
 
 Runs a two-turn test: "log 100g chicken for lunch" → interrupt → resume with "1" → logs food. Useful for verifying the interrupt flow without the UI. The agent also supports amount+unit (e.g. "log 1 cup rice for dinner").
+
+## Evaluation
+
+```bash
+npm run eval
+```
+
+Runs offline evaluation on a curated dataset (~43 examples) covering intent classification, off-topic handling, chitchat, log-food parsing, tool selection, and final response quality.
+
+**Prerequisites:** Backend running at `BACKEND_URL`, and `OPENAI_API_KEY`, `BACKEND_URL`, `INTERNAL_API_KEY`, `PINECONE_*` in `.env`.
+
+**Evaluators:**
+
+| Evaluator | Measures |
+|-----------|----------|
+| intent_correct | Intent classification matches expected (chitchat, off_topic, log_food, nutrition) |
+| off_topic_handled | Off-topic responses redirect to nutrition and are brief |
+| chitchat_appropriate | Chitchat responses are friendly and invite nutrition questions |
+| log_food_parsed | Log-food messages parse correctly (search_query, grams/amount+unit, meal_type) |
+| right_tools_called | Nutrition questions trigger expected tools (e.g. search_nutrition_knowledge, get_calorie_goal) |
+| final_response_quality | Nutrition responses are substantive and on-topic |
+
+Dataset and evaluators live in `src/eval/`.
 
 ## Environment
 
