@@ -9,6 +9,8 @@ on:
       - '.env.example'
       - '.gitignore'
       - '.dockerignore'
+      - 'docker-compose.yml'
+      - 'backend/scripts/dummy-data*.sql'
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
