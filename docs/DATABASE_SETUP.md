@@ -70,6 +70,30 @@ cd backend
 npm run dev
 ```
 
+### 6. Seed Dummy Data (Optional)
+
+To populate the database with a test user and sample food/weight logs for local development and AI chat testing:
+
+**Full dummy data (30 days, ~115 meals):**
+```bash
+psql -U postgres -d nutriguide -f backend/scripts/dummy-data.sql
+```
+
+**Minimal dummy data (7 days, ~24 meals):**
+```bash
+psql -U postgres -d nutriguide -f backend/scripts/dummy-data-minimal.sql
+```
+
+Or from the project root using your connection string:
+
+```bash
+psql $DATABASE_URL -f backend/scripts/dummy-data.sql
+```
+
+**Test user ID:** `11111111-1111-1111-1111-111111111111` — use this when testing the chat or API.
+
+> **Warning:** Do not run the dummy data script in production.
+
 ---
 
 ## Production Setup (AWS RDS)
