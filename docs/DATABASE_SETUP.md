@@ -74,12 +74,12 @@ npm run dev
 
 To populate the database with a test user and sample food/weight logs for local development and AI chat testing:
 
-**Full dummy data (30 days, ~115 meals):**
+**Full dummy data (31 days, ~124 meals, calories ~2200→2000 kcal/day):**
 ```bash
 psql -U postgres -d nutriguide -f backend/scripts/dummy-data.sql
 ```
 
-**Minimal dummy data (7 days, ~24 meals):**
+**Minimal dummy data (7 days, 28 meals, direct slice from full; calories ~2040→2000 kcal/day):**
 ```bash
 psql -U postgres -d nutriguide -f backend/scripts/dummy-data-minimal.sql
 ```

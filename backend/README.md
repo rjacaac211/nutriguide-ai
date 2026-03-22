@@ -63,6 +63,7 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | GET | `/api/users/:id/profile` | Get user profile (id = sessionId) |
 | PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists. When `weight_kg` is provided and the user has no weight logs, seeds an initial WeightLog for today. |
 | GET | `/api/users/:id/calorie-goal` | Get TDEE calorie goal. Uses latest WeightLog weight when available, else profile. Returns `{ goalKcal, bmr, tdee }` |
+| GET | `/api/users/:id/daily-calories?from=YYYY-MM-DD&to=YYYY-MM-DD` | Daily calorie totals for date range (UTC). Returns `{ days: [{ date, calories }] }` with all days filled (missing = 0). Range capped at 366 days. |
 | GET | `/api/foods/search?q=...&limit=25` | Search foods via USDA FoodData Central (proxy) |
 | GET | `/api/foods/:fdcId` | Fetch full food details including portions (cups, servings, etc.) |
 | GET | `/api/users/:id/food-logs?date=YYYY-MM-DD` | List food logs for date |

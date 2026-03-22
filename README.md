@@ -162,7 +162,7 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 
 1. Open http://localhost:5173
 2. **Create Account** or **Log in** — New users complete onboarding (goal, gender, birth date, height, weight, preferences, activity level, etc.), enter a unique name, and view the goal summary. Returning users click **Log in** and enter their name to access the dashboard.
-3. Use the **dashboard** to see calorie summary (TDEE from latest weight log or profile), date picker, meals logged (search/add/edit food via USDA FDC API), weight tracking (add/edit/delete weight logs), and activity. Click **Log out** in the header to return to the landing page.
+3. Use the **dashboard** to see calorie summary (TDEE from latest weight log or profile), date picker, meals logged (search/add/edit food via USDA FDC API), weight tracking (add/edit/delete weight logs), progress charts (weight trend and calories vs goal), and activity. Click **Log out** in the header to return to the landing page.
 4. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
 
 **Session-scoped data:** User profiles are persisted in PostgreSQL. Names must be unique. Conversation memory is session-scoped (per thread). Reloading the page clears the session; use **Log in** with your name to restore your profile.
@@ -194,7 +194,7 @@ NutriGuide-AI/
 │       └── index.js
 ├── frontend/          # React app ([README](frontend/README.md))
 │   └── src/
-│       ├── components/ # LandingStep, OnboardingWizard, Dashboard, MealsLogged, WeightSection, AddFoodModal, AddWeightModal, EditFoodModal, DatePicker, ChatWidget, etc.
+│       ├── components/ # LandingStep, OnboardingWizard, Dashboard, ProgressCharts, MealsLogged, WeightSection, AddFoodModal, AddWeightModal, EditFoodModal, DatePicker, ChatWidget, etc.
 │       ├── config/    # onboardingQuestions
 │       ├── App.css    # Component styles, design tokens
 │       └── api/
@@ -210,6 +210,7 @@ NutriGuide-AI/
 - `GET /api/users/:id/profile` — Get user profile (id = sessionId)
 - `PUT /api/users/:id/profile` — Update profile. Schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists.
 - `GET /api/users/:id/calorie-goal` — Get TDEE calorie goal (uses latest WeightLog or profile). Returns `{ goalKcal, bmr, tdee }`
+- `GET /api/users/:id/daily-calories?from=YYYY-MM-DD&to=YYYY-MM-DD` — Daily calorie totals for date range (UTC). Returns `{ days: [{ date, calories }] }` with all days filled (missing = 0). Range capped at 366 days.
 - `GET /api/foods/search?q=...&limit=25` — Search foods via USDA FoodData Central (proxy)
 - `GET /api/foods/:fdcId` — Fetch full food details including portions (cups, servings, etc.)
 - `GET /api/users/:id/food-logs?date=YYYY-MM-DD` — List food logs for date

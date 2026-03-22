@@ -85,6 +85,17 @@ export async function getCalorieGoal(userId) {
   return res.json();
 }
 
+export async function getDailyCalories(userId, from, to) {
+  const fromStr = typeof from === "string" ? from : from.toISOString().slice(0, 10);
+  const toStr = typeof to === "string" ? to : to.toISOString().slice(0, 10);
+  const res = await fetch(
+    `${API_BASE}/users/${userId}/daily-calories?from=${encodeURIComponent(fromStr)}&to=${encodeURIComponent(toStr)}`
+  );
+  if (!res.ok) throw new Error("Failed to fetch daily calories");
+  const data = await res.json();
+  return data.days ?? [];
+}
+
 export async function searchFoods(query, limit = 25) {
   const params = new URLSearchParams({ q: query, limit: String(limit) });
   const res = await fetch(`${API_BASE}/foods/search?${params}`);

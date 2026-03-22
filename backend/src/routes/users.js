@@ -86,6 +86,68 @@ router.get("/:id/calorie-goal", async (req, res) => {
   }
 });
 
+const MAX_DAILY_CALORIES_RANGE_DAYS = 366;
+
+/**
+ * GET /api/users/:id/daily-calories?from=YYYY-MM-DD&to=YYYY-MM-DD
+ * Daily calorie totals for date range. Returns array of { date, calories } for every day
+ * in range (missing days filled with 0). Range capped at 366 days.
+ */
+router.get("/:id/daily-calories", async (req, res) => {
+  try {
+    const userId = req.params.id;
+    const fromStr = req.query.from;
+    const toStr = req.query.to;
+    if (!fromStr || !toStr) {
+      return res.status(400).json({ error: "from and to query params (YYYY-MM-DD) are required" });
+    }
+    const from = new Date(fromStr + "T00:00:00.000Z");
+    const to = new Date(toStr + "T00:00:00.000Z");
+    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
+      return res.status(400).json({ error: "from and to must be valid dates (YYYY-MM-DD)" });
+    }
+    if (from > to) {
+      return res.status(400).json({ error: "from must be before or equal to to" });
+    }
+    const diffDays = Math.ceil((to - from) / (24 * 60 * 60 * 1000)) + 1;
+    if (diffDays > MAX_DAILY_CALORIES_RANGE_DAYS) {
+      return res.status(400).json({ error: `Range cannot exceed ${MAX_DAILY_CALORIES_RANGE_DAYS} days` });
+    }
+
+    const toExclusive = new Date(to);
+    toExclusive.setUTCDate(toExclusive.getUTCDate() + 1);
+
+    const logs = await prisma.foodLog.findMany({
+      where: {
+        userId,
+        loggedAt: { gte: from, lt: toExclusive },
+      },
+      select: { loggedAt: true, totalCal: true },
+    });
+
+    const sumsByDate = {};
+    for (const log of logs) {
+      const d = log.loggedAt;
+      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+      const cal = log.totalCal != null ? Number(log.totalCal) : 0;
+      sumsByDate[key] = (sumsByDate[key] ?? 0) + cal;
+    }
+
+    const days = [];
+    const cursor = new Date(from);
+    while (cursor <= to) {
+      const key = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, "0")}-${String(cursor.getUTCDate()).padStart(2, "0")}`;
+      days.push({ date: key, calories: Math.round(sumsByDate[key] ?? 0) });
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    res.json({ days });
+  } catch (err) {
+    console.error("Daily calories fetch error:", err);
+    res.status(500).json({ error: "Failed to fetch daily calories" });
+  }
+});
+
 function parseBirthDate(v) {
   if (v == null || v === "") return null;
   if (v instanceof Date && !isNaN(v.getTime())) return v;
