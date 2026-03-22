@@ -163,11 +163,11 @@ const LOG_FOOD_GRAMS_REGEX = /(?:log|add|record)\s+(\d+)\s*g\s+(?:of\s+)?(.+?)(?
 const LOG_FOOD_PORTION_REGEX =
   /(?:log|add|record)\s+(\d+(?:\.\d+)?)\s+(cup|cups|serving|servings|oz|tbsp|tsp|piece|pieces|slice|slices)\s+(?:of\s+)?(.+?)(?:\s+for\s+(breakfast|lunch|dinner|snack))?$/i;
 
-type ParsedLogFood =
+export type ParsedLogFood =
   | { search_query: string; grams: number; meal_type: string }
   | { search_query: string; amount: number; unit: string; meal_type: string };
 
-function parseLogFoodMessage(text: string): ParsedLogFood | null {
+export function parseLogFoodMessage(text: string): ParsedLogFood | null {
   const t = text.trim();
   const gramsMatch = t.match(LOG_FOOD_GRAMS_REGEX);
   if (gramsMatch) {

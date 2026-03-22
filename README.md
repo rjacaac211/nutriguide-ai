@@ -11,6 +11,7 @@ Users create an account (or log in by name) and complete a short onboarding flow
 | **AI / Agent** | LangGraph (StateGraph), multi-step reasoning, stateful conversations, LangChain tools |
 | **RAG** | OpenAI embeddings, Pinecone vector store, Markdown knowledge base |
 | **Observability** | LangSmith tracing (optional) |
+| **Evaluation** | Offline eval (intent, tools, response quality); `npm run eval` in ai-agent-ts |
 | **Stack** | Full stack: React (Vite), Node.js/Express, TypeScript AI agent |
 | **Deployment** | Docker, AWS (EC2, ECR), GitHub Actions CI/CD |
 | **APIs** | Internal APIs (agent ↔ backend), external APIs (USDA FoodData Central) |
@@ -181,7 +182,8 @@ NutriGuide-AI/
 ├── ai-agent-ts/       # TypeScript LangGraph agent ([README](ai-agent-ts/README.md))
 │   ├── src/
 │   │   ├── agent/     # StateGraph, nodes, tools, RAG
-│   │   ├── scripts/   # index.ts (Pinecone indexing for knowledge/)
+│   │   ├── eval/      # Dataset, target, evaluators (npm run eval)
+│   │   ├── scripts/   # index.ts (Pinecone indexing), run-eval.ts
 │   │   ├── index.ts   # Express server
 │   │   └── types.ts
 │   └── knowledge/     # Nutrition docs for RAG

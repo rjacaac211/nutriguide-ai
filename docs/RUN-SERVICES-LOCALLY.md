@@ -81,6 +81,19 @@ curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "
 
 ---
 
+## Run Offline Evaluation
+
+With the **backend** and **AI agent** running, run the evaluation suite:
+
+```powershell
+cd ai-agent-ts
+npm run eval
+```
+
+Runs ~43 examples covering intent classification, off-topic handling, chitchat, log-food parsing, tool selection, and response quality. See [ai-agent-ts/README.md](../ai-agent-ts/README.md#evaluation) for details.
+
+---
+
 ## Common 500 Causes
 
 1. **Missing `OPENAI_API_KEY`** — Agent fails on first LLM call
