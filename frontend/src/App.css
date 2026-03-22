@@ -1187,6 +1187,98 @@
   background: var(--color-border);
 }
 
+/* Progress charts */
+.progress-charts {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow-md);
+}
+
+.progress-charts-title {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.progress-charts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.progress-charts-header .progress-charts-title {
+  margin: 0;
+}
+
+.progress-charts-presets {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.progress-charts-preset {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.progress-charts-preset:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.progress-charts-preset.active {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.progress-charts-loading,
+.progress-charts-error,
+.progress-charts-empty {
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.progress-charts-error {
+  color: #b91c1c;
+}
+
+.progress-charts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.progress-charts-card {
+  min-height: 200px;
+}
+
+.progress-charts-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+.progress-charts-chart {
+  width: 100%;
+}
+
 /* Chat widget */
 .chat-widget {
   position: fixed;
