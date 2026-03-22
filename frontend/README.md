@@ -8,6 +8,7 @@ Part of [NutriGuide AI](../README.md).
 
 - **Node.js 18+**
 - **React 18**
+- **React Router** — Path-based routing (`/dashboard`, `/dashboard/chat`)
 - **Vite** — Build tool and dev server
 - **CSS** — Plain CSS with design tokens
 
@@ -52,7 +53,7 @@ npm run preview
 - **Session-scoped** — Profile and chat use `sessionId` (userId); reload clears session; users log in again with their name to restore access
 - **API Proxy** — `/api` requests forwarded to backend
 
-Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation; the frontend appends each user message and assistant response to local state.
+Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation. Chat state (threadId, messages) lives in `ChatThreadContext` so the widget and Chat tab share the same thread; the frontend appends each user message and assistant response to that shared state.
 
 ## UI / Design
 

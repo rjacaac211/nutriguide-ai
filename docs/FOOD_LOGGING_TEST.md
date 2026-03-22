@@ -52,7 +52,7 @@ Open http://localhost (port 80)
 
 1. **Create Account or Log in** — New users: Landing → Onboarding → Name → Summary → Dashboard. Returning users: click **Log in**, enter your name. This creates or restores a profile and user.
 
-2. **Dashboard** — You should see:
+2. **Dashboard** — Two tabs: **Overview** (date picker, calorie summary, meals, weight, progress charts) and **Chat** (full-page AI chat at `/dashboard/chat`). On Overview you should see:
    - Date picker (default: today)
    - Calorie summary (Eaten, Goal, Burned; goal from TDEE using latest weight log or profile)
    - Progress charts: weight trend and calories vs goal (7/30/90-day presets)
@@ -77,9 +77,9 @@ Open http://localhost (port 80)
 
 ### Chat flow (food logging via AI)
 
-You can also log food through the chat widget:
+You can also log food through the chat widget or the Chat tab:
 
-1. Open the chat widget and say e.g. **"log 100g chicken for lunch"**, **"add 1 cup rice for dinner"**, or **"log 2 servings oatmeal for breakfast"**
+1. Open the chat widget (bottom-right; expands to a panel) or go to the **Chat** tab, then say e.g. **"log 100g chicken for lunch"**, **"add 1 cup rice for dinner"**, or **"log 2 servings oatmeal for breakfast"**
 2. The agent searches and shows numbered options (1, 2, 3, …)
 3. Reply with a number (e.g. **"1"**) to select and log, or **"cancel"** to abort
 4. The agent confirms the log was created

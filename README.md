@@ -23,7 +23,7 @@ Users create an account (or log in by name) and complete a short onboarding flow
 - **Node.js / Express**: Backend API, middleware, agent proxy, internal API (`X-Internal-API-Key`) for agent-only endpoints.
 - **RAG**: OpenAI embeddings (text-embedding-3-small) + Pinecone for nutrition knowledge (cloud vector store).
 - **OpenAI**: GPT-4o-mini for the agent.
-- **React / Vite**: Landing (Create Account / Log in), onboarding, dashboard, and AI chat widget (light theme, green/orange palette).
+- **React / Vite / React Router**: Landing (Create Account / Log in), onboarding, dashboard with Overview and Chat tabs, and AI chat widget (light theme, green/orange palette).
 - **Database**: PostgreSQL 15+ with Prisma ORM (users, profiles, food logs, weight logs).
 - **External APIs**: USDA FoodData Central (food search, nutrition data).
 - **Deployment**: Docker Compose (local + prod), AWS EC2 + ECR, GitHub Actions CI/CD (build → push → deploy on push to main).
@@ -162,8 +162,8 @@ If the backend is not running, the chat will show "Thinking..." and then fail. S
 
 1. Open http://localhost:5173
 2. **Create Account** or **Log in** — New users complete onboarding (goal, gender, birth date, height, weight, preferences, activity level, etc.), enter a unique name, and view the goal summary. Returning users click **Log in** and enter their name to access the dashboard.
-3. Use the **dashboard** to see calorie summary (TDEE from latest weight log or profile), date picker, meals logged (search/add/edit food via USDA FDC API), weight tracking (add/edit/delete weight logs), progress charts (weight trend and calories vs goal), and activity. Click **Log out** in the header to return to the landing page.
-4. Open the **chat widget** (bottom-right) to ask nutrition questions. Use **New chat** in the widget to start a fresh conversation.
+3. Use the **dashboard** — **Overview** tab: calorie summary (TDEE from latest weight log or profile), date picker, meals logged (search/add/edit food via USDA FDC API), weight tracking (add/edit/delete weight logs), progress charts (weight trend and calories vs goal), and activity. **Chat** tab: full-page AI chat at `/dashboard/chat`. Click **Log out** in the header to return to the landing page.
+4. Open the **chat widget** (bottom-right) to ask nutrition questions — it expands to a floating panel. Use **Open in Chat tab** to switch to the full-page chat. Use **New chat** to start a fresh conversation. The widget and Chat tab share the same thread.
 
 **Session-scoped data:** User profiles are persisted in PostgreSQL. Names must be unique. Conversation memory is session-scoped (per thread). Reloading the page clears the session; use **Log in** with your name to restore your profile.
 
@@ -194,7 +194,8 @@ NutriGuide-AI/
 │       └── index.js
 ├── frontend/          # React app ([README](frontend/README.md))
 │   └── src/
-│       ├── components/ # LandingStep, OnboardingWizard, Dashboard, ProgressCharts, MealsLogged, WeightSection, AddFoodModal, AddWeightModal, EditFoodModal, DatePicker, ChatWidget, etc.
+│       ├── components/ # LandingStep, OnboardingWizard, DashboardLayout, DashboardOverview, ChatPage, ProgressCharts, MealsLogged, WeightSection, AddFoodModal, AddWeightModal, EditFoodModal, DatePicker, ChatWidget, Chat
+│       ├── context/   # ChatThreadContext (shared chat state)
 │       ├── config/    # onboardingQuestions
 │       ├── App.css    # Component styles, design tokens
 │       └── api/
