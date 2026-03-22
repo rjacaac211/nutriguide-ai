@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useOutletContext } from "react-router-dom";
 import CalorieSummary from "./CalorieSummary";
 import MealsLogged from "./MealsLogged";
 import ActivitySection from "./ActivitySection";
@@ -22,7 +23,8 @@ function formatDateLabel(dateStr) {
   return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 }
 
-export default function Dashboard({ profile, userId, onLogout }) {
+export default function DashboardOverview() {
+  const { userId } = useOutletContext();
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [foodLogs, setFoodLogs] = useState([]);
   const [goalKcal, setGoalKcal] = useState(1625);
@@ -50,21 +52,11 @@ export default function Dashboard({ profile, userId, onLogout }) {
   const remaining = Math.max(0, goalKcal - eaten);
 
   return (
-    <div className="dashboard">
-      <header className="dashboard-header">
-        <div className="dashboard-header-row">
-          <h1>NutriGuide AI</h1>
-          {onLogout && (
-            <button type="button" className="dashboard-logout-btn" onClick={onLogout}>
-              Log out
-            </button>
-          )}
-        </div>
-        <div className="dashboard-date-row">
-          <DatePicker value={selectedDate} onChange={setSelectedDate} />
-          <span className="dashboard-date-label">{formatDateLabel(selectedDate)}</span>
-        </div>
-      </header>
+    <>
+      <div className="dashboard-date-row">
+        <DatePicker value={selectedDate} onChange={setSelectedDate} />
+        <span className="dashboard-date-label">{formatDateLabel(selectedDate)}</span>
+      </div>
       <div className="dashboard-content">
         <CalorieSummary
           eaten={Math.round(eaten)}
@@ -92,6 +84,6 @@ export default function Dashboard({ profile, userId, onLogout }) {
           Food data from USDA FoodData Central, fdc.nal.usda.gov
         </a>
       </footer>
-    </div>
+    </>
   );
 }

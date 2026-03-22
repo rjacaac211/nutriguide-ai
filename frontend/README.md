@@ -38,13 +38,16 @@ npm run build
 npm run preview
 ```
 
+**Production hosting:** Configure the server to serve `index.html` for all paths (SPA fallback). Vite’s static build has no server-side routing; clients hitting `/dashboard` or `/dashboard/chat` directly must receive the same HTML.
+
 ## Features
 
 - **Landing** — Create Account (onboarding) or Log in (name-based, no password)
 - **Onboarding Wizard** — Multi-step questionnaire (goal, gender, birth date, height, weight, preferences, activity, speed of change)
 - **Loading & Summary** — Progress animation, name entry (unique names enforced), goal summary with calculated target date
-- **Dashboard** — Date picker, calorie summary (eaten/remaining/burned from TDEE using latest weight log or profile), meals logged (Breakfast, Lunch, Dinner, Snack) with add/edit/delete via USDA food search (unit selector: grams, cups, servings, etc.), weight section (add/edit/delete weight logs for selected date), progress charts (weight trend and calories vs goal with 7/30/90-day presets), activity section, **Log out** button
-- **Chat Widget** — Floating, collapsible AI chat (bottom-right) for nutrition Q&A; **New chat** starts a fresh conversation
+- **Dashboard** — Overview and Chat tabs; date picker, calorie summary (eaten/remaining/burned from TDEE using latest weight log or profile), meals logged (Breakfast, Lunch, Dinner, Snack) with add/edit/delete via USDA food search (unit selector: grams, cups, servings, etc.), weight section (add/edit/delete weight logs for selected date), progress charts (weight trend and calories vs goal with 7/30/90-day presets), activity section, **Log out** button
+- **Chat Tab** — Full-page AI chat at `/dashboard/chat`; shared thread with chat widget
+- **Chat Widget** — Floating, collapsible panel (bottom-right) for nutrition Q&A; "Open in Chat tab" navigates to full page; hidden when on the Chat tab
 - **Chat display** — User message appears immediately when sent; NutriGuide shows "Thinking..." while the AI responds; only the final AI output is displayed (no internal tool outputs, profile dumps, or RAG labels)
 - **Session-scoped** — Profile and chat use `sessionId` (userId); reload clears session; users log in again with their name to restore access
 - **API Proxy** — `/api` requests forwarded to backend
@@ -69,10 +72,11 @@ Styles live in `src/index.css` (global) and `src/App.css` (component styles).
 frontend/
 ├── src/
 │   ├── components/   # LandingStep, OnboardingWizard, QuestionSlide, LoadingScreen,
-│   │                 # EnterNameStep, GoalSummaryStep, Dashboard, ProgressCharts,
-│   │                 # CalorieSummary, MealsLogged, WeightSection, AddFoodModal,
-│   │                 # AddWeightModal, EditFoodModal, DatePicker, ActivitySection,
+│   │                 # EnterNameStep, GoalSummaryStep, DashboardLayout, DashboardOverview,
+│   │                 # ChatPage, ProgressCharts, CalorieSummary, MealsLogged, WeightSection,
+│   │                 # AddFoodModal, AddWeightModal, EditFoodModal, DatePicker, ActivitySection,
 │   │                 # ChatWidget, Chat
+│   ├── context/      # ChatThreadContext
 │   ├── config/       # onboardingQuestions.js
 │   ├── api/          # API client (profile, chat, calorie goal, daily calories, foods, food logs, weight logs)
 │   ├── App.css       # Component styles, design tokens

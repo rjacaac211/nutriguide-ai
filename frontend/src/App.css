@@ -149,6 +149,23 @@
   cursor: not-allowed;
 }
 
+.chat-page {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 400px;
+}
+
+.chat-page .chat {
+  flex: 1;
+  min-height: 0;
+}
+
+.chat-page .chat-messages {
+  max-height: none;
+  flex: 1;
+}
+
 .chat {
   background: var(--color-bg);
   border: 1px solid var(--color-border);
@@ -789,6 +806,15 @@
   margin: 0 auto;
   padding: 1.5rem;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-outlet {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .dashboard-header {
@@ -848,6 +874,33 @@
 .dashboard-date-label {
   color: var(--color-text-muted);
   font-size: 0.9rem;
+}
+
+.dashboard-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dashboard-tab {
+  padding: 0.5rem 1rem;
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.dashboard-tab:hover {
+  color: var(--color-text);
+}
+
+.dashboard-tab.active {
+  color: var(--color-primary);
+  font-weight: 600;
+  border-bottom-color: var(--color-primary);
 }
 
 .dashboard-footer {
@@ -1372,6 +1425,22 @@
 
 .chat-widget-body .chat-messages {
   max-height: 280px;
+}
+
+.chat-widget-open-tab {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  color: var(--color-primary);
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--color-border);
+  cursor: pointer;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.chat-widget-open-tab:hover {
+  background: var(--color-bg-subtle);
 }
 
 /* Modal */

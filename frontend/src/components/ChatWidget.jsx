@@ -1,8 +1,15 @@
 import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Chat from "./Chat";
 
-export default function ChatWidget({ sessionId }) {
+export default function ChatWidget() {
   const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  if (pathname === "/dashboard/chat") {
+    return null;
+  }
 
   return (
     <div className={`chat-widget ${expanded ? "expanded" : "collapsed"}`}>
@@ -20,8 +27,15 @@ export default function ChatWidget({ sessionId }) {
             </button>
           </div>
           <div className="chat-widget-body">
-            <Chat userId={sessionId} />
+            <Chat />
           </div>
+          <button
+            type="button"
+            className="chat-widget-open-tab"
+            onClick={() => navigate("/dashboard/chat")}
+          >
+            Open in Chat tab
+          </button>
         </>
       ) : (
         <button
