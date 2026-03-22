@@ -55,6 +55,7 @@ Open http://localhost (port 80)
 2. **Dashboard** — You should see:
    - Date picker (default: today)
    - Calorie summary (Eaten, Goal, Burned; goal from TDEE using latest weight log or profile)
+   - Progress charts: weight trend and calories vs goal (7/30/90-day presets)
    - Meals: Breakfast, Lunch, Dinner, Snack with "+" buttons
    - Weight: current weight for selected date, add/edit/delete weight logs
 
