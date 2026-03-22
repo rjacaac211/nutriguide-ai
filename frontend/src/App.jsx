@@ -1,12 +1,16 @@
 import { useState, useEffect } from "react";
-import { checkBackendHealth, updateProfile, loginByName } from "./api/client";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { checkBackendHealth, updateProfile } from "./api/client";
 import LandingStep from "./components/LandingStep";
 import OnboardingWizard from "./components/OnboardingWizard";
 import LoadingScreen from "./components/LoadingScreen";
 import EnterNameStep from "./components/EnterNameStep";
 import GoalSummaryStep from "./components/GoalSummaryStep";
-import Dashboard from "./components/Dashboard";
+import DashboardLayout from "./components/DashboardLayout";
+import DashboardOverview from "./components/DashboardOverview";
+import ChatPage from "./components/ChatPage";
 import ChatWidget from "./components/ChatWidget";
+import { ChatThreadProvider } from "./context/ChatThreadContext";
 import "./App.css";
 
 const PHASES = {
@@ -19,6 +23,7 @@ const PHASES = {
 };
 
 export default function App() {
+  const navigate = useNavigate();
   const [sessionId, setSessionId] = useState(() => {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
       return crypto.randomUUID();
@@ -60,14 +65,19 @@ export default function App() {
     }
   };
 
+  const enterDashboard = () => {
+    setAppPhase(PHASES.DASHBOARD);
+    navigate("/dashboard");
+  };
+
   const handleLogin = ({ userId, profile: backendProfile }) => {
     setSessionId(userId);
     setProfile(backendProfile);
-    setAppPhase(PHASES.DASHBOARD);
+    enterDashboard();
   };
 
   const handleSummaryContinue = () => {
-    setAppPhase(PHASES.DASHBOARD);
+    enterDashboard();
   };
 
   const handleLogout = () => {
@@ -134,10 +144,26 @@ export default function App() {
       )}
 
       {appPhase === PHASES.DASHBOARD && (
-        <>
-          <Dashboard profile={profile} userId={sessionId} onLogout={handleLogout} />
-          <ChatWidget sessionId={sessionId} />
-        </>
+        <ChatThreadProvider userId={sessionId}>
+          <Routes>
+            <Route
+              path="/dashboard"
+              element={
+                <DashboardLayout
+                  profile={profile}
+                  userId={sessionId}
+                  onLogout={handleLogout}
+                />
+              }
+            >
+              <Route index element={<DashboardOverview />} />
+              <Route path="chat" element={<ChatPage />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+          <ChatWidget />
+        </ChatThreadProvider>
       )}
     </div>
   );

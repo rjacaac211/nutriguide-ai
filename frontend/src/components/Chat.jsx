@@ -1,56 +1,21 @@
-import { useState, useRef, useEffect } from "react";
-import { sendChat } from "../api/client";
+import { useRef, useEffect } from "react";
+import { useChatThread } from "../context/ChatThreadContext";
 
-function generateId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/x/g, () =>
-    Math.floor(Math.random() * 16).toString(16)
-  );
-}
-
-export default function Chat({ userId }) {
-  const [threadId, setThreadId] = useState(() => generateId());
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+export default function Chat() {
   const bottomRef = useRef(null);
+  const {
+    messages,
+    input,
+    setInput,
+    loading,
+    error,
+    handleSubmit,
+    handleNewChat,
+  } = useChatThread();
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!input.trim() || loading || !userId) return;
-
-    const userMsg = input.trim();
-    setInput("");
-    setLoading(true);
-    setError(null);
-
-    setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
-
-    try {
-      const { response } = await sendChat(userId, userMsg, threadId);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: response || "(No response)" },
-      ]);
-    } catch (err) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleNewChat = () => {
-    setThreadId(generateId());
-    setMessages([]);
-    setError(null);
-  };
 
   return (
     <div className="chat">
@@ -91,9 +56,9 @@ export default function Chat({ userId }) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about nutrition..."
-          disabled={loading || !userId}
+          disabled={loading}
         />
-        <button type="submit" disabled={loading || !input.trim() || !userId}>
+        <button type="submit" disabled={loading || !input.trim()}>
           Send
         </button>
       </form>
