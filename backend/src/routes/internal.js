@@ -1,4 +1,5 @@
 import express from "express";
+import { timingSafeEqual } from "crypto";
 import { prisma } from "../db.js";
 import { searchFoods, getFoodDetails, convertToGrams } from "../services/fdc.js";
 import { calculateTDEE } from "../services/tdee.js";
@@ -9,7 +10,15 @@ const router = express.Router();
 
 function requireInternalApiKey(req, res, next) {
   const key = req.headers["x-internal-api-key"];
-  if (!key || key !== process.env.INTERNAL_API_KEY) {
+  const expected = process.env.INTERNAL_API_KEY;
+  if (!key || !expected) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  const keyBuf = Buffer.from(key);
+  const expectedBuf = Buffer.from(expected);
+  const matches =
+    keyBuf.length === expectedBuf.length && timingSafeEqual(keyBuf, expectedBuf);
+  if (!matches) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   next();

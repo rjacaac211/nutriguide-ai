@@ -8,13 +8,14 @@ import {
   computeTotals,
   serializeLog,
 } from "../services/foodLogs.js";
+import { requireAuth, requireOwnership } from "../middleware/auth.js";
 
 const router = express.Router();
 
 /**
  * GET /api/users/:id/food-logs?date=YYYY-MM-DD
  */
-router.get("/:id/food-logs", async (req, res) => {
+router.get("/:id/food-logs", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const dateStr = req.query.date;
@@ -47,7 +48,7 @@ router.get("/:id/food-logs", async (req, res) => {
  * POST /api/users/:id/food-logs
  * Body: { mealType, items, loggedAt? }
  */
-router.post("/:id/food-logs", async (req, res) => {
+router.post("/:id/food-logs", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const { mealType, items, loggedAt } = req.body;
@@ -67,7 +68,7 @@ router.post("/:id/food-logs", async (req, res) => {
  * PUT /api/users/:id/food-logs/:logId
  * Body: { mealType?, items? }
  */
-router.put("/:id/food-logs/:logId", async (req, res) => {
+router.put("/:id/food-logs/:logId", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const logId = req.params.logId;
@@ -119,7 +120,7 @@ router.put("/:id/food-logs/:logId", async (req, res) => {
 /**
  * DELETE /api/users/:id/food-logs/:logId
  */
-router.delete("/:id/food-logs/:logId", async (req, res) => {
+router.delete("/:id/food-logs/:logId", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const logId = req.params.logId;
@@ -143,7 +144,7 @@ router.delete("/:id/food-logs/:logId", async (req, res) => {
  * PATCH /api/users/:id/food-logs/:logId/items/:itemIndex
  * Body: { grams?, calories?, protein?, carbs?, fat?, portionDescription?, portionAmount? } - or full item
  */
-router.patch("/:id/food-logs/:logId/items/:itemIndex", async (req, res) => {
+router.patch("/:id/food-logs/:logId/items/:itemIndex", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const logId = req.params.logId;
@@ -203,7 +204,7 @@ router.patch("/:id/food-logs/:logId/items/:itemIndex", async (req, res) => {
 /**
  * DELETE /api/users/:id/food-logs/:logId/items/:itemIndex
  */
-router.delete("/:id/food-logs/:logId/items/:itemIndex", async (req, res) => {
+router.delete("/:id/food-logs/:logId/items/:itemIndex", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const logId = req.params.logId;

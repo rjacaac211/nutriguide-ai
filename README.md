@@ -204,11 +204,14 @@ NutriGuide-AI/
 
 ## API
 
+Every route below except account creation/login requires `Authorization: Bearer <token>` (a JWT scoped to one userId, issued at signup/login); requests for a `:id` the token doesn't own are rejected with 403.
+
 - `GET /api/health` — Health check (returns `{ status: "ok" }`)
 - `GET /health` — Same, alternate path
-- `POST /api/chat` — Send message: `{ userId, message, threadId }` (userId is sessionId; agent maintains session memory per thread). Returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation (e.g. user said "log 100g chicken for lunch" or "add 1 cup rice for dinner"—reply with "1" or "2" in a follow-up request using the same threadId). The response contains the final AI output only (no intermediate tool outputs or internal details).
-- `GET /api/users/by-name?name=...` — Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for name-based login.
-- `GET /api/users/:id/profile` — Get user profile (id = sessionId)
+- `POST /api/users` — Create a new account server-side. Returns `{ userId, token, profile }`.
+- `GET /api/users/by-name?name=...` — Log in by name (case-insensitive, no password). Returns `{ userId, token, profile }` or 404 if not found.
+- `POST /api/chat` — Send message: `{ message, threadId }` (userId comes from the token; agent maintains session memory per thread). Returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation (e.g. user said "log 100g chicken for lunch" or "add 1 cup rice for dinner"—reply with "1" or "2" in a follow-up request using the same threadId). The response contains the final AI output only (no intermediate tool outputs or internal details).
+- `GET /api/users/:id/profile` — Get user profile
 - `PUT /api/users/:id/profile` — Update profile. Schema: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists.
 - `GET /api/users/:id/calorie-goal` — Get TDEE calorie goal (uses latest WeightLog or profile). Returns `{ goalKcal, bmr, tdee }`
 - `GET /api/users/:id/daily-calories?from=YYYY-MM-DD&to=YYYY-MM-DD` — Daily calorie totals for date range (UTC). Returns `{ days: [{ date, calories }] }` with all days filled (missing = 0). Range capped at 366 days.

@@ -14,7 +14,7 @@ export default function LandingStep({ onStart, onLogin }) {
     try {
       const result = await loginByName(name);
       if (result) {
-        onLogin({ userId: result.userId, profile: result.profile });
+        onLogin({ userId: result.userId, token: result.token, profile: result.profile });
       } else {
         setLoginError("No account found with that name. Create one?");
       }

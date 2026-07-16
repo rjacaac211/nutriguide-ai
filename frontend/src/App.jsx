@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { checkBackendHealth, updateProfile } from "./api/client";
+import { checkBackendHealth, signup, setAuthToken } from "./api/client";
 import LandingStep from "./components/LandingStep";
 import OnboardingWizard from "./components/OnboardingWizard";
 import LoadingScreen from "./components/LoadingScreen";
@@ -24,14 +24,7 @@ const PHASES = {
 
 export default function App() {
   const navigate = useNavigate();
-  const [sessionId, setSessionId] = useState(() => {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-      return crypto.randomUUID();
-    }
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/x/g, () =>
-      Math.floor(Math.random() * 16).toString(16)
-    );
-  });
+  const [userId, setUserId] = useState(null);
   const [appPhase, setAppPhase] = useState(PHASES.LANDING);
   const [profile, setProfile] = useState({});
   const [backendOk, setBackendOk] = useState(null);
@@ -56,9 +49,11 @@ export default function App() {
   const handleNameSubmit = async (name) => {
     setNameError(null);
     const fullProfile = { ...profile, name };
-    setProfile(fullProfile);
     try {
-      await updateProfile(sessionId, mapProfileToBackend(fullProfile));
+      const result = await signup(mapProfileToBackend(fullProfile));
+      setAuthToken(result.token);
+      setUserId(result.userId);
+      setProfile(fullProfile);
       setAppPhase(PHASES.SUMMARY);
     } catch (err) {
       setNameError(err.message || "Name already taken");
@@ -70,8 +65,9 @@ export default function App() {
     navigate("/dashboard");
   };
 
-  const handleLogin = ({ userId, profile: backendProfile }) => {
-    setSessionId(userId);
+  const handleLogin = ({ userId: loggedInUserId, token, profile: backendProfile }) => {
+    setAuthToken(token);
+    setUserId(loggedInUserId);
     setProfile(backendProfile);
     enterDashboard();
   };
@@ -81,13 +77,8 @@ export default function App() {
   };
 
   const handleLogout = () => {
-    setSessionId(
-      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-        ? crypto.randomUUID()
-        : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/x/g, () =>
-            Math.floor(Math.random() * 16).toString(16)
-          )
-    );
+    setAuthToken(null);
+    setUserId(null);
     setProfile({});
     setAppPhase(PHASES.LANDING);
   };
@@ -144,14 +135,14 @@ export default function App() {
       )}
 
       {appPhase === PHASES.DASHBOARD && (
-        <ChatThreadProvider userId={sessionId}>
+        <ChatThreadProvider userId={userId}>
           <Routes>
             <Route
               path="/dashboard"
               element={
                 <DashboardLayout
                   profile={profile}
-                  userId={sessionId}
+                  userId={userId}
                   onLogout={handleLogout}
                 />
               }

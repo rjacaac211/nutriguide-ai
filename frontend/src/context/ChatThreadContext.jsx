@@ -31,7 +31,7 @@ export function ChatThreadProvider({ userId, children }) {
       setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
 
       try {
-        const { response } = await sendChat(userId, userMsg, threadId);
+        const { response } = await sendChat(userMsg, threadId);
         setMessages((prev) => [
           ...prev,
           { role: "assistant", content: response || "(No response)" },

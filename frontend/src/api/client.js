@@ -1,6 +1,16 @@
 const API_BASE = "/api";
 const CHAT_TIMEOUT_MS = 90000; // 90 seconds for LLM response
 
+let authToken = null;
+
+export function setAuthToken(token) {
+  authToken = token;
+}
+
+function authHeaders(extra = {}) {
+  return authToken ? { ...extra, Authorization: `Bearer ${authToken}` } : extra;
+}
+
 export async function checkBackendHealth() {
   try {
     const res = await fetch(`${API_BASE}/health`, { method: "GET" });
@@ -10,15 +20,28 @@ export async function checkBackendHealth() {
   }
 }
 
-export async function sendChat(userId, message, threadId) {
+export async function signup(profile) {
+  const res = await fetch(`${API_BASE}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(profile),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to create account");
+  }
+  return res.json();
+}
+
+export async function sendChat(message, threadId) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
 
   try {
     const res = await fetch(`${API_BASE}/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, message, threadId }),
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ message, threadId }),
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -45,7 +68,7 @@ export async function sendChat(userId, message, threadId) {
 }
 
 export async function getProfile(userId) {
-  const res = await fetch(`${API_BASE}/users/${userId}/profile`);
+  const res = await fetch(`${API_BASE}/users/${userId}/profile`, { headers: authHeaders() });
   if (!res.ok) {
     if (res.status === 404) return null;
     throw new Error("Failed to fetch profile");
@@ -56,7 +79,7 @@ export async function getProfile(userId) {
 export async function updateProfile(userId, profile) {
   const res = await fetch(`${API_BASE}/users/${userId}/profile`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(profile),
   });
   if (!res.ok) {
@@ -77,7 +100,7 @@ export async function loginByName(name) {
 }
 
 export async function getCalorieGoal(userId) {
-  const res = await fetch(`${API_BASE}/users/${userId}/calorie-goal`);
+  const res = await fetch(`${API_BASE}/users/${userId}/calorie-goal`, { headers: authHeaders() });
   if (!res.ok) {
     if (res.status === 404) return { goalKcal: 2000 };
     throw new Error("Failed to fetch calorie goal");
@@ -89,7 +112,8 @@ export async function getDailyCalories(userId, from, to) {
   const fromStr = typeof from === "string" ? from : from.toISOString().slice(0, 10);
   const toStr = typeof to === "string" ? to : to.toISOString().slice(0, 10);
   const res = await fetch(
-    `${API_BASE}/users/${userId}/daily-calories?from=${encodeURIComponent(fromStr)}&to=${encodeURIComponent(toStr)}`
+    `${API_BASE}/users/${userId}/daily-calories?from=${encodeURIComponent(fromStr)}&to=${encodeURIComponent(toStr)}`,
+    { headers: authHeaders() }
   );
   if (!res.ok) throw new Error("Failed to fetch daily calories");
   const data = await res.json();
@@ -115,7 +139,9 @@ export async function getFoodDetails(fdcId) {
 
 export async function getFoodLogs(userId, date) {
   const dateStr = typeof date === "string" ? date : date.toISOString().slice(0, 10);
-  const res = await fetch(`${API_BASE}/users/${userId}/food-logs?date=${dateStr}`);
+  const res = await fetch(`${API_BASE}/users/${userId}/food-logs?date=${dateStr}`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch food logs");
   const data = await res.json();
   return data.logs ?? [];
@@ -124,7 +150,7 @@ export async function getFoodLogs(userId, date) {
 export async function createFoodLog(userId, { mealType, items, loggedAt }) {
   const res = await fetch(`${API_BASE}/users/${userId}/food-logs`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ mealType, items, loggedAt }),
   });
   if (!res.ok) {
@@ -137,7 +163,7 @@ export async function createFoodLog(userId, { mealType, items, loggedAt }) {
 export async function updateFoodLog(userId, logId, { mealType, items }) {
   const res = await fetch(`${API_BASE}/users/${userId}/food-logs/${logId}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ mealType, items }),
   });
   if (!res.ok) {
@@ -150,6 +176,7 @@ export async function updateFoodLog(userId, logId, { mealType, items }) {
 export async function deleteFoodLog(userId, logId) {
   const res = await fetch(`${API_BASE}/users/${userId}/food-logs/${logId}`, {
     method: "DELETE",
+    headers: authHeaders(),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -162,7 +189,7 @@ export async function updateFoodLogItem(userId, logId, itemIndex, patch) {
     `${API_BASE}/users/${userId}/food-logs/${logId}/items/${itemIndex}`,
     {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(patch),
     }
   );
@@ -176,7 +203,7 @@ export async function updateFoodLogItem(userId, logId, itemIndex, patch) {
 export async function deleteFoodLogItem(userId, logId, itemIndex) {
   const res = await fetch(
     `${API_BASE}/users/${userId}/food-logs/${logId}/items/${itemIndex}`,
-    { method: "DELETE" }
+    { method: "DELETE", headers: authHeaders() }
   );
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -189,7 +216,9 @@ export async function getWeightLogs(userId, from, to) {
   if (from) params.set("from", typeof from === "string" ? from : from.toISOString().slice(0, 10));
   if (to) params.set("to", typeof to === "string" ? to : to.toISOString().slice(0, 10));
   const qs = params.toString();
-  const res = await fetch(`${API_BASE}/users/${userId}/weight-logs${qs ? `?${qs}` : ""}`);
+  const res = await fetch(`${API_BASE}/users/${userId}/weight-logs${qs ? `?${qs}` : ""}`, {
+    headers: authHeaders(),
+  });
   if (!res.ok) throw new Error("Failed to fetch weight logs");
   const data = await res.json();
   return data.logs ?? [];
@@ -198,7 +227,7 @@ export async function getWeightLogs(userId, from, to) {
 export async function createWeightLog(userId, { weightKg, date, notes }) {
   const res = await fetch(`${API_BASE}/users/${userId}/weight-logs`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ weightKg, date, notes }),
   });
   if (!res.ok) {
@@ -211,7 +240,7 @@ export async function createWeightLog(userId, { weightKg, date, notes }) {
 export async function updateWeightLog(userId, logId, { weightKg, notes }) {
   const res = await fetch(`${API_BASE}/users/${userId}/weight-logs/${logId}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ weightKg, notes }),
   });
   if (!res.ok) {
@@ -224,6 +253,7 @@ export async function updateWeightLog(userId, logId, { weightKg, notes }) {
 export async function deleteWeightLog(userId, logId) {
   const res = await fetch(`${API_BASE}/users/${userId}/weight-logs/${logId}`, {
     method: "DELETE",
+    headers: authHeaders(),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

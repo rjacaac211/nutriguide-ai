@@ -1,7 +1,9 @@
 import express from "express";
+import { randomUUID } from "crypto";
 import { prisma } from "../db.js";
 import { calculateTDEE } from "../services/tdee.js";
 import { getCurrentWeight } from "../services/weightLogs.js";
+import { signUserToken, requireAuth, requireOwnership } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -41,6 +43,91 @@ function serializeProfile(profile) {
   };
 }
 
+/**
+ * POST /api/users
+ * Creates a new account server-side (client never chooses its own userId).
+ * Body: full onboarding profile payload. Returns { userId, token, profile }.
+ */
+router.post("/", async (req, res) => {
+  try {
+    const {
+      name,
+      gender,
+      birth_date,
+      height_cm,
+      weight_kg,
+      goal_weight_kg,
+      goal,
+      activity_level,
+      speed_kg_per_week,
+      preferences,
+      challenges,
+      dietary_restrictions,
+      age,
+    } = req.body;
+
+    if (name != null && String(name).trim()) {
+      const existing = await prisma.profile.findFirst({
+        where: { name: { equals: String(name).trim(), mode: "insensitive" } },
+      });
+      if (existing) {
+        return res.status(400).json({ error: "Name already taken" });
+      }
+    }
+
+    const userId = randomUUID();
+    const birthDateParsed = parseBirthDate(birth_date);
+    const ageComputed = age ?? ageFromBirthDate(birthDateParsed);
+
+    const profile = await prisma.$transaction(async (tx) => {
+      await tx.user.create({ data: { id: userId } });
+
+      const created = await tx.profile.create({
+        data: {
+          userId,
+          name: name ?? null,
+          gender: gender ?? null,
+          birthDate: birthDateParsed,
+          age: ageComputed,
+          heightCm: height_cm ?? null,
+          weightKg: weight_kg ?? null,
+          goalWeightKg: goal_weight_kg ?? null,
+          goal: goal ?? "maintain",
+          activityLevel: activity_level ?? "moderate",
+          speedKgPerWeek: speed_kg_per_week ?? null,
+          preferences: preferences || [],
+          challenges: challenges || [],
+          dietaryRestrictions: dietary_restrictions || [],
+        },
+      });
+
+      const weightNum = weight_kg != null ? parseFloat(weight_kg) : NaN;
+      if (!isNaN(weightNum) && weightNum > 0) {
+        const today = new Date();
+        const dateObj = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+        await tx.weightLog.create({
+          data: { userId, weightKg: weightNum, date: dateObj },
+        });
+      }
+
+      return created;
+    });
+
+    const token = signUserToken(userId);
+    res.status(201).json({ userId, token, profile: serializeProfile(profile) });
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.status(500).json({ error: "Failed to create account" });
+  }
+});
+
+/**
+ * GET /api/users/by-name?name=...
+ * Name-based login. No password is involved (see backend/README.md for the
+ * threat-model tradeoff this implies), but callers must know the exact
+ * display name and receive only a signed token for that one account, not a
+ * bare, reusable userId that would grant access on its own.
+ */
 router.get("/by-name", async (req, res) => {
   const name = req.query.name?.trim();
   if (!name) return res.status(400).json({ error: "Name is required" });
@@ -49,10 +136,11 @@ router.get("/by-name", async (req, res) => {
     include: { user: true },
   });
   if (!profile) return res.status(404).json({ error: "No account found with that name" });
-  res.json({ userId: profile.userId, profile: serializeProfile(profile) });
+  const token = signUserToken(profile.userId);
+  res.json({ userId: profile.userId, token, profile: serializeProfile(profile) });
 });
 
-router.get("/:id/profile", async (req, res) => {
+router.get("/:id/profile", requireAuth, requireOwnership, async (req, res) => {
   try {
     const profile = await prisma.profile.findUnique({
       where: { userId: req.params.id },
@@ -67,7 +155,7 @@ router.get("/:id/profile", async (req, res) => {
   }
 });
 
-router.get("/:id/calorie-goal", async (req, res) => {
+router.get("/:id/calorie-goal", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const profile = await prisma.profile.findUnique({
@@ -93,7 +181,7 @@ const MAX_DAILY_CALORIES_RANGE_DAYS = 366;
  * Daily calorie totals for date range. Returns array of { date, calories } for every day
  * in range (missing days filled with 0). Range capped at 366 days.
  */
-router.get("/:id/daily-calories", async (req, res) => {
+router.get("/:id/daily-calories", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const fromStr = req.query.from;
@@ -157,7 +245,7 @@ function parseBirthDate(v) {
   return isNaN(date.getTime()) ? null : date;
 }
 
-router.put("/:id/profile", async (req, res) => {
+router.put("/:id/profile", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const {

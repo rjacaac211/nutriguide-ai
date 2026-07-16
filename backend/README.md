@@ -1,6 +1,6 @@
 # NutriGuide Backend
 
-Express API that proxies chat requests to the AI agent and manages user profiles in PostgreSQL. Profiles are keyed by `sessionId` (session-scoped; reload = new session = new profile).
+Express API that proxies chat requests to the AI agent and manages user profiles in PostgreSQL. Accounts are created server-side (`POST /api/users`) or resumed by name (`GET /api/users/by-name`), each returning a JWT; the frontend holds that token in memory only, so reloading the page clears it and requires logging in again by name.
 
 Part of [NutriGuide AI](../README.md).
 
@@ -24,6 +24,7 @@ Create `.env` in the project root:
 DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide
 INTERNAL_API_KEY=your-internal-api-key
 USDA_FDC_API_KEY=your-data-gov-api-key
+JWT_SECRET=your-jwt-signing-secret
 PORT=3001
 AGENT_URL=http://localhost:8000
 ```
@@ -31,6 +32,8 @@ AGENT_URL=http://localhost:8000
 - `DATABASE_URL` — PostgreSQL connection string (required)
 - `INTERNAL_API_KEY` — Secret for internal API (agent-backend auth; generate with `openssl rand -hex 32`)
 - `USDA_FDC_API_KEY` — USDA FoodData Central API key for food search (required for food logging; get at [api.data.gov/signup](https://api.data.gov/signup))
+- `JWT_SECRET` — Signing secret for user session tokens (required; generate with `openssl rand -hex 32`)
+- `FRONTEND_URL` — Comma-separated allowed CORS origins (optional; defaults to common local dev origins)
 - `PORT` — Server port (default: 3001)
 - `AGENT_URL` — AI agent base URL (default: http://localhost:8000)
 
@@ -56,11 +59,14 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 
 ## API
 
+Every route below except `POST /api/users` and `GET /api/users/by-name` requires `Authorization: Bearer <token>`; the token's userId must match the `:id` in the URL or the request is rejected with 403.
+
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| POST | `/api/chat` | Send message to agent. Body: `{ userId, message, threadId }` (userId = sessionId). Returns `{ response }` with the final AI output only. |
-| GET | `/api/users/by-name?name=...` | Lookup user by name (case-insensitive). Returns `{ userId, profile }` or 404 if not found. Used for login. |
-| GET | `/api/users/:id/profile` | Get user profile (id = sessionId) |
+| POST | `/api/users` | Create a new account server-side. Body: same fields as profile update. Returns `{ userId, token, profile }`. |
+| GET | `/api/users/by-name?name=...` | Log in by name (case-insensitive, no password). Returns `{ userId, token, profile }` or 404 if not found. |
+| POST | `/api/chat` | Send message to agent. Body: `{ message, threadId }` (userId comes from the token). Returns `{ response }` with the final AI output only. |
+| GET | `/api/users/:id/profile` | Get user profile |
 | PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists. When `weight_kg` is provided and the user has no weight logs, seeds an initial WeightLog for today. |
 | GET | `/api/users/:id/calorie-goal` | Get TDEE calorie goal. Uses latest WeightLog weight when available, else profile. Returns `{ goalKcal, bmr, tdee }` |
 | GET | `/api/users/:id/daily-calories?from=YYYY-MM-DD&to=YYYY-MM-DD` | Daily calorie totals for date range (UTC). Returns `{ days: [{ date, calories }] }` with all days filled (missing = 0). Range capped at 366 days. |
@@ -90,7 +96,9 @@ Runs on **http://localhost:3001**. For production-like runs, `npm start` runs mi
 | POST | `/api/internal/foods/convert` | Convert amount+unit to grams. Body: `{ food, amount, unit }`. Returns `{ grams, portionDescription?, portionAmount? }` |
 | POST | `/api/internal/users/:id/food-logs/append` | Append items to existing log or create new one (agent use) |
 
-**Note:** User profiles are persisted in PostgreSQL. Profiles are keyed by userId; names must be unique. Users can log in by name via `GET /api/users/by-name`. Reloading the frontend clears the session; users log in again with their name to restore access.
+**Note:** User profiles are persisted in PostgreSQL. Profiles are keyed by userId; names must be unique.
+
+**Auth model:** `POST /api/users` (signup) and `GET /api/users/by-name` (login) are the only unauthenticated routes; both return a short-lived (7-day) JWT bound to the account's userId. Every other user-scoped route (`/api/users/:id/*`, `/api/chat`) requires `Authorization: Bearer <token>` and rejects tokens whose userId doesn't match the `:id` in the URL (`requireAuth`/`requireOwnership` in `src/middleware/auth.js`) — this closes the previous gap where any client that knew or guessed a userId could read/write/delete that account's data. There is still no password: `by-name` login only requires knowing a display name (unique but not secret), which is a narrower surface than a bare guessable UUID but not equivalent to real credential-based auth. Reloading the frontend clears the token from memory; users log in again with their name to restore access.
 
 **Weight logs:** WeightLog is the source of truth for current weight. `profile.weight_kg` is synced to the latest WeightLog on create/update/delete. Calorie goal uses latest WeightLog when available, else profile.
 

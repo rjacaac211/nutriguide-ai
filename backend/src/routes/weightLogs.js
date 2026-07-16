@@ -5,6 +5,7 @@ import {
   updateWeightLog,
   deleteWeightLog,
 } from "../services/weightLogs.js";
+import { requireAuth, requireOwnership } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ function parseDate(str) {
  * GET /api/users/:id/weight-logs?from=YYYY-MM-DD&to=YYYY-MM-DD
  * List weight logs in date range. Default: last 30 days.
  */
-router.get("/:id/weight-logs", async (req, res) => {
+router.get("/:id/weight-logs", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const fromStr = req.query.from;
@@ -54,7 +55,7 @@ router.get("/:id/weight-logs", async (req, res) => {
  * Body: { weightKg, date, notes? }
  * Create or replace log for given date (one per day).
  */
-router.post("/:id/weight-logs", async (req, res) => {
+router.post("/:id/weight-logs", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const { weightKg, date, notes } = req.body;
@@ -78,7 +79,7 @@ router.post("/:id/weight-logs", async (req, res) => {
  * PUT /api/users/:id/weight-logs/:logId
  * Body: { weightKg?, notes? }
  */
-router.put("/:id/weight-logs/:logId", async (req, res) => {
+router.put("/:id/weight-logs/:logId", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const logId = req.params.logId;
@@ -101,7 +102,7 @@ router.put("/:id/weight-logs/:logId", async (req, res) => {
 /**
  * DELETE /api/users/:id/weight-logs/:logId
  */
-router.delete("/:id/weight-logs/:logId", async (req, res) => {
+router.delete("/:id/weight-logs/:logId", requireAuth, requireOwnership, async (req, res) => {
   try {
     const userId = req.params.id;
     const logId = req.params.logId;

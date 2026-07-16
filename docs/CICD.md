@@ -49,7 +49,7 @@ Note: `*.md` was removed so pushes that change `ai-agent-ts/knowledge/*.md` trig
   6. Add runner IP to EC2 security group (dynamic whitelisting)
   7. Setup SSH key (from `EC2_SSH_KEY` secret)
   8. Copy `docker-compose.prod.yml` to EC2 via scp
-  9. SSH to EC2, write `.env`, run ECR login, `docker compose pull`, `docker compose up -d`
+  9. SSH to EC2, write `.env` (including `JWT_SECRET` for user session tokens and `FRONTEND_URL` for CORS), run ECR login, `docker compose pull`, `docker compose up -d`
   10. Remove runner IP from security group (runs even on failure via `if: always()`)
 
 ## Flow
@@ -74,7 +74,7 @@ deploy
     |-- Add runner IP to EC2 security group (SSH port 22)
     |-- Copy docker-compose.prod.yml to EC2
     |-- SSH to EC2
-    |-- Write .env (OPENAI_API_KEY, PINECONE_*, DATABASE_URL, INTERNAL_API_KEY, USDA_FDC_API_KEY, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
+    |-- Write .env (OPENAI_API_KEY, PINECONE_*, DATABASE_URL, INTERNAL_API_KEY, USDA_FDC_API_KEY, JWT_SECRET, FRONTEND_URL, LANGSMITH_*, ECR_REGISTRY, IMAGE_TAG)
     |-- aws ecr get-login-password | docker login
     |-- docker compose pull
     |-- docker compose up -d
@@ -95,6 +95,7 @@ Add these in **Settings > Secrets and variables > Actions > Secrets**:
 | `DATABASE_URL` | PostgreSQL connection string (RDS). Include `?sslmode=require`. See [DATABASE_SETUP.md](DATABASE_SETUP.md) |
 | `INTERNAL_API_KEY` | Shared secret for backend–agent auth (generate with `openssl rand -hex 32`) |
 | `USDA_FDC_API_KEY` | USDA FoodData Central API key for food search (get at [api.data.gov/signup](https://api.data.gov/signup)) |
+| `JWT_SECRET` | Signing secret for user session tokens (generate with `openssl rand -hex 32`) |
 | `LANGSMITH_API_KEY` | LangSmith API key (optional, for tracing) |
 
 ## GitHub Variables
@@ -111,6 +112,7 @@ Add these in **Settings > Secrets and variables > Actions > Variables**:
 | `SECURITY_GROUP_ID` | EC2 security group ID (for dynamic IP whitelisting) | `sg-0123456789abcdef0` |
 | `LANGSMITH_TRACING_V2` | Enable LangSmith tracing | `true` or `false` |
 | `LANGSMITH_PROJECT` | LangSmith project name | `nutriguide-ai-prod` |
+| `FRONTEND_URL` | Comma-separated allowed CORS origins (optional; prod traffic is same-origin through the frontend's nginx proxy, so this mainly matters for direct API testing) | `https://nutriguide.example.com` |
 
 ## Modifying the Workflow
 

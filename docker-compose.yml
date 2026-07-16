@@ -27,6 +27,8 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
       - USDA_FDC_API_KEY=${USDA_FDC_API_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL:-}
     depends_on:
       - ai-agent
     restart: unless-stopped

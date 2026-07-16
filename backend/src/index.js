@@ -19,7 +19,22 @@ if (!PORT) {
 
 await prisma.$connect();
 
-app.use(cors({ origin: true }));
+const DEFAULT_DEV_ORIGINS = ["http://localhost:5173", "http://localhost:80", "http://localhost"];
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
+  : DEFAULT_DEV_ORIGINS;
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow non-browser requests (no Origin header, e.g. server-to-server, curl).
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
+  })
+);
 app.use(express.json());
 
 app.use("/api/chat", chatRoutes);

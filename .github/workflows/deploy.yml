@@ -62,6 +62,8 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       INTERNAL_API_KEY: ${{ secrets.INTERNAL_API_KEY }}
       USDA_FDC_API_KEY: ${{ secrets.USDA_FDC_API_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -127,6 +129,8 @@ jobs:
             echo 'DATABASE_URL=$DATABASE_URL' >> .env && \
             echo 'INTERNAL_API_KEY=$INTERNAL_API_KEY' >> .env && \
             echo 'USDA_FDC_API_KEY=$USDA_FDC_API_KEY' >> .env && \
+            echo 'JWT_SECRET=$JWT_SECRET' >> .env && \
+            echo 'FRONTEND_URL=$FRONTEND_URL' >> .env && \
             echo 'ECR_REGISTRY=$ECR_REGISTRY' >> .env && \
             echo 'IMAGE_TAG=$IMAGE_TAG' >> .env && \
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REGISTRY && \
