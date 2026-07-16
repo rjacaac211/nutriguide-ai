@@ -24,17 +24,30 @@ const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",").map((o) => o.trim())
   : DEFAULT_DEV_ORIGINS;
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      // Allow non-browser requests (no Origin header, e.g. server-to-server, curl).
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
+// In prod, browser traffic always reaches this server same-origin (nginx proxies
+// /api to the backend on the frontend's own origin), so trust any request whose
+// Origin host matches the Host header it was sent to, regardless of whether the
+// browser was pointed at an IP, a DNS name, or a future custom domain.
+// FRONTEND_URL remains for genuinely cross-origin cases (e.g. local dev, where
+// the Vite dev server's origin differs from the backend's).
+function corsOptionsDelegate(req, callback) {
+  const origin = req.headers.origin;
+  let allowed = !origin; // no Origin header: non-browser request (curl, server-to-server)
+  if (origin) {
+    if (allowedOrigins.includes(origin)) {
+      allowed = true;
+    } else {
+      try {
+        allowed = new URL(origin).host === req.headers.host;
+      } catch {
+        allowed = false;
       }
-      callback(new Error("Not allowed by CORS"));
-    },
-  })
-);
+    }
+  }
+  callback(null, { origin: allowed });
+}
+
+app.use(cors(corsOptionsDelegate));
 app.use(express.json());
 
 app.use("/api/chat", chatRoutes);
