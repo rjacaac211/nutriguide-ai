@@ -11,7 +11,7 @@ Users create an account (or log in by name) and complete a short onboarding flow
 | **AI / Agent** | LangGraph (StateGraph), multi-step reasoning, stateful conversations, LangChain tools |
 | **RAG** | OpenAI embeddings, Pinecone vector store, Markdown knowledge base |
 | **Observability** | LangSmith tracing (optional) |
-| **Evaluation** | Offline eval (intent, tools, response quality); `npm run eval` in ai-agent-ts |
+| **Evaluation** | Offline eval harness: LLM-as-judge response grading, `agentevals` trajectory matching, LangSmith `evaluate()` experiment dashboard; `npm run eval` in ai-agent-ts |
 | **Stack** | Full stack: React (Vite), Node.js/Express, TypeScript AI agent |
 | **Deployment** | Docker, AWS (EC2, ECR), GitHub Actions CI/CD |
 | **APIs** | Internal APIs (agent ↔ backend), external APIs (USDA FoodData Central) |

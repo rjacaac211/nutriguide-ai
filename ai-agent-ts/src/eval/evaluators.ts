@@ -3,25 +3,34 @@
  * Each evaluator receives { inputs, outputs, referenceOutputs } (LangSmith convention).
  */
 
+import { ChatOpenAI } from "@langchain/openai";
+import { AIMessage, type BaseMessage } from "@langchain/core/messages";
+import { createTrajectoryMatchEvaluator } from "agentevals";
+import { z } from "zod";
 import { parseLogFoodMessage } from "../agent/nodes.js";
 import type { EvalExampleOutput } from "./dataset.js";
 
 interface EvaluatorArgs {
   inputs: Record<string, unknown>;
-  outputs: Record<string, unknown>;
+  // On a failed target-function run (e.g. graph recursion limit hit), LangSmith's
+  // evaluate() still invokes evaluators with outputs undefined - every evaluator
+  // must treat a missing run as a fail, not crash.
+  outputs: Record<string, unknown> | undefined;
   referenceOutputs?: Record<string, unknown>;
 }
 
-type Evaluator = (args: EvaluatorArgs) => { key: string; score: number | boolean };
+type Evaluator = (
+  args: EvaluatorArgs
+) => { key: string; score: number | boolean } | Promise<{ key: string; score: number | boolean }>;
 
-export const intentCorrect: Evaluator = ({ outputs, referenceOutputs }) => {
+export const intentCorrect: Evaluator = ({ outputs = {}, referenceOutputs }) => {
   const expected = referenceOutputs?.intent as string | undefined;
   if (expected == null) return { key: "intent_correct", score: true };
   const actual = (outputs as { classification?: { intent?: string } }).classification?.intent;
   return { key: "intent_correct", score: actual === expected };
 };
 
-export const offTopicHandled: Evaluator = ({ outputs, referenceOutputs }) => {
+export const offTopicHandled: Evaluator = ({ outputs = {}, referenceOutputs }) => {
   if (referenceOutputs?.intent !== "off_topic") return { key: "off_topic_handled", score: true };
   const response = (String(outputs.response ?? "")).toLowerCase();
   const hasRedirect = response.includes("nutrition") || response.includes("diet") || response.includes("health");
@@ -29,7 +38,7 @@ export const offTopicHandled: Evaluator = ({ outputs, referenceOutputs }) => {
   return { key: "off_topic_handled", score: hasRedirect && isBrief };
 };
 
-export const chitchatAppropriate: Evaluator = ({ outputs, referenceOutputs }) => {
+export const chitchatAppropriate: Evaluator = ({ outputs = {}, referenceOutputs }) => {
   if (referenceOutputs?.intent !== "chitchat") return { key: "chitchat_appropriate", score: true };
   const response = (String(outputs.response ?? "")).toLowerCase();
   const isFriendly = response.length > 0 && !response.includes("error");
@@ -42,7 +51,7 @@ export const chitchatAppropriate: Evaluator = ({ outputs, referenceOutputs }) =>
   return { key: "chitchat_appropriate", score: isFriendly && (invitesQuestion || response.length < 200) };
 };
 
-export const logFoodParsed: Evaluator = ({ inputs, outputs, referenceOutputs }) => {
+export const logFoodParsed: Evaluator = ({ inputs, referenceOutputs }) => {
   const ref = referenceOutputs as EvalExampleOutput | undefined;
   if (ref?.intent !== "log_food" || !ref?.parsed) return { key: "log_food_parsed", score: true };
   const message = String(inputs.message ?? "");
@@ -66,26 +75,73 @@ export const logFoodParsed: Evaluator = ({ inputs, outputs, referenceOutputs }) 
   return { key: "log_food_parsed", score: true };
 };
 
-export const rightToolsCalled: Evaluator = ({ outputs, referenceOutputs }) => {
+/**
+ * Trajectory match via agentevals: does the actual tool-call trajectory contain
+ * (at least) every tool in expected_tools? Tool args are ignored - expected_tools
+ * is a minimum-required-set, not an exact-call assertion. "superset" mode allows
+ * the agent to call additional helpful tools beyond the minimum.
+ */
+const trajectorySupersetMatch = createTrajectoryMatchEvaluator({
+  trajectoryMatchMode: "superset",
+  toolArgsMatchMode: "ignore",
+});
+
+export const rightToolsCalled: Evaluator = async ({ outputs = {}, referenceOutputs }) => {
   const expectedTools = referenceOutputs?.expected_tools as string[] | undefined;
   if (!expectedTools?.length) return { key: "right_tools_called", score: true };
-  const actualTools = (outputs.tool_calls ?? []) as string[];
-  const actualSet = new Set(actualTools);
-  const allExpectedCalled = expectedTools.every((t) => actualSet.has(t));
-  return { key: "right_tools_called", score: allExpectedCalled };
+  const actualMessages = (outputs.messages ?? []) as BaseMessage[];
+  const referenceTrajectory = [
+    new AIMessage({
+      content: "",
+      tool_calls: expectedTools.map((name, i) => ({ id: `ref_${i}`, name, args: {} })),
+    }),
+  ];
+  const result = await trajectorySupersetMatch({
+    outputs: actualMessages,
+    referenceOutputs: referenceTrajectory,
+  });
+  return { key: "right_tools_called", score: result.score === true };
 };
 
+const JUDGE_SCHEMA = z.object({
+  grounded: z
+    .boolean()
+    .describe(
+      "True if the response's factual claims are reasonable and don't contradict or fabricate beyond the reference answer."
+    ),
+  addressesQuestion: z.boolean().describe("True if the response directly and substantively addresses the user's question."),
+  reasoning: z.string().describe("One or two sentence justification for the scores above."),
+});
+
+const judgeModel = new ChatOpenAI({ model: "gpt-4o-mini", temperature: 0 }).withStructuredOutput(JUDGE_SCHEMA);
+
 /**
- * Heuristic evaluator for final response quality.
- * Can be extended with LLM-as-judge for nutrition examples.
+ * LLM-as-judge evaluator for final response quality on nutrition-intent examples.
+ * Grades against a golden reference answer (dataset.ts) rather than length/keyword heuristics.
  */
-export const finalResponseQuality: Evaluator = ({ outputs, referenceOutputs }) => {
-  if (referenceOutputs?.intent !== "nutrition") return { key: "final_response_quality", score: true };
+export const judgeResponseQuality: Evaluator = async ({ inputs, outputs = {}, referenceOutputs }) => {
+  const ref = referenceOutputs as EvalExampleOutput | undefined;
+  if (ref?.intent !== "nutrition") return { key: "response_quality_judge", score: true };
   const response = String(outputs.response ?? "");
-  if (!response || response.length < 10) return { key: "final_response_quality", score: false };
-  const hasContent = response.length > 50;
-  const notError = !response.toLowerCase().includes("error") && !response.toLowerCase().includes("could not");
-  return { key: "final_response_quality", score: hasContent && notError };
+  if (!response || response.length < 10 || response.toLowerCase().includes("error")) {
+    return { key: "response_quality_judge", score: false };
+  }
+
+  const question = String((inputs as { message?: string }).message ?? "");
+  const referenceAnswer = ref.reference_answer ?? "(no reference answer provided; grade on general soundness and relevance)";
+
+  const result = await judgeModel.invoke(
+    `You are grading a nutrition assistant's response for quality.
+
+User question: ${question}
+
+Reference answer (guidance for grading, not a required verbatim match): ${referenceAnswer}
+
+Assistant's actual response: ${response}
+
+Grade whether the response is grounded (no fabricated or contradictory claims relative to the reference) and whether it addresses the user's question.`
+  );
+  return { key: "response_quality_judge", score: result.grounded && result.addressesQuestion };
 };
 
 export const ALL_EVALUATORS = [
@@ -94,5 +150,5 @@ export const ALL_EVALUATORS = [
   chitchatAppropriate,
   logFoodParsed,
   rightToolsCalled,
-  finalResponseQuality,
+  judgeResponseQuality,
 ];

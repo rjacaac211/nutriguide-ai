@@ -11,7 +11,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { AIMessage } from "@langchain/core/messages";
 import { graph } from "../agent/index.js";
 import type { EvalExampleInput } from "./dataset.js";
 
@@ -20,7 +19,6 @@ export interface TargetOutput {
   classification?: { intent: string };
   response: string;
   __interrupt__?: unknown;
-  tool_calls: string[];
 }
 
 function extractResponseText(messages: Array<{ content?: unknown }>): string {
@@ -37,18 +35,6 @@ function extractResponseText(messages: Array<{ content?: unknown }>): string {
     }
   }
   return "";
-}
-
-function extractToolCalls(messages: unknown[]): string[] {
-  const toolNames: string[] = [];
-  for (const msg of messages) {
-    if (AIMessage.isInstance(msg) && msg.tool_calls?.length) {
-      for (const tc of msg.tool_calls) {
-        if (tc.name) toolNames.push(tc.name);
-      }
-    }
-  }
-  return toolNames;
 }
 
 /**
@@ -75,13 +61,11 @@ export async function runAgent(inputs: EvalExampleInput): Promise<TargetOutput> 
 
   const resultMessages = (result?.messages ?? []) as unknown[];
   const response = extractResponseText(resultMessages as Array<{ content?: unknown }>);
-  const tool_calls = extractToolCalls(resultMessages);
 
   return {
     messages: resultMessages,
     classification: result.classification,
     response,
     __interrupt__: result.__interrupt__,
-    tool_calls,
   };
 }

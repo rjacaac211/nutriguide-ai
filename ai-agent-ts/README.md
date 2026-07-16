@@ -44,7 +44,7 @@ flowchart TD
 | `agent/index.ts` | Exports graph and tools |
 | `eval/dataset.ts` | Evaluation examples (intent, off-topic, chitchat, log-food, nutrition) |
 | `eval/target.ts` | Target function that invokes the graph for evaluation |
-| `eval/evaluators.ts` | Code evaluators (intent, off-topic, chitchat, log-food, tools, response quality) |
+| `eval/evaluators.ts` | Evaluators (intent, off-topic, chitchat, log-food, agentevals trajectory match for tool selection, LLM-as-judge for response quality) |
 | `scripts/test-chat-direct.ts` | Direct agent test (bypasses HTTP); run with `npm run test:chat` |
 | `scripts/run-eval.ts` | Offline evaluation runner; run with `npm run eval` |
 
@@ -90,6 +90,10 @@ Runs offline evaluation on a curated dataset (~43 examples) covering intent clas
 
 **Prerequisites:** Backend running at `BACKEND_URL`, and `OPENAI_API_KEY`, `BACKEND_URL`, `INTERNAL_API_KEY`, `PINECONE_*` in `.env`.
 
+**Two modes**, chosen automatically:
+- **LangSmith mode** (when `LANGSMITH_TRACING_V2=true` and `LANGSMITH_API_KEY` are set): syncs the dataset in `eval/dataset.ts` to a LangSmith dataset (`nutriguide-agent-eval`, wiped and recreated each run so it never drifts from the code) and runs it through LangSmith's `evaluate()`. Produces a real experiment in the LangSmith UI (project from `LANGSMITH_PROJECT`) with per-example traces and scores, in addition to the console summary.
+- **Local mode** (no LangSmith env vars): runs the same evaluators in a local loop, console output only.
+
 **Evaluators:**
 
 | Evaluator | Measures |
@@ -98,10 +102,10 @@ Runs offline evaluation on a curated dataset (~43 examples) covering intent clas
 | off_topic_handled | Off-topic responses redirect to nutrition and are brief |
 | chitchat_appropriate | Chitchat responses are friendly and invite nutrition questions |
 | log_food_parsed | Log-food messages parse correctly (search_query, grams/amount+unit, meal_type) |
-| right_tools_called | Nutrition questions trigger expected tools (e.g. search_nutrition_knowledge, get_calorie_goal) |
-| final_response_quality | Nutrition responses are substantive and on-topic |
+| right_tools_called | Agent's tool-call trajectory is a superset of the expected tools for the question, via `agentevals`' `createTrajectoryMatchEvaluator` (tool args ignored - this checks *which* tools ran, not their exact arguments) |
+| response_quality_judge | LLM-as-judge (`gpt-4o-mini`, structured output): grades whether the response is grounded and actually addresses the question, against a golden `reference_answer` in the dataset - not a length/keyword heuristic |
 
-Dataset and evaluators live in `src/eval/`.
+Dataset and evaluators live in `src/eval/`. Not yet wired into CI (`deploy.yml`) - the nutrition/log-food examples need a live backend+DB, which the CI runner doesn't have; that's a separate follow-up (standing up service containers + a seeded eval user).
 
 ## Environment
 
