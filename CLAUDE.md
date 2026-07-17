@@ -62,7 +62,7 @@ docker compose up              # run without rebuilding
 Copy `.env.example` to `.env` in the project root. Required variables:
 - `OPENAI_API_KEY` — GPT-4o-mini + OpenAI embeddings
 - `PINECONE_API_KEY`, `PINECONE_INDEX` — Pinecone vector store for RAG
-- `DATABASE_URL` — PostgreSQL connection string
+- `DATABASE_URL` — PostgreSQL connection string (shared by the backend's Prisma models and the AI agent's LangGraph checkpointer tables)
 - `INTERNAL_API_KEY` — shared secret for agent↔backend internal calls
 - `USDA_FDC_API_KEY` — USDA FoodData Central API key
 - `JWT_SECRET` — signs user session tokens (see Authentication below)
@@ -73,7 +73,7 @@ Optional: `LANGSMITH_TRACING_V2`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` for L
 
 ## Agent Architecture (LangGraph StateGraph)
 
-`ai-agent-ts/src/agent/graph.ts` defines a `StateGraph` compiled with `MemorySaver` (session-scoped memory per `threadId`). Flow:
+`ai-agent-ts/src/agent/graph.ts` defines a `StateGraph` compiled with a Postgres-backed `PostgresSaver` checkpointer (`@langchain/langgraph-checkpoint-postgres`, using the same `DATABASE_URL` as the backend) — conversation history and in-flight interrupts survive process restarts and redeploys. Flow:
 
 ```
 START → classifyIntent → routeAfterClassify →
@@ -94,7 +94,7 @@ START → classifyIntent → routeAfterClassify →
 
 **Tools** (`tools.ts`): `get_user_profile`, `get_user_behavioural`, `search_nutrition_knowledge`, `search_foods`, `get_calorie_goal`, `request_food_log_confirmation`. All profile/log tools call backend internal API with `X-Internal-API-Key`.
 
-**Food log confirmation flow**: `requestFoodLogConfirmationTool` calls LangGraph `interrupt()` to pause execution. The backend chat route detects `isGraphInterrupt` and returns `{ response, interrupted: true }`. The frontend shows food options; the user's selection (e.g., "1") is sent as a follow-up message with the same `threadId`, which resumes the graph via `graph.invoke(null, { config, command: { resume: value } })`.
+**Food log confirmation flow**: `requestFoodLogConfirmationTool` calls LangGraph `interrupt()` to pause execution. `ai-agent-ts/src/index.ts` derives pause status from `graph.getState(config).tasks[].interrupts` (durable via the Postgres checkpointer) and, when `graph.invoke`'s result has `result.__interrupt__ != null`, returns `{ response, interrupted: true }`. The frontend shows food options; the user's selection (e.g., "1") is sent as a follow-up message with the same `threadId`, which resumes the graph via `graph.invoke(new Command({ resume: value }), config)`.
 
 **RAG** (`rag.ts`): Pinecone vector store with OpenAI `text-embedding-3-small` embeddings. Sources are in `ai-agent-ts/knowledge/*.md`. Add source URL mappings in the `KNOWN_SOURCES` record in `rag.ts` when adding new knowledge files.
 

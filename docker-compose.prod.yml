@@ -11,6 +11,7 @@ services:
       - PINECONE_INDEX=${PINECONE_INDEX}
       - BACKEND_URL=http://backend:3001
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
+      - DATABASE_URL=${DATABASE_URL}
     restart: unless-stopped
 
   backend:

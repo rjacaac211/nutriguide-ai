@@ -11,8 +11,6 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { graph } from "./agent/index.js";
 import type { ChatRequest, ChatResponse } from "./types.js";
 
-const interruptedThreads = new Set<string>();
-
 const app = express();
 app.use(cors({ origin: "*", credentials: true }));
 app.use(express.json());
@@ -67,15 +65,17 @@ app.post("/chat", async (req: Request, res: Response) => {
 
     const config = { configurable: { thread_id } };
 
+    const state = (await graph.getState(config)) as {
+      values?: { messages?: unknown[] };
+      tasks?: Array<{ interrupts?: unknown[] }>;
+    } | undefined;
+    const isInterrupted = (state?.tasks ?? []).some((t) => (t.interrupts?.length ?? 0) > 0);
+
     let result: { messages?: unknown[]; __interrupt__?: unknown };
 
-    if (interruptedThreads.has(thread_id)) {
-      interruptedThreads.delete(thread_id);
+    if (isInterrupted) {
       result = (await graph.invoke(new Command({ resume: message }), config)) as typeof result;
     } else {
-      const state = (await graph.getState(config)) as {
-        values?: { messages?: unknown[] };
-      } | undefined;
       const existingMessages = state?.values?.messages ?? [];
       const isNewThread = !existingMessages || existingMessages.length === 0;
 
@@ -92,7 +92,6 @@ app.post("/chat", async (req: Request, res: Response) => {
     }
 
     if (result.__interrupt__ != null) {
-      interruptedThreads.add(thread_id);
       const raw = result.__interrupt__;
       const payload = Array.isArray(raw)
         ? (raw[0] as { value?: unknown })?.value ?? raw[0]
