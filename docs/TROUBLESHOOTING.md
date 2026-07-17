@@ -67,6 +67,7 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 - **Dev**: Ensure PostgreSQL is running and `DATABASE_URL` in `.env` is correct. For Docker, use `host.docker.internal` as host. See [DATABASE_SETUP.md](DATABASE_SETUP.md)
 - **Prod**: Verify `DATABASE_URL` in GitHub Secrets. RDS must be in same VPC as EC2; security group must allow 5432 from EC2. Add `?sslmode=require` for RDS
+- **AI agent won't start**: The agent's LangGraph checkpointer (`PostgresSaver`) connects to Postgres on boot and throws immediately if `DATABASE_URL` is missing or the database is unreachable — unlike the backend, this isn't a per-request error, the container/process exits. Check `docker compose logs ai-agent` (or the terminal running `npm run dev` in `ai-agent-ts/`) for the connection error.
 
 ### Env vars missing
 

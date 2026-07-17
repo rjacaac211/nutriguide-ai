@@ -5,12 +5,12 @@ Use this guide to run each service in a separate terminal so you can see logs an
 ## Prerequisites
 
 - **Index knowledge first** — When you add or change `.md` files in `ai-agent-ts/knowledge/`, run `npm run index` in `ai-agent-ts` before testing. The agent reads from a pre-populated Pinecone index; it does not index at runtime.
-- **PostgreSQL** — Backend requires PostgreSQL. See [DATABASE_SETUP.md](DATABASE_SETUP.md) for setup. Create `nutriguide` database and run migrations.
+- **PostgreSQL** — Backend and AI agent both require PostgreSQL (agent uses it for LangGraph checkpointing). See [DATABASE_SETUP.md](DATABASE_SETUP.md) for setup. Create `nutriguide` database and run migrations.
 - `.env` in **project root** — both AI agent and backend load from it. Include at least:
   - `OPENAI_API_KEY` (required for AI agent)
   - `PINECONE_API_KEY` (required for RAG)
   - `PINECONE_INDEX=nutriguide-app-knowledge` (or your index name)
-  - `DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide` (required for backend)
+  - `DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide` (required for backend and AI agent)
   - `INTERNAL_API_KEY` (required; backend and agent share this; generate with `openssl rand -hex 32`)
   - `USDA_FDC_API_KEY` (required for food search; get at [api.data.gov/signup](https://api.data.gov/signup))
   - `PORT=3001` (backend)
@@ -37,7 +37,7 @@ cd ai-agent-ts
 npm run dev
 ```
 
-Loads `PINECONE_API_KEY`, `PINECONE_INDEX`, `PORT`, `OPENAI_API_KEY`, `BACKEND_URL`, and `INTERNAL_API_KEY` from root `.env`. The agent uses these to fetch profiles, behavioural data, and food search from the backend. You should see: `NutriGuide AI Agent listening on port 8000`
+Loads `PINECONE_API_KEY`, `PINECONE_INDEX`, `PORT`, `OPENAI_API_KEY`, `BACKEND_URL`, `INTERNAL_API_KEY`, and `DATABASE_URL` from root `.env`. The agent uses `BACKEND_URL`/`INTERNAL_API_KEY` to fetch profiles, behavioural data, and food search from the backend, and `DATABASE_URL` for its LangGraph checkpointer (conversation memory persisted to Postgres) — the process throws on startup if `DATABASE_URL` is missing or unreachable. You should see: `NutriGuide AI Agent listening on port 8000`
 
 ---
 
@@ -98,7 +98,7 @@ Runs ~43 examples covering intent classification, off-topic handling, chitchat, 
 
 1. **Missing `OPENAI_API_KEY`** — Agent fails on first LLM call
 2. **Pinecone unreachable** — `PINECONE_API_KEY` or `PINECONE_INDEX` wrong or missing (RAG/search tool fails). Ensure you have internet and a valid Pinecone index.
-3. **Database unreachable** — `DATABASE_URL` wrong or PostgreSQL not running. See [DATABASE_SETUP.md](DATABASE_SETUP.md).
+3. **Database unreachable** — `DATABASE_URL` wrong or PostgreSQL not running. Affects both services: the backend errors on DB queries, and the AI agent now fails to start entirely (its LangGraph checkpointer connects on boot). See [DATABASE_SETUP.md](DATABASE_SETUP.md).
 4. **Agent not running** — Backend gets connection refused when calling `AGENT_URL`
 5. **Backend not running** — Frontend gets 500 when proxying to backend
 

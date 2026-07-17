@@ -102,7 +102,7 @@ START → classifyIntent → routeAfterClassify →
 
 `backend/src/` is plain ESM (`.js` files, `"type": "module"`).
 - `routes/internal.js` — agent-only endpoints, all protected by `requireInternalApiKey` middleware
-- `routes/chat.js` — proxies frontend chat requests to the agent, handles interrupt detection, protected by `requireAuth`
+- `routes/chat.js` — proxies frontend chat requests to the agent, protected by `requireAuth` (interrupt detection happens in the agent, not here — see Agent Architecture above)
 - `routes/users.js`, `foodLogs.js`, `weightLogs.js` — user-scoped routes, all protected by `requireAuth` + `requireOwnership`
 - `services/tdee.js` — TDEE/BMR calculation from profile
 - `services/fdc.js` — USDA FoodData Central proxy (search, food details, unit conversion)
@@ -132,6 +132,8 @@ All component styles live in `frontend/src/App.css`. Design tokens are CSS varia
 ## Database
 
 PostgreSQL 15+ with Prisma ORM. Run migrations with `npm run migrate dev` from `backend/`. Schema: `users` → `profile` (1:1), `food_log` (many), `weight_log` (many). `WeightLog` has a unique constraint on `(userId, date)` — one log per user per day.
+
+The same database also holds the AI agent's LangGraph checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`), created and managed by `PostgresSaver.setup()` (see Agent Architecture above) — outside Prisma's schema/migrations, no collision.
 
 ## Deployment
 

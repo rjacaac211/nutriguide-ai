@@ -19,6 +19,9 @@ Technical review of the PostgreSQL integration. For setup steps (dev and prod), 
 | Package | Status |
 |---------|--------|
 | @langchain/* | Current versions |
+| @langchain/langgraph-checkpoint-postgres | ^1.0.4 — added for Postgres-backed conversation checkpointing |
+| pg | ^8.12.0 — direct dependency (see SSL note below) |
+| @types/pg | ^8.11.0 (devDependency; `pg` ships no bundled types) |
 | zod | ^3.23.0 |
 | express, dotenv, cors | Same as backend |
 
@@ -58,6 +61,15 @@ Technical review of the PostgreSQL integration. For setup steps (dev and prod), 
 - **Behavioural fetch**: Calls `GET /api/internal/users/:id/behavioural?days=7`; returns food logs and weight trend
 - **Food search**: Calls `GET /api/internal/foods/search?q=...&limit=...`; backend proxies to USDA FDC
 - **Format**: Maps internal API camelCase (weightKg, etc.) to LLM string format – correct
+
+### Agent Checkpointer (LangGraph → Postgres)
+
+- **Package**: `PostgresSaver` from `@langchain/langgraph-checkpoint-postgres`, wired into `ai-agent-ts/src/agent/graph.ts`. Replaced the in-memory `MemorySaver` so conversation threads and paused food-log-confirmation interrupts survive process restarts and redeploys.
+- **Connection**: Built via an explicit `new pg.Pool({ connectionString, ssl })` rather than `PostgresSaver.fromConnString(connString)`. **Reason**: `fromConnString` only does `new pg.Pool({ connectionString })` — it does not interpret `sslmode` query params. `pg-connection-string`'s default (non-libpq-compat) parser only sets an `ssl` config for `sslmode=disable`; `sslmode=require` (used by prod's RDS `DATABASE_URL`, see [DATABASE_SETUP.md](DATABASE_SETUP.md)) is silently a no-op under `fromConnString`, which would either get rejected by RDS's SSL enforcement or silently connect in plaintext. Verified directly against the `pg-connection-string` source and the official LangGraph.js docs — every documented `fromConnString` example uses `sslmode=disable` against local Postgres only, none exercise `sslmode=require`.
+- **SSL derivation**: `ssl: /sslmode=require/.test(databaseUrl) ? { rejectUnauthorized: false } : undefined` — `{ rejectUnauthorized: false }` matches libpq's own definition of `sslmode=require` (encrypt, don't verify the cert chain; `verify-ca`/`verify-full` are the certificate-checking modes, not used here).
+- **Setup**: `await checkpointer.setup()` runs on every process boot as a top-level `await` in `graph.ts` (ESM, ES2022 target — valid). Idempotent per LangGraph docs; creates `checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations` tables on first run, no-ops after. Not wrapped in a lock — a true concurrent cold-start race (two processes calling `setup()` against a never-initialized DB at the same instant) could error, but this doesn't occur under normal `tsx watch` restarts or single-instance deploys; not worth engineering around at this project's scale.
+- **Shared instance**: Reuses the backend's `DATABASE_URL` rather than a separate connection string — the checkpointer's tables live in the same database as Prisma's schema with no naming collision.
+- **Interrupt detection**: `interruptedThreads` in-memory `Set` (previously tracked which threads were paused) was removed entirely. `ai-agent-ts/src/index.ts` now derives pause status per-request from `graph.getState(config).tasks[].interrupts`, which is itself durable once the checkpointer is Postgres-backed — confirmed against the official LangGraph.js docs ("Detecting in-flight threads").
 
 ---
 

@@ -26,7 +26,7 @@ docker compose up --build
 
 - Builds images from `./frontend`, `./backend`, `./ai-agent-ts`
 - Uses `.env` in project root for environment variables (including `DATABASE_URL`, `PINECONE_API_KEY`, `PINECONE_INDEX`, `USDA_FDC_API_KEY`)
-- **Database**: No PostgreSQL container. Backend connects to your local PostgreSQL via `DATABASE_URL`. Use `host.docker.internal` as host (see [DATABASE_SETUP.md](DATABASE_SETUP.md))
+- **Database**: No PostgreSQL container. Backend and ai-agent both connect to your local PostgreSQL via `DATABASE_URL` (agent uses it for LangGraph checkpointing). Use `host.docker.internal` as host (see [DATABASE_SETUP.md](DATABASE_SETUP.md))
 - App available at http://localhost:80 (or http://localhost)
 
 ## Production

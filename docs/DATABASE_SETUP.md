@@ -1,15 +1,15 @@
 # Database Setup
 
-PostgreSQL setup for NutriGuide-AI. Both development and production use external PostgreSQL (no database container in Docker).
+PostgreSQL setup for NutriGuide-AI. Both development and production use external PostgreSQL (no database container in Docker). Both the **backend** (Prisma ORM) and the **AI agent** (`ai-agent-ts`, LangGraph checkpointer for conversation memory) connect to the same database — the agent's tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`) live alongside Prisma's schema with no collision, since the checkpointer creates and manages them itself.
 
 ## Overview
 
 | Environment | PostgreSQL Source | Connection |
 |-------------|-------------------|------------|
-| **Development** | Local PostgreSQL on host | `localhost` (backend on host) or `host.docker.internal` (backend in Docker) |
+| **Development** | Local PostgreSQL on host | `localhost` (services on host) or `host.docker.internal` (services in Docker) |
 | **Production** | AWS RDS | RDS endpoint from `DATABASE_URL` |
 
-When using `docker compose up`, the backend runs in a container and connects to your local PostgreSQL via `host.docker.internal`.
+When using `docker compose up`, the backend and ai-agent both run in containers and connect to your local PostgreSQL via `host.docker.internal`.
 
 ---
 
@@ -38,13 +38,13 @@ CREATE DATABASE nutriguide;
 
 Add to `.env` in the project root:
 
-**Running services locally** (backend outside Docker):
+**Running services locally** (backend/agent outside Docker):
 
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/nutriguide
 ```
 
-**Running with Docker Compose** (backend in container, connects to host PostgreSQL):
+**Running with Docker Compose** (backend and agent in containers, connect to host PostgreSQL):
 
 ```
 DATABASE_URL=postgresql://user:password@host.docker.internal:5432/nutriguide

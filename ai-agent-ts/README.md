@@ -1,6 +1,6 @@
 # NutriGuide AI Agent (TypeScript)
 
-Custom LangGraph StateGraph-based nutrition assistant with RAG (Pinecone) and tools. Uses routing (nutrition, chitchat, off-topic, log_food), multi-step reasoning (analyze node), and an agent loop with MemorySaver for session-scoped conversation memory. Food logging uses LangGraph interrupts so the user can reply "1" or "2" to confirm options without re-classification.
+Custom LangGraph StateGraph-based nutrition assistant with RAG (Pinecone) and tools. Uses routing (nutrition, chitchat, off-topic, log_food), multi-step reasoning (analyze node), and an agent loop with a Postgres-backed `PostgresSaver` checkpointer so conversation memory and in-flight interrupts survive process restarts and redeploys. Food logging uses LangGraph interrupts so the user can reply "1" or "2" to confirm options without re-classification.
 
 ## Architecture
 
@@ -38,7 +38,7 @@ flowchart TD
 |------|-------------|
 | `agent/state.ts` | Annotation.Root state schema (messages, user_id, classification, analysis) |
 | `agent/nodes.ts` | classifyIntent, respondDecline, chitchatNode, logFoodNode, analyze, agentNode, toolNode |
-| `agent/graph.ts` | StateGraph, edges, MemorySaver |
+| `agent/graph.ts` | StateGraph, edges, PostgresSaver checkpointer |
 | `agent/tools.ts` | getUserProfile, getUserBehavioural (food logs + weight trend), getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), requestFoodLogConfirmation (interrupt-based logging; accepts grams or amount+unit) |
 | `agent/rag.ts` | Pinecone RAG (embeddings, retriever) |
 | `agent/index.ts` | Exports graph and tools |
@@ -113,6 +113,7 @@ Dataset and evaluators live in `src/eval/`. Not yet wired into CI (`deploy.yml`)
 - `PINECONE_API_KEY` — Required for RAG
 - `PINECONE_INDEX` — Pinecone index name (default: nutriguide-app-knowledge)
 - `AGENT_PORT` — Server port (required)
+- `DATABASE_URL` — Required; the LangGraph checkpointer (`PostgresSaver`) persists conversation state and in-flight interrupts to this Postgres database (same instance as the backend, separate tables). The process throws on startup if unset.
 - `BACKEND_URL` — Backend base URL for fetching profiles (default: http://localhost:3001; use http://backend:3001 in Docker)
 - `INTERNAL_API_KEY` — Required for agent-backend auth (must match backend)
 - `LANGSMITH_*` — Optional LangSmith tracing

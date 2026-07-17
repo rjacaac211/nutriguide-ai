@@ -19,7 +19,7 @@ Users create an account (or log in by name) and complete a short onboarding flow
 
 ## Tech Stack
 
-- **TypeScript / LangGraph.js / LangChain**: Custom LangGraph StateGraph with intent routing, multi-step reasoning (classify → analyze → agent loop), tools, and RAG. Session-scoped memory via MemorySaver; LangGraph interrupts for food-log confirmation flows.
+- **TypeScript / LangGraph.js / LangChain**: Custom LangGraph StateGraph with intent routing, multi-step reasoning (classify → analyze → agent loop), tools, and RAG. Postgres-backed conversation memory (`PostgresSaver`) that survives process restarts and redeploys; LangGraph interrupts for food-log confirmation flows.
 - **Node.js / Express**: Backend API, middleware, agent proxy, internal API (`X-Internal-API-Key`) for agent-only endpoints.
 - **RAG**: OpenAI embeddings (text-embedding-3-small) + Pinecone for nutrition knowledge (cloud vector store).
 - **OpenAI**: GPT-4o-mini for the agent.
@@ -64,7 +64,7 @@ flowchart LR
 - Node.js 20+
 - OpenAI API key (required for the agent)
 - Pinecone account and index (required for RAG; create at [app.pinecone.io](https://app.pinecone.io))
-- PostgreSQL 15+ (required for backend; see [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md))
+- PostgreSQL 15+ (required for backend and AI agent — the agent's LangGraph checkpointer uses the same database; see [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md))
 - Docker and Docker Compose (optional, for Docker setup)
 
 ## Quick Reference
@@ -100,7 +100,7 @@ LANGSMITH_PROJECT=your_langchain_project_name
 
 Backend: `PORT=3001`, `AGENT_URL=http://localhost:8000`, `DATABASE_URL` (required). See [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) for database setup.
 
-AI agent: `AGENT_PORT=8000` (required). Pinecone keys above are required for RAG.
+AI agent: `AGENT_PORT=8000` (required). `DATABASE_URL` (required — the agent's LangGraph checkpointer persists conversation state to Postgres; the process throws on startup if unset). Pinecone keys above are required for RAG.
 
 ### 2. AI Agent (TypeScript)
 
@@ -146,7 +146,7 @@ Run all services with Docker:
 docker compose up --build
 ```
 
-App available at http://localhost. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, and ai-agent (TypeScript). Backend connects to your local PostgreSQL via `DATABASE_URL` (use `host.docker.internal` as host). RAG uses Pinecone (cloud). See [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md).
+App available at http://localhost. Uses [docker-compose.yml](docker-compose.yml) to build and run frontend, backend, and ai-agent (TypeScript). Backend and ai-agent both connect to your local PostgreSQL via `DATABASE_URL` (use `host.docker.internal` as host). RAG uses Pinecone (cloud). See [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md).
 
 For production deployment (ECR images), see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
