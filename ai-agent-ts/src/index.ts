@@ -2,16 +2,32 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { randomUUID } from "crypto";
 import express, { Request, Response } from "express";
+import { pinoHttp } from "pino-http";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 import { Command } from "@langchain/langgraph";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { graph } from "./agent/index.js";
+import { logger } from "./logger.js";
 import type { ChatRequest, ChatResponse } from "./types.js";
 
 const app = express();
+app.use(
+  pinoHttp({
+    logger,
+    genReqId: (req, res) => {
+      const existing = req.headers["x-request-id"];
+      if (existing) return Array.isArray(existing) ? existing[0] : existing;
+      const id = randomUUID();
+      res.setHeader("X-Request-Id", id);
+      return id;
+    },
+    autoLogging: { ignore: (req) => req.url === "/health" },
+  })
+);
 app.use(cors({ origin: "*", credentials: true }));
 app.use(express.json());
 
@@ -63,7 +79,7 @@ app.post("/chat", async (req: Request, res: Response) => {
       return;
     }
 
-    const config = { configurable: { thread_id } };
+    const config = { configurable: { thread_id, request_id: req.id } };
 
     const state = (await graph.getState(config)) as {
       values?: { messages?: unknown[] };
@@ -71,10 +87,17 @@ app.post("/chat", async (req: Request, res: Response) => {
     } | undefined;
     const isInterrupted = (state?.tasks ?? []).some((t) => (t.interrupts?.length ?? 0) > 0);
 
+    const runConfig = {
+      ...config,
+      runName: "nutriguide-chat",
+      tags: ["chat", isInterrupted ? "resume" : "new-turn"],
+      metadata: { user_id, thread_id, request_id: req.id },
+    };
+
     let result: { messages?: unknown[]; __interrupt__?: unknown };
 
     if (isInterrupted) {
-      result = (await graph.invoke(new Command({ resume: message }), config)) as typeof result;
+      result = (await graph.invoke(new Command({ resume: message }), runConfig)) as typeof result;
     } else {
       const existingMessages = state?.values?.messages ?? [];
       const isNewThread = !existingMessages || existingMessages.length === 0;
@@ -88,7 +111,7 @@ app.post("/chat", async (req: Request, res: Response) => {
           ]
         : [new HumanMessage(message)];
 
-      result = (await graph.invoke({ messages, user_id }, config)) as typeof result;
+      result = (await graph.invoke({ messages, user_id }, runConfig)) as typeof result;
     }
 
     if (result.__interrupt__ != null) {
@@ -108,7 +131,7 @@ app.post("/chat", async (req: Request, res: Response) => {
     const responseText = extractResponseText(resultMessages);
     res.json({ response: responseText } satisfies ChatResponse);
   } catch (err) {
-    console.error("Chat error:", err);
+    req.log.error({ err }, "Chat error");
     res.status(500).json({ error: (err as Error).message ?? "Chat request failed" });
   }
 });
@@ -122,5 +145,5 @@ if (!PORT) {
   throw new Error("AGENT_PORT environment variable is required");
 }
 app.listen(Number(PORT), "0.0.0.0", () => {
-  console.log(`NutriGuide AI Agent listening on port ${PORT}`);
+  logger.info(`NutriGuide AI Agent listening on port ${PORT}`);
 });

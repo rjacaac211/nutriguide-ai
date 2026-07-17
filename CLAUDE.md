@@ -92,6 +92,8 @@ START → classifyIntent → routeAfterClassify →
 - `agentNode` — GPT-4o-mini with tools bound; loops with `toolNode` until no tool calls remain
 - `toolNode` — executes tool calls from agent, returns ToolMessages
 
+All LLM-calling nodes log token usage/cost via `logTokenUsage()` (`agent/observability.ts`), keyed off `nodes.ts`'s `MODEL_NAME` constant. **If you change the model, add a matching entry to `observability.ts`'s `PRICING_PER_1M_TOKENS_USD` table** — an unlisted model logs a warning and skips the cost estimate rather than silently pricing against the old model.
+
 **Tools** (`tools.ts`): `get_user_profile`, `get_user_behavioural`, `search_nutrition_knowledge`, `search_foods`, `get_calorie_goal`, `request_food_log_confirmation`. All profile/log tools call backend internal API with `X-Internal-API-Key`.
 
 **Food log confirmation flow**: `requestFoodLogConfirmationTool` calls LangGraph `interrupt()` to pause execution. `ai-agent-ts/src/index.ts` derives pause status from `graph.getState(config).tasks[].interrupts` (durable via the Postgres checkpointer) and, when `graph.invoke`'s result has `result.__interrupt__ != null`, returns `{ response, interrupted: true }`. The frontend shows food options; the user's selection (e.g., "1") is sent as a follow-up message with the same `threadId`, which resumes the graph via `graph.invoke(new Command({ resume: value }), config)`.

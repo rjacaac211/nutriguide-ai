@@ -44,7 +44,12 @@ function extractResponseText(messages: Array<{ content?: unknown }>): string {
 export async function runAgent(inputs: EvalExampleInput): Promise<TargetOutput> {
   const { message, user_id } = inputs;
   const threadId = `eval-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const config = { configurable: { thread_id: threadId } };
+  const config = {
+    configurable: { thread_id: threadId },
+    runName: "nutriguide-chat-eval",
+    tags: ["eval"],
+    metadata: { user_id, thread_id: threadId },
+  };
 
   const messages = [
     new SystemMessage(

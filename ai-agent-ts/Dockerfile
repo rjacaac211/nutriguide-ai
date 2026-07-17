@@ -24,4 +24,5 @@ COPY knowledge/ knowledge/
 EXPOSE 8000
 
 ENV PORT=8000
+ENV NODE_ENV=production
 CMD ["node", "dist/index.js"]

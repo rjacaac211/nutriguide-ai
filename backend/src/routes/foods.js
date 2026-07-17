@@ -19,7 +19,7 @@ router.get("/search", async (req, res) => {
     const foods = await searchFoods(q, limit);
     res.json({ foods });
   } catch (err) {
-    console.error("Food search error:", err);
+    req.log.error({ err }, "Food search error");
     res.status(500).json({ error: err.message || "Food search failed" });
   }
 });
@@ -40,7 +40,7 @@ router.get("/:fdcId", async (req, res) => {
     }
     res.json(food);
   } catch (err) {
-    console.error("Food details error:", err);
+    req.log.error({ err }, "Food details error");
     res.status(500).json({ error: err.message || "Failed to fetch food details" });
   }
 });
