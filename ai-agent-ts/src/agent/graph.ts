@@ -1,5 +1,6 @@
+import pg from "pg";
 import { StateGraph, START, END } from "@langchain/langgraph";
-import { MemorySaver } from "@langchain/langgraph-checkpoint";
+import { PostgresSaver } from "@langchain/langgraph-checkpoint-postgres";
 import { NutriGuideState } from "./state.js";
 import {
   classifyIntent,
@@ -44,6 +45,17 @@ const workflow = new StateGraph(NutriGuideState)
   .addConditionalEdges("agentNode", shouldContinue, ["toolNode", END])
   .addEdge("toolNode", "agentNode");
 
-const checkpointer = new MemorySaver();
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL environment variable is required for the Postgres checkpointer");
+}
+
+const pool = new pg.Pool({
+  connectionString: databaseUrl,
+  ssl: /sslmode=require/.test(databaseUrl) ? { rejectUnauthorized: false } : undefined,
+});
+
+const checkpointer = new PostgresSaver(pool);
+await checkpointer.setup(); // idempotent: creates checkpoints/checkpoint_blobs/checkpoint_writes/checkpoint_migrations tables
 
 export const graph = workflow.compile({ checkpointer });
