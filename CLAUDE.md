@@ -32,7 +32,7 @@ npm start              # run compiled dist/index.js
 npm run dev            # tsx watch (hot reload, no build needed)
 npm run index          # index knowledge/ files to Pinecone (run after changing .md files)
 npm run test:chat      # smoke test agent directly
-npm run eval           # run offline evaluation suite
+npm run eval           # run offline eval suite (LLM-as-judge + agentevals trajectory match); uses LangSmith evaluate() if LANGSMITH_TRACING_V2/LANGSMITH_API_KEY are set, else runs locally
 ```
 
 ### Backend (`backend/`)
@@ -65,6 +65,8 @@ Copy `.env.example` to `.env` in the project root. Required variables:
 - `DATABASE_URL` — PostgreSQL connection string
 - `INTERNAL_API_KEY` — shared secret for agent↔backend internal calls
 - `USDA_FDC_API_KEY` — USDA FoodData Central API key
+- `JWT_SECRET` — signs user session tokens (see Authentication below)
+- `FRONTEND_URL` — comma-separated CORS allow-list for the backend (defaults to localhost dev origins if unset)
 - `PORT=3001`, `AGENT_URL=http://localhost:8000`, `BACKEND_URL=http://localhost:3001`, `AGENT_PORT=8000`
 
 Optional: `LANGSMITH_TRACING_V2`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` for LangSmith observability.
@@ -100,13 +102,20 @@ START → classifyIntent → routeAfterClassify →
 
 `backend/src/` is plain ESM (`.js` files, `"type": "module"`).
 - `routes/internal.js` — agent-only endpoints, all protected by `requireInternalApiKey` middleware
-- `routes/chat.js` — proxies frontend chat requests to the agent, handles interrupt detection
+- `routes/chat.js` — proxies frontend chat requests to the agent, handles interrupt detection, protected by `requireAuth`
+- `routes/users.js`, `foodLogs.js`, `weightLogs.js` — user-scoped routes, all protected by `requireAuth` + `requireOwnership`
 - `services/tdee.js` — TDEE/BMR calculation from profile
 - `services/fdc.js` — USDA FoodData Central proxy (search, food details, unit conversion)
 - `services/foodLogs.js` — `appendFoodLog`: upserts a food log entry by date+mealType (used by agent)
 - `prisma/schema.prisma` — models: `User`, `Profile` (1:1), `FoodLog`, `WeightLog`
 
 Prisma `Decimal` fields must be serialized with `.toNumber()` before sending JSON — a pattern repeated in route handlers (look for `toNum` helper functions).
+
+### Authentication
+
+`middleware/auth.js` issues and verifies JWTs (7-day TTL, `JWT_SECRET`). Accounts are created via `POST /api/users` and resumed via `GET /api/users/by-name`; both return a token the frontend sends as `Authorization: Bearer <token>` (see `frontend/src/api/client.js`). `requireAuth` verifies the token and sets `req.userId`; `requireOwnership` (must run after `requireAuth`) 403s if `req.params.id !== req.userId`, so a valid token for one account can't read/write another account's profile, food logs, or weight logs. `/api/internal/*` is separate — it's agent-to-backend only and uses `requireInternalApiKey`, not user auth.
+
+CORS (`backend/src/index.js`) allows origins in `FRONTEND_URL` (comma-separated) plus any origin whose host matches the request's own `Host` header — so the same server reached via IP, DNS name, or a future custom domain is treated as same-origin without needing every variant listed explicitly.
 
 ## Frontend Structure
 
