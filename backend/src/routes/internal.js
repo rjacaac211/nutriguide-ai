@@ -58,7 +58,7 @@ router.get("/users/:id/profile", async (req, res) => {
     }
     res.json(serializeProfile(profile));
   } catch (err) {
-    console.error("Internal profile fetch error:", err);
+    req.log.error({ err, id: req.params.id }, "Internal profile fetch error");
     res.status(500).json({ error: "Failed to fetch profile" });
   }
 });
@@ -103,7 +103,7 @@ router.get("/users/:id/behavioural", async (req, res) => {
 
     res.json({ food_logs: serializedLogs, weight_trend });
   } catch (err) {
-    console.error("Internal behavioural fetch error:", err);
+    req.log.error({ err, id: req.params.id }, "Internal behavioural fetch error");
     res.status(500).json({ error: "Failed to fetch behavioural data" });
   }
 });
@@ -124,7 +124,7 @@ router.get("/foods/search", async (req, res) => {
     const foods = await searchFoods(q, limit);
     res.json({ foods });
   } catch (err) {
-    console.error("Internal food search error:", err);
+    req.log.error({ err, q: req.query.q }, "Internal food search error");
     res.status(500).json({ error: err.message || "Food search failed" });
   }
 });
@@ -145,7 +145,7 @@ router.get("/foods/:fdcId", async (req, res) => {
     }
     res.json(food);
   } catch (err) {
-    console.error("Internal food details error:", err);
+    req.log.error({ err, fdcId: req.params.fdcId }, "Internal food details error");
     res.status(500).json({ error: err.message || "Failed to fetch food details" });
   }
 });
@@ -167,7 +167,7 @@ router.post("/foods/convert", async (req, res) => {
     }
     res.json(result);
   } catch (err) {
-    console.error("Internal food convert error:", err);
+    req.log.error({ err }, "Internal food convert error");
     res.status(500).json({ error: err.message || "Conversion failed" });
   }
 });
@@ -190,7 +190,7 @@ router.get("/users/:id/calorie-goal", async (req, res) => {
     const { goalKcal, bmr, tdee } = calculateTDEE(profileForTDEE);
     res.json({ goalKcal, bmr, tdee });
   } catch (err) {
-    console.error("Internal calorie goal error:", err);
+    req.log.error({ err, id: req.params.id }, "Internal calorie goal error");
     res.status(500).json({ error: "Failed to get calorie goal" });
   }
 });
@@ -211,7 +211,7 @@ router.post("/users/:id/food-logs/append", async (req, res) => {
     if (err.message?.includes("mealType") || err.message?.includes("items") || err.message?.includes("Invalid item")) {
       return res.status(400).json({ error: err.message });
     }
-    console.error("Internal food log append error:", err);
+    req.log.error({ err, id: req.params.id }, "Internal food log append error");
     res.status(500).json({ error: "Failed to append food log" });
   }
 });

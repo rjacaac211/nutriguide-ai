@@ -45,7 +45,7 @@ router.get("/:id/weight-logs", requireAuth, requireOwnership, async (req, res) =
     const logs = await listWeightLogs(userId, from, to);
     res.json({ logs });
   } catch (err) {
-    console.error("Weight logs fetch error:", err);
+    req.log.error({ err }, "Weight logs fetch error");
     res.status(500).json({ error: "Failed to fetch weight logs" });
   }
 });
@@ -70,7 +70,7 @@ router.post("/:id/weight-logs", requireAuth, requireOwnership, async (req, res) 
     if (err.message?.includes("weightKg") || err.message?.includes("date")) {
       return res.status(400).json({ error: err.message });
     }
-    console.error("Weight log create error:", err);
+    req.log.error({ err }, "Weight log create error");
     res.status(500).json({ error: "Failed to create weight log" });
   }
 });
@@ -94,7 +94,7 @@ router.put("/:id/weight-logs/:logId", requireAuth, requireOwnership, async (req,
     if (err.message?.includes("weightKg")) {
       return res.status(400).json({ error: err.message });
     }
-    console.error("Weight log update error:", err);
+    req.log.error({ err }, "Weight log update error");
     res.status(500).json({ error: "Failed to update weight log" });
   }
 });
@@ -113,7 +113,7 @@ router.delete("/:id/weight-logs/:logId", requireAuth, requireOwnership, async (r
     }
     res.status(204).send();
   } catch (err) {
-    console.error("Weight log delete error:", err);
+    req.log.error({ err }, "Weight log delete error");
     res.status(500).json({ error: "Failed to delete weight log" });
   }
 });

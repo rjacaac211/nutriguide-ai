@@ -2,8 +2,11 @@ import "./env.js";
 
 import express from "express";
 import cors from "cors";
+import { randomUUID } from "crypto";
+import { pinoHttp } from "pino-http";
 
 import { prisma } from "./db.js";
+import { logger } from "./logger.js";
 import chatRoutes from "./routes/chat.js";
 import userRoutes from "./routes/users.js";
 import internalRoutes from "./routes/internal.js";
@@ -16,6 +19,20 @@ const PORT = process.env.PORT;
 if (!PORT) {
   throw new Error("PORT environment variable is not set");
 }
+
+app.use(
+  pinoHttp({
+    logger,
+    genReqId: (req, res) => {
+      const existing = req.headers["x-request-id"];
+      if (existing) return Array.isArray(existing) ? existing[0] : existing;
+      const id = randomUUID();
+      res.setHeader("X-Request-Id", id);
+      return id;
+    },
+    autoLogging: { ignore: (req) => req.url === "/health" || req.url === "/api/health" },
+  })
+);
 
 await prisma.$connect();
 
@@ -66,5 +83,5 @@ app.get("/health", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`NutriGuide backend running on http://localhost:${PORT}`);
+  logger.info(`NutriGuide backend running on http://localhost:${PORT}`);
 });

@@ -39,7 +39,12 @@ function extractResponseText(messages: Array<{ content?: unknown }>): string {
 async function main() {
   const threadId = "test-thread-" + Date.now();
   const userId = "test-user-1";
-  const config = { configurable: { thread_id: threadId } };
+  const config = {
+    configurable: { thread_id: threadId },
+    runName: "nutriguide-chat-manual-test",
+    tags: ["manual-test"],
+    metadata: { user_id: userId, thread_id: threadId },
+  };
 
   console.log("=== Turn 1: Log 100g chicken for lunch ===\n");
 

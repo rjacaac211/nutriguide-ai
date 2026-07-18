@@ -39,7 +39,7 @@ router.get("/:id/food-logs", requireAuth, requireOwnership, async (req, res) => 
 
     res.json({ logs: logs.map(serializeLog) });
   } catch (err) {
-    console.error("Food logs fetch error:", err);
+    req.log.error({ err }, "Food logs fetch error");
     res.status(500).json({ error: "Failed to fetch food logs" });
   }
 });
@@ -59,7 +59,7 @@ router.post("/:id/food-logs", requireAuth, requireOwnership, async (req, res) =>
     if (err.message?.includes("mealType") || err.message?.includes("items") || err.message?.includes("Invalid item")) {
       return res.status(400).json({ error: err.message });
     }
-    console.error("Food log create error:", err);
+    req.log.error({ err }, "Food log create error");
     res.status(500).json({ error: "Failed to create food log" });
   }
 });
@@ -112,7 +112,7 @@ router.put("/:id/food-logs/:logId", requireAuth, requireOwnership, async (req, r
 
     res.json(serializeLog(log));
   } catch (err) {
-    console.error("Food log update error:", err);
+    req.log.error({ err }, "Food log update error");
     res.status(500).json({ error: "Failed to update food log" });
   }
 });
@@ -135,7 +135,7 @@ router.delete("/:id/food-logs/:logId", requireAuth, requireOwnership, async (req
     await prisma.foodLog.delete({ where: { id: logId } });
     res.status(204).send();
   } catch (err) {
-    console.error("Food log delete error:", err);
+    req.log.error({ err }, "Food log delete error");
     res.status(500).json({ error: "Failed to delete food log" });
   }
 });
@@ -196,7 +196,7 @@ router.patch("/:id/food-logs/:logId/items/:itemIndex", requireAuth, requireOwner
 
     res.json(serializeLog(log));
   } catch (err) {
-    console.error("Food log item update error:", err);
+    req.log.error({ err }, "Food log item update error");
     res.status(500).json({ error: "Failed to update item" });
   }
 });
@@ -243,7 +243,7 @@ router.delete("/:id/food-logs/:logId/items/:itemIndex", requireAuth, requireOwne
 
     res.status(204).send();
   } catch (err) {
-    console.error("Food log item delete error:", err);
+    req.log.error({ err }, "Food log item delete error");
     res.status(500).json({ error: "Failed to delete item" });
   }
 });

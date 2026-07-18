@@ -17,9 +17,22 @@ import {
   getCalorieGoalTool,
   requestFoodLogConfirmationTool,
 } from "./tools.js";
+import { logger } from "../logger.js";
+import { logTokenUsage } from "./observability.js";
 
+type NodeConfig = { configurable?: { thread_id?: string; request_id?: string } };
+
+// Single source of truth for the model name — also drives observability.ts's
+// per-call cost estimate (see logTokenUsage). If you change this, add a matching
+// pricing entry in observability.ts's PRICING_PER_1M_TOKENS_USD or cost logging
+// will warn and skip the estimate instead of silently using stale pricing.
+const MODEL_NAME = "gpt-4o-mini";
+
+// Swapping the model? Update MODEL_NAME above, and add/update its entry in
+// observability.ts's PRICING_PER_1M_TOKENS_USD — otherwise token-usage/cost
+// logging (logTokenUsage) will warn and skip the cost estimate for every call.
 const model = new ChatOpenAI({
-  model: "gpt-4o-mini",
+  model: MODEL_NAME,
   temperature: 0.3,
   maxTokens: 1000,
 });
@@ -39,7 +52,7 @@ const CLASSIFY_SCHEMA = z.object({
   intent: z.enum(["nutrition", "chitchat", "off_topic", "log_food"]),
 });
 
-const classifyLlm = model.withStructuredOutput(CLASSIFY_SCHEMA);
+const classifyLlm = model.withStructuredOutput(CLASSIFY_SCHEMA, { includeRaw: true });
 
 const DECLINE_PROMPT = `You are NutriGuide, a friendly nutrition assistant. The user has asked something off-topic (not about nutrition, diet, fitness, meal planning, macros, weight management, or health).
 
@@ -73,7 +86,8 @@ When the search_nutrition_knowledge tool returns **Sources** at the end, cite th
 You MUST only answer questions about nutrition, diet, fitness, meal planning, macros, weight management, dietary restrictions, and related health topics.`;
 
 export const classifyIntent = async (
-  state: NutriGuideStateType
+  state: NutriGuideStateType,
+  config?: NodeConfig
 ) => {
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const lastMsg = messages.at(-1);
@@ -96,13 +110,15 @@ Reply with intent: "log_food", "nutrition", "chitchat", or "off_topic".
 
 User: ${text}`
   );
+  logTokenUsage("classifyIntent", result.raw as AIMessage, MODEL_NAME, { thread_id: config?.configurable?.thread_id });
   return {
-    classification: { intent: result.intent },
+    classification: { intent: result.parsed.intent },
   };
 };
 
 export const respondDecline = async (
-  state: NutriGuideStateType
+  state: NutriGuideStateType,
+  config?: NodeConfig
 ) => {
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const lastMsg = messages.at(-1);
@@ -118,6 +134,7 @@ export const respondDecline = async (
     new SystemMessage(DECLINE_PROMPT),
     new HumanMessage(userText),
   ]);
+  logTokenUsage("respondDecline", response, MODEL_NAME, { thread_id: config?.configurable?.thread_id });
   const content =
     typeof response.content === "string"
       ? response.content
@@ -131,7 +148,7 @@ export const respondDecline = async (
   };
 };
 
-export const chitchatNode = async (state: NutriGuideStateType) => {
+export const chitchatNode = async (state: NutriGuideStateType, config?: NodeConfig) => {
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const lastMsg = messages.at(-1);
   const userText =
@@ -146,6 +163,7 @@ export const chitchatNode = async (state: NutriGuideStateType) => {
     new SystemMessage(CHITCHAT_PROMPT),
     new HumanMessage(userText),
   ]);
+  logTokenUsage("chitchatNode", response, MODEL_NAME, { thread_id: config?.configurable?.thread_id });
   const content =
     typeof response.content === "string"
       ? response.content
@@ -230,7 +248,7 @@ export const logFoodNode = async (state: NutriGuideStateType) => {
   };
 };
 
-export const analyze = async (state: NutriGuideStateType) => {
+export const analyze = async (state: NutriGuideStateType, config?: NodeConfig) => {
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const lastMsg = messages.at(-1);
   const userText =
@@ -245,6 +263,7 @@ export const analyze = async (state: NutriGuideStateType) => {
     new SystemMessage(ANALYZE_PROMPT),
     new HumanMessage(userText),
   ]);
+  logTokenUsage("analyze", response, MODEL_NAME, { thread_id: config?.configurable?.thread_id });
   const analysis =
     typeof response.content === "string"
       ? response.content
@@ -256,7 +275,7 @@ export const analyze = async (state: NutriGuideStateType) => {
   return { analysis };
 };
 
-export const agentNode = async (state: NutriGuideStateType) => {
+export const agentNode = async (state: NutriGuideStateType, config?: NodeConfig) => {
   const systemParts = [
     AGENT_SYSTEM_PROMPT,
     `Current user ID for this conversation: ${state.user_id}. Use this ID when calling get_user_profile, get_user_behavioural, get_calorie_goal, or request_food_log_confirmation.`,
@@ -270,12 +289,13 @@ export const agentNode = async (state: NutriGuideStateType) => {
     systemMessage,
     ...messages,
   ]);
+  logTokenUsage("agentNode", response, MODEL_NAME, { thread_id: config?.configurable?.thread_id });
   return {
     messages: [response],
   };
 };
 
-export const toolNode = async (state: NutriGuideStateType) => {
+export const toolNode = async (state: NutriGuideStateType, config?: NodeConfig) => {
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const lastMessage = messages.at(-1);
   if (!lastMessage || !AIMessage.isInstance(lastMessage)) {
@@ -283,6 +303,7 @@ export const toolNode = async (state: NutriGuideStateType) => {
   }
   const toolCalls = lastMessage.tool_calls ?? [];
   const results: ToolMessage[] = [];
+  const thread_id = config?.configurable?.thread_id;
   for (const toolCall of toolCalls) {
     const toolCallId = toolCall.id ?? `call_${Math.random().toString(36).slice(2)}`;
     const tool = toolsByName[toolCall.name as keyof typeof toolsByName];
@@ -295,9 +316,14 @@ export const toolNode = async (state: NutriGuideStateType) => {
       );
       continue;
     }
+    const start = Date.now();
     try {
       const args = (toolCall.args ?? {}) as Record<string, unknown>;
       const observation = await (tool as { invoke: (input: unknown) => Promise<unknown> }).invoke(args);
+      logger.debug(
+        { tool: toolCall.name, thread_id, duration_ms: Date.now() - start },
+        "Tool call completed"
+      );
       const content =
         typeof observation === "string"
           ? observation
@@ -309,6 +335,10 @@ export const toolNode = async (state: NutriGuideStateType) => {
         })
       );
     } catch (err) {
+      logger.warn(
+        { tool: toolCall.name, thread_id, duration_ms: Date.now() - start, err },
+        "Tool call failed"
+      );
       results.push(
         new ToolMessage({
           content: `Tool error: ${(err as Error).message}`,

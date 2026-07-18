@@ -69,7 +69,7 @@ Copy `.env.example` to `.env` in the project root. Required variables:
 - `FRONTEND_URL` — comma-separated CORS allow-list for the backend (defaults to localhost dev origins if unset)
 - `PORT=3001`, `AGENT_URL=http://localhost:8000`, `BACKEND_URL=http://localhost:3001`, `AGENT_PORT=8000`
 
-Optional: `LANGSMITH_TRACING_V2`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` for LangSmith observability.
+Optional: `LANGSMITH_TRACING_V2`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` for LangSmith observability. `LOG_LEVEL` (default `info`) controls `pino` verbosity in both the agent and backend.
 
 ## Agent Architecture (LangGraph StateGraph)
 
@@ -92,11 +92,19 @@ START → classifyIntent → routeAfterClassify →
 - `agentNode` — GPT-4o-mini with tools bound; loops with `toolNode` until no tool calls remain
 - `toolNode` — executes tool calls from agent, returns ToolMessages
 
+All LLM-calling nodes log token usage/cost via `logTokenUsage()` (`agent/observability.ts`), keyed off `nodes.ts`'s `MODEL_NAME` constant. **If you change the model, add a matching entry to `observability.ts`'s `PRICING_PER_1M_TOKENS_USD` table** — an unlisted model logs a warning and skips the cost estimate rather than silently pricing against the old model.
+
 **Tools** (`tools.ts`): `get_user_profile`, `get_user_behavioural`, `search_nutrition_knowledge`, `search_foods`, `get_calorie_goal`, `request_food_log_confirmation`. All profile/log tools call backend internal API with `X-Internal-API-Key`.
 
 **Food log confirmation flow**: `requestFoodLogConfirmationTool` calls LangGraph `interrupt()` to pause execution. `ai-agent-ts/src/index.ts` derives pause status from `graph.getState(config).tasks[].interrupts` (durable via the Postgres checkpointer) and, when `graph.invoke`'s result has `result.__interrupt__ != null`, returns `{ response, interrupted: true }`. The frontend shows food options; the user's selection (e.g., "1") is sent as a follow-up message with the same `threadId`, which resumes the graph via `graph.invoke(new Command({ resume: value }), config)`.
 
 **RAG** (`rag.ts`): Pinecone vector store with OpenAI `text-embedding-3-small` embeddings. Sources are in `ai-agent-ts/knowledge/*.md`. Add source URL mappings in the `KNOWN_SOURCES` record in `rag.ts` when adding new knowledge files.
+
+## Observability
+
+Both services log structured JSON via `pino` (`ai-agent-ts/src/logger.ts`, `backend/src/logger.js`) — pretty-printed via `pino-pretty` in dev, plain JSON in prod. This is gated on `NODE_ENV=production`, set explicitly in both Dockerfiles: without it, prod containers would try to load the dev-only `pino-pretty` transport (stripped from the `--omit=dev` production install) and crash on boot — don't remove that `ENV` line.
+
+`pino-http` is mounted as the *first* middleware in both Express apps (before `cors()`/`express.json()`, since `cors()` doesn't call `next()` for rejected/preflight requests) and attaches a per-request `req.log` plus `req.id`. `backend/src/routes/chat.js` forwards its `req.id` to the agent as an `X-Request-Id` header on the `/chat` proxy call; the agent's `pino-http` reuses that header instead of minting a new one, so one correlation ID threads through both services' logs. That same ID (plus `user_id`/`thread_id`) is also passed as LangGraph `metadata` on every `graph.invoke` call, alongside `tags` (`chat` + `new-turn`/`resume` for live traffic, `eval`/`manual-test` for the eval harness and `test:chat` script) and `runName: "nutriguide-chat"` — so LangSmith traces are filterable by source and correlate back to the same request. See the token-usage/cost logging note under Agent Architecture above for the `MODEL_NAME`/pricing-table coupling.
 
 ## Backend Structure
 

@@ -116,7 +116,7 @@ router.post("/", async (req, res) => {
     const token = signUserToken(userId);
     res.status(201).json({ userId, token, profile: serializeProfile(profile) });
   } catch (err) {
-    console.error("Signup error:", err);
+    req.log.error({ err }, "Signup error");
     res.status(500).json({ error: "Failed to create account" });
   }
 });
@@ -150,7 +150,7 @@ router.get("/:id/profile", requireAuth, requireOwnership, async (req, res) => {
     }
     res.json(serializeProfile(profile));
   } catch (err) {
-    console.error("Profile fetch error:", err);
+    req.log.error({ err }, "Profile fetch error");
     res.status(500).json({ error: "Failed to fetch profile" });
   }
 });
@@ -169,7 +169,7 @@ router.get("/:id/calorie-goal", requireAuth, requireOwnership, async (req, res) 
     const { goalKcal, bmr, tdee } = calculateTDEE(profileForTDEE);
     res.json({ goalKcal, bmr, tdee });
   } catch (err) {
-    console.error("Calorie goal error:", err);
+    req.log.error({ err }, "Calorie goal error");
     res.status(500).json({ error: "Failed to get calorie goal" });
   }
 });
@@ -231,7 +231,7 @@ router.get("/:id/daily-calories", requireAuth, requireOwnership, async (req, res
 
     res.json({ days });
   } catch (err) {
-    console.error("Daily calories fetch error:", err);
+    req.log.error({ err }, "Daily calories fetch error");
     res.status(500).json({ error: "Failed to fetch daily calories" });
   }
 });
@@ -343,7 +343,7 @@ router.put("/:id/profile", requireAuth, requireOwnership, async (req, res) => {
 
     res.json(serializeProfile(profile));
   } catch (err) {
-    console.error("Profile update error:", err);
+    req.log.error({ err }, "Profile update error");
     res.status(500).json({ error: "Failed to update profile" });
   }
 });

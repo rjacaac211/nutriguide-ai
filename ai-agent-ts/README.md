@@ -41,7 +41,9 @@ flowchart TD
 | `agent/graph.ts` | StateGraph, edges, PostgresSaver checkpointer |
 | `agent/tools.ts` | getUserProfile, getUserBehavioural (food logs + weight trend), getCalorieGoal, searchNutritionKnowledge (RAG), searchFoods (USDA FDC), requestFoodLogConfirmation (interrupt-based logging; accepts grams or amount+unit) |
 | `agent/rag.ts` | Pinecone RAG (embeddings, retriever) |
+| `agent/observability.ts` | `logTokenUsage()` — per-LLM-call token usage/cost logging, keyed off `nodes.ts`'s `MODEL_NAME` |
 | `agent/index.ts` | Exports graph and tools |
+| `logger.ts` | Shared `pino` logger (JSON in prod, pretty-printed via `pino-pretty` in dev) |
 | `eval/dataset.ts` | Evaluation examples (intent, off-topic, chitchat, log-food, nutrition) |
 | `eval/target.ts` | Target function that invokes the graph for evaluation |
 | `eval/evaluators.ts` | Evaluators (intent, off-topic, chitchat, log-food, agentevals trajectory match for tool selection, LLM-as-judge for response quality) |
@@ -107,6 +109,12 @@ Runs offline evaluation on a curated dataset (~43 examples) covering intent clas
 
 Dataset and evaluators live in `src/eval/`. Not yet wired into CI (`deploy.yml`) - the nutrition/log-food examples need a live backend+DB, which the CI runner doesn't have; that's a separate follow-up (standing up service containers + a seeded eval user).
 
+## Observability
+
+Every `graph.invoke` call carries LangSmith `tags`/`metadata`/`runName`: live chat traffic is tagged `chat` + `new-turn`/`resume` (see `src/index.ts`), while the eval harness and `test:chat` script tag their runs `eval`/`manual-test` so traces are filterable by source. Each LLM-calling node (`classifyIntent`, `respondDecline`, `chitchatNode`, `analyze`, `agentNode`) logs token usage and an estimated cost via `logTokenUsage()` (`agent/observability.ts`), priced off a small hardcoded table keyed by `nodes.ts`'s `MODEL_NAME` constant — **if you change the model, update that pricing table too**, or cost logging warns and skips the estimate instead of silently pricing against the old model.
+
+Logging itself is structured JSON via `pino` (`logger.ts`), pretty-printed in dev. `pino-http` is mounted first in the Express app and attaches a per-request `req.log` plus `req.id`; when the backend calls `/chat`, it forwards its own request ID as an `X-Request-Id` header, which the agent reuses instead of minting a new one — so one ID threads through both services' logs, and is also included in each run's LangSmith `metadata` for full-stack trace correlation.
+
 ## Environment
 
 - `OPENAI_API_KEY` — Required
@@ -117,3 +125,4 @@ Dataset and evaluators live in `src/eval/`. Not yet wired into CI (`deploy.yml`)
 - `BACKEND_URL` — Backend base URL for fetching profiles (default: http://localhost:3001; use http://backend:3001 in Docker)
 - `INTERNAL_API_KEY` — Required for agent-backend auth (must match backend)
 - `LANGSMITH_*` — Optional LangSmith tracing
+- `LOG_LEVEL` — Optional pino log level (default: `info`; set `debug` to see per-tool-call timing logs from `toolNode`)
