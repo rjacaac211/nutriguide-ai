@@ -10,7 +10,7 @@ Users create an account (or log in by name) and complete a short onboarding flow
 |------|---------------------------|
 | **AI / Agent** | LangGraph (StateGraph), multi-step reasoning, stateful conversations, LangChain tools |
 | **RAG** | OpenAI embeddings, Pinecone vector store, Markdown knowledge base |
-| **Observability** | LangSmith tracing (optional) |
+| **Observability** | LangSmith run tags/metadata/cost tracking, structured JSON logging (`pino`), cross-service request correlation IDs |
 | **Evaluation** | Offline eval harness: LLM-as-judge response grading, `agentevals` trajectory matching, LangSmith `evaluate()` experiment dashboard; `npm run eval` in ai-agent-ts |
 | **Stack** | Full stack: React (Vite), Node.js/Express, TypeScript AI agent |
 | **Deployment** | Docker, AWS (EC2, ECR), GitHub Actions CI/CD |
@@ -27,7 +27,7 @@ Users create an account (or log in by name) and complete a short onboarding flow
 - **Database**: PostgreSQL 15+ with Prisma ORM (users, profiles, food logs, weight logs).
 - **External APIs**: USDA FoodData Central (food search, nutrition data).
 - **Deployment**: Docker Compose (local + prod), AWS EC2 + ECR, GitHub Actions CI/CD (build → push → deploy on push to main).
-- **Observability**: Optional LangSmith tracing for agent debugging.
+- **Observability**: Structured JSON logging (`pino`) across both Node services; a single `X-Request-Id` correlates a request across backend logs, agent logs, and LangGraph run metadata; per-LLM-call token usage/cost logging; LangSmith tracing (optional) with `tags`/`metadata`/`runName` on every agent run.
 
 ## Architecture
 
@@ -97,6 +97,8 @@ LANGSMITH_TRACING_V2=true
 LANGSMITH_API_KEY=your_langchain_api_key
 LANGSMITH_PROJECT=your_langchain_project_name
 ```
+
+Optional (log verbosity for both Node services, default `info`): `LOG_LEVEL=debug`
 
 Backend: `PORT=3001`, `AGENT_URL=http://localhost:8000`, `DATABASE_URL` (required). See [docs/DATABASE_SETUP.md](docs/DATABASE_SETUP.md) for database setup.
 

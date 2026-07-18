@@ -57,6 +57,11 @@ Common issues and fixes for NutriGuide-AI deployment.
 
 - Backend or AI agent may not be running. SSH to EC2 and run `docker ps` to verify all containers are up (frontend, backend, ai-agent)
 - Check logs: `docker compose -f docker-compose.prod.yml logs backend` and `logs ai-agent`
+- Both services log structured JSON (`pino`) and correlate a single request across both logs via `X-Request-Id` — grep the failing request's ID in both services' logs (visible in the backend's "Proxying chat to agent"/"Agent chat response" lines) to see exactly where it broke
+
+### Backend or AI agent container exits immediately on boot (prod)
+
+- Check for a crash loop caused by a missing `NODE_ENV=production`: both Dockerfiles set this explicitly so `pino` doesn't try to load its dev-only `pino-pretty` transport, which is stripped from the production install and isn't there. If you've customized either Dockerfile, confirm `ENV NODE_ENV=production` is still present in the final runtime stage. See [DOCKER.md](DOCKER.md).
 
 ### Backend unreachable
 

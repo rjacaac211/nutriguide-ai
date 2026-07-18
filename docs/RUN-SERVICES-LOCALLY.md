@@ -102,4 +102,4 @@ Runs ~43 examples covering intent classification, off-topic handling, chitchat, 
 4. **Agent not running** — Backend gets connection refused when calling `AGENT_URL`
 5. **Backend not running** — Frontend gets 500 when proxying to backend
 
-Check each terminal for stack traces when a request fails.
+Check each terminal for stack traces when a request fails. Both services log structured JSON (pretty-printed in dev via `pino-pretty`) and tag every request with an `X-Request-Id` that's shared between the backend and agent logs for a given chat request — useful for tracing one request across both terminals. Set `LOG_LEVEL=debug` before starting the agent to also see per-tool-call timing logs from `toolNode` (e.g. `LOG_LEVEL=debug npm run dev`).

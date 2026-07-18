@@ -16,6 +16,7 @@ services:
       - BACKEND_URL=http://backend:3001
       - INTERNAL_API_KEY=${INTERNAL_API_KEY}
       - DATABASE_URL=${DATABASE_URL}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     restart: unless-stopped
 
   backend:
@@ -32,6 +33,7 @@ services:
       - USDA_FDC_API_KEY=${USDA_FDC_API_KEY}
       - JWT_SECRET=${JWT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL:-}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     depends_on:
       - ai-agent
     restart: unless-stopped

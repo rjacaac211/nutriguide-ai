@@ -56,3 +56,5 @@ Each service has its own Dockerfile:
 | ai-agent | `ai-agent-ts/Dockerfile` | `./ai-agent-ts` |
 
 RAG uses Pinecone (cloud); no local vector store container is needed.
+
+Both `backend/Dockerfile` and `ai-agent-ts/Dockerfile` set `ENV NODE_ENV=production` in their runtime stage. Both services log via `pino`, which loads a dev-only pretty-print transport (`pino-pretty`) unless `NODE_ENV=production` — that package is stripped out of the production install (`--omit=dev`), so removing this `ENV` line would crash both containers on boot. Local logs are pretty-printed by default (no `NODE_ENV` set outside Docker); prod logs are plain JSON.
