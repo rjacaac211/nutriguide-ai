@@ -4,10 +4,11 @@
  */
 
 import { ChatOpenAI } from "@langchain/openai";
-import { AIMessage, type BaseMessage } from "@langchain/core/messages";
+import { AIMessage, ToolMessage, type BaseMessage } from "@langchain/core/messages";
 import { createTrajectoryMatchEvaluator } from "agentevals";
 import { z } from "zod";
 import { parseLogFoodMessage } from "../agent/nodes.js";
+import { KNOWN_SOURCES } from "../agent/rag.js";
 import type { EvalExampleOutput } from "./dataset.js";
 
 interface EvaluatorArgs {
@@ -144,6 +145,42 @@ Grade whether the response is grounded (no fabricated or contradictory claims re
   return { key: "response_quality_judge", score: result.grounded && result.addressesQuestion };
 };
 
+/**
+ * Retrieval-quality check: for nutrition examples that name an expected_source_file,
+ * verifies the search_nutrition_knowledge tool call actually surfaced that source's
+ * URL (searchNutritionKnowledge appends a **Sources:** URL list to its returned string -
+ * see rag.ts), not just that some plausible-sounding answer was produced.
+ */
+export const retrievalSourceCorrect: Evaluator = ({ outputs = {}, referenceOutputs }) => {
+  const ref = referenceOutputs as EvalExampleOutput | undefined;
+  if (ref?.intent !== "nutrition" || !ref?.expected_source_file) {
+    return { key: "retrieval_source_correct", score: true };
+  }
+  const expectedUrl = KNOWN_SOURCES[ref.expected_source_file];
+  if (!expectedUrl) {
+    return { key: "retrieval_source_correct", score: false };
+  }
+  const actualMessages = (outputs.messages ?? []) as BaseMessage[];
+  // ToolMessage.content doesn't carry the tool name that produced it - only tool_call_id -
+  // so the corresponding AIMessage.tool_calls entry has to be looked up to identify which
+  // ToolMessages came from search_nutrition_knowledge.
+  const searchCallIds = new Set(
+    actualMessages
+      .filter((m): m is AIMessage => m instanceof AIMessage)
+      .flatMap((m) => m.tool_calls ?? [])
+      .filter((tc) => tc.name === "search_nutrition_knowledge")
+      .map((tc) => tc.id)
+  );
+  const found = actualMessages.some(
+    (m) =>
+      m instanceof ToolMessage &&
+      searchCallIds.has(m.tool_call_id) &&
+      typeof m.content === "string" &&
+      m.content.includes(expectedUrl)
+  );
+  return { key: "retrieval_source_correct", score: found };
+};
+
 export const ALL_EVALUATORS = [
   intentCorrect,
   offTopicHandled,
@@ -151,4 +188,5 @@ export const ALL_EVALUATORS = [
   logFoodParsed,
   rightToolsCalled,
   judgeResponseQuality,
+  retrievalSourceCorrect,
 ];

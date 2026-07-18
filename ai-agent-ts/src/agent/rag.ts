@@ -17,9 +17,15 @@ dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 const PINECONE_INDEX = process.env.PINECONE_INDEX;
 
 /** Source URLs for knowledge files. Add entries when adding new .md files. */
-const KNOWN_SOURCES: Record<string, string> = {
+export const KNOWN_SOURCES: Record<string, string> = {
   "healthy_diet.md":
     "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+  "hydration.md":
+    "https://www.cdc.gov/healthy-weight-growth/water-healthy-drinks/index.html",
+  "diabetes_diet.md":
+    "https://www.cdc.gov/diabetes/healthy-eating/index.html",
+  "physical_activity_nutrition.md":
+    "https://www.who.int/news-room/fact-sheets/detail/physical-activity",
 };
 
 function getKnowledgeDir(): string {

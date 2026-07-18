@@ -32,7 +32,7 @@ npm start              # run compiled dist/index.js
 npm run dev            # tsx watch (hot reload, no build needed)
 npm run index          # index knowledge/ files to Pinecone (run after changing .md files)
 npm run test:chat      # smoke test agent directly
-npm run eval           # run offline eval suite (LLM-as-judge + agentevals trajectory match); uses LangSmith evaluate() if LANGSMITH_TRACING_V2/LANGSMITH_API_KEY are set, else runs locally
+npm run eval           # run offline eval suite (LLM-as-judge + agentevals trajectory match + retrieval-source check); uses LangSmith evaluate() if LANGSMITH_TRACING_V2/LANGSMITH_API_KEY are set, else runs locally
 ```
 
 ### Backend (`backend/`)
@@ -98,7 +98,7 @@ All LLM-calling nodes log token usage/cost via `logTokenUsage()` (`agent/observa
 
 **Food log confirmation flow**: `requestFoodLogConfirmationTool` calls LangGraph `interrupt()` to pause execution. `ai-agent-ts/src/index.ts` derives pause status from `graph.getState(config).tasks[].interrupts` (durable via the Postgres checkpointer) and, when `graph.invoke`'s result has `result.__interrupt__ != null`, returns `{ response, interrupted: true }`. The frontend shows food options; the user's selection (e.g., "1") is sent as a follow-up message with the same `threadId`, which resumes the graph via `graph.invoke(new Command({ resume: value }), config)`.
 
-**RAG** (`rag.ts`): Pinecone vector store with OpenAI `text-embedding-3-small` embeddings. Sources are in `ai-agent-ts/knowledge/*.md`. Add source URL mappings in the `KNOWN_SOURCES` record in `rag.ts` when adding new knowledge files.
+**RAG** (`rag.ts`): Pinecone vector store with OpenAI `text-embedding-3-small` embeddings. Sources are in `ai-agent-ts/knowledge/*.md` (currently `healthy_diet.md`, `hydration.md`, `diabetes_diet.md`, `physical_activity_nutrition.md`). Add source URL mappings in the exported `KNOWN_SOURCES` record in `rag.ts` when adding new knowledge files — the eval suite's `retrievalSourceCorrect` evaluator (`eval/evaluators.ts`) imports this same map to check that `search_nutrition_knowledge` surfaced the expected source's URL for a given question (see `expected_source_file` on eval dataset examples in `eval/dataset.ts`), so an undocumented `KNOWN_SOURCES` entry breaks that check, not just source attribution.
 
 ## Observability
 
