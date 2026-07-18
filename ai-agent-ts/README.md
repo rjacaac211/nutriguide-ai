@@ -46,7 +46,7 @@ flowchart TD
 | `logger.ts` | Shared `pino` logger (JSON in prod, pretty-printed via `pino-pretty` in dev) |
 | `eval/dataset.ts` | Evaluation examples (intent, off-topic, chitchat, log-food, nutrition) |
 | `eval/target.ts` | Target function that invokes the graph for evaluation |
-| `eval/evaluators.ts` | Evaluators (intent, off-topic, chitchat, log-food, agentevals trajectory match for tool selection, LLM-as-judge for response quality) |
+| `eval/evaluators.ts` | Evaluators (intent, off-topic, chitchat, log-food, agentevals trajectory match for tool selection, LLM-as-judge for response quality, retrieval-source check) |
 | `scripts/test-chat-direct.ts` | Direct agent test (bypasses HTTP); run with `npm run test:chat` |
 | `scripts/run-eval.ts` | Offline evaluation runner; run with `npm run eval` |
 
@@ -88,7 +88,7 @@ Runs a two-turn test: "log 100g chicken for lunch" → interrupt → resume with
 npm run eval
 ```
 
-Runs offline evaluation on a curated dataset (~43 examples) covering intent classification, off-topic handling, chitchat, log-food parsing, tool selection, and final response quality.
+Runs offline evaluation on a curated dataset (~46 examples) covering intent classification, off-topic handling, chitchat, log-food parsing, tool selection, final response quality, and retrieval accuracy.
 
 **Prerequisites:** Backend running at `BACKEND_URL`, and `OPENAI_API_KEY`, `BACKEND_URL`, `INTERNAL_API_KEY`, `PINECONE_*` in `.env`.
 
@@ -106,6 +106,7 @@ Runs offline evaluation on a curated dataset (~43 examples) covering intent clas
 | log_food_parsed | Log-food messages parse correctly (search_query, grams/amount+unit, meal_type) |
 | right_tools_called | Agent's tool-call trajectory is a superset of the expected tools for the question, via `agentevals`' `createTrajectoryMatchEvaluator` (tool args ignored - this checks *which* tools ran, not their exact arguments) |
 | response_quality_judge | LLM-as-judge (`gpt-4o-mini`, structured output): grades whether the response is grounded and actually addresses the question, against a golden `reference_answer` in the dataset - not a length/keyword heuristic |
+| retrieval_source_correct | For nutrition examples with an `expected_source_file`, checks that `search_nutrition_knowledge`'s returned Sources list actually includes that knowledge file's URL (from `rag.ts`'s `KNOWN_SOURCES`) - catches wrong/irrelevant retrieval that a plausible-sounding final answer could otherwise mask |
 
 Dataset and evaluators live in `src/eval/`. Not yet wired into CI (`deploy.yml`) - the nutrition/log-food examples need a live backend+DB, which the CI runner doesn't have; that's a separate follow-up (standing up service containers + a seeded eval user).
 
