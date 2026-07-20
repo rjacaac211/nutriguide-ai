@@ -6,6 +6,7 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/README.md'
+      - 'CLAUDE.md'
       - '.env.example'
       - '.gitignore'
       - '.dockerignore'
