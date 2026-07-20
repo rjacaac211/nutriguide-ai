@@ -49,11 +49,11 @@ npm run preview
 - **Dashboard** — Overview and Chat tabs; date picker, calorie summary (eaten/remaining/burned from TDEE using latest weight log or profile), meals logged (Breakfast, Lunch, Dinner, Snack) with add/edit/delete via USDA food search (unit selector: grams, cups, servings, etc.), weight section (add/edit/delete weight logs for selected date), progress charts (weight trend and calories vs goal with 7/30/90-day presets), activity section, **Log out** button
 - **Chat Tab** — Full-page AI chat at `/dashboard/chat`; shared thread with chat widget
 - **Chat Widget** — Floating, collapsible panel (bottom-right) for nutrition Q&A; "Open in Chat tab" navigates to full page; hidden when on the Chat tab
-- **Chat display** — User message appears immediately when sent; NutriGuide shows "Thinking..." while the AI responds; only the final AI output is displayed (no internal tool outputs, profile dumps, or RAG labels)
+- **Chat display** — User message appears immediately when sent; NutriGuide shows "Thinking..." until the first token arrives, then the response renders incrementally as it streams in (SSE); only the final AI output is displayed (no internal tool outputs, profile dumps, or RAG labels)
 - **Session-scoped** — Profile and chat use `sessionId` (userId); reload clears session; users log in again with their name to restore access
 - **API Proxy** — `/api` requests forwarded to backend
 
-Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation. Chat state (threadId, messages) lives in `ChatThreadContext` so the widget and Chat tab share the same thread; the frontend appends each user message and assistant response to that shared state.
+Conversation memory is handled by the agent per session (thread); the frontend sends only the new message and a `threadId`. The chat API streams the response as SSE (`sendChatStream` in `src/api/client.js` reads and hand-parses `event:`/`data:` frames off the fetch response body — a plain `EventSource` can't be used since it doesn't support POST bodies or an `Authorization` header), calling back into `ChatThreadContext` per `token`/`interrupt`/`done`/`error` event; a pause for food log confirmation arrives as a single `interrupt` event with the formatted options. Chat state (threadId, messages) lives in `ChatThreadContext` so the widget and Chat tab share the same thread; the frontend appends the user message immediately and incrementally builds the assistant response as tokens arrive.
 
 ## UI / Design
 

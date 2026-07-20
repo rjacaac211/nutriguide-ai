@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from "react";
-import { sendChat } from "../api/client";
+import { sendChatStream } from "../api/client";
 
 function generateId() {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -19,6 +19,13 @@ export function ChatThreadProvider({ userId, children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const appendToLastMessage = useCallback((text) => {
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      return [...prev.slice(0, -1), { ...last, content: last.content + text }];
+    });
+  }, []);
+
   const handleSubmit = useCallback(
     async (e) => {
       e?.preventDefault();
@@ -28,21 +35,33 @@ export function ChatThreadProvider({ userId, children }) {
       setInput("");
       setLoading(true);
       setError(null);
-      setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: userMsg },
+        { role: "assistant", content: "", streaming: true },
+      ]);
 
-      try {
-        const { response } = await sendChat(userMsg, threadId);
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: response || "(No response)" },
-        ]);
-      } catch (err) {
-        setError(err.message || "Something went wrong");
-      } finally {
-        setLoading(false);
-      }
+      await sendChatStream(userMsg, threadId, {
+        onToken: (text) => appendToLastMessage(text),
+        onInterrupt: (text) => appendToLastMessage(text),
+        onDone: () => {
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            return [
+              ...prev.slice(0, -1),
+              { ...last, streaming: false, content: last.content || "(No response)" },
+            ];
+          });
+          setLoading(false);
+        },
+        onError: (err) => {
+          setError(err.message || "Something went wrong");
+          setMessages((prev) => prev.slice(0, -1));
+          setLoading(false);
+        },
+      });
     },
-    [userId, threadId, input, loading]
+    [userId, threadId, input, loading, appendToLastMessage]
   );
 
   const handleNewChat = useCallback(() => {

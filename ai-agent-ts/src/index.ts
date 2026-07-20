@@ -12,7 +12,18 @@ import { Command } from "@langchain/langgraph";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { graph } from "./agent/index.js";
 import { logger } from "./logger.js";
-import type { ChatRequest, ChatResponse } from "./types.js";
+import type {
+  ChatRequest,
+  ChatTokenEvent,
+  ChatInterruptEvent,
+  ChatDoneEvent,
+  ChatErrorEvent,
+} from "./types.js";
+
+// Nodes whose LLM output is user-facing and should be streamed to the client.
+// classifyIntent (structured-output classification) and analyze (internal reasoning
+// step feeding agentNode's system prompt) are deliberately excluded.
+const STREAMED_NODES = new Set(["agentNode", "chitchatNode", "respondDecline"]);
 
 const app = express();
 app.use(
@@ -36,18 +47,23 @@ let agentReady = false;
 // Initialize agent (async - connects to Chroma, etc.)
 agentReady = true;
 
-function extractResponseText(messages: Array<{ content?: unknown }>): string {
+function extractChunkText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content.map((c) => (typeof c === "string" ? c : (c as { text?: string })?.text ?? "")).join("");
+  }
+  return "";
+}
+
+// Fallback for nodes that construct their final AIMessage directly (e.g. logFoodNode's
+// post-resume confirmation) instead of via a streamed model.invoke() call — these never
+// appear in "messages" streamMode, so if no tokens were streamed for a completed
+// (non-interrupted) turn, pull the last message's text straight from final state.
+function extractLastMessageText(messages: unknown[]): string {
   for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i];
-    const content = msg.content;
-    if (content && typeof content === "string") return content;
-    if (Array.isArray(content)) {
-      const text = content
-        .map((c) => (typeof c === "string" ? c : (c as { text?: string })?.text ?? ""))
-        .join("")
-        .trim();
-      if (text) return text;
-    }
+    const content = (messages[i] as { content?: unknown } | undefined)?.content;
+    const text = extractChunkText(content);
+    if (text) return text;
   }
   return "";
 }
@@ -69,70 +85,133 @@ function formatFoodLogInterrupt(payload: {
   return `Here are the options:\n${lines.join("\n")}\n\nReply with 1-${payload.options.length} to log, or say cancel.`;
 }
 
+type GraphState = {
+  values?: { messages?: unknown[] };
+  tasks?: Array<{ interrupts?: unknown[] }>;
+};
+
+function getPendingInterrupts(state: GraphState | undefined): unknown[] {
+  return (state?.tasks ?? []).flatMap((t) => t.interrupts ?? []);
+}
+
 app.post("/chat", async (req: Request, res: Response) => {
+  const body = req.body as ChatRequest;
+  const { user_id, message, thread_id } = body;
+
+  if (!user_id || !message || !thread_id) {
+    res.status(400).json({ error: "user_id, message, and thread_id are required" });
+    return;
+  }
+
+  const config = { configurable: { thread_id, request_id: req.id } };
+
+  let state: GraphState | undefined;
   try {
-    const body = req.body as ChatRequest;
-    const { user_id, message, thread_id } = body;
+    state = (await graph.getState(config)) as GraphState | undefined;
+  } catch (err) {
+    req.log.error({ err }, "Chat error");
+    res.status(500).json({ error: (err as Error).message ?? "Chat request failed" });
+    return;
+  }
+  const isInterrupted = getPendingInterrupts(state).length > 0;
 
-    if (!user_id || !message || !thread_id) {
-      res.status(400).json({ error: "user_id, message, and thread_id are required" });
-      return;
+  const runConfig = {
+    ...config,
+    runName: "nutriguide-chat",
+    tags: ["chat", isInterrupted ? "resume" : "new-turn"],
+    metadata: { user_id, thread_id, request_id: req.id },
+  };
+
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+  res.flushHeaders();
+
+  function sendEvent(event: string, data: ChatTokenEvent | ChatInterruptEvent | ChatDoneEvent | ChatErrorEvent) {
+    if (res.writableEnded) return;
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  }
+
+  // res.on("close") — not req.on("close") — is the correct client-disconnect signal here:
+  // req (the incoming request stream) emits "close" once its body is fully read, which
+  // happens almost immediately and has nothing to do with whether the client is still
+  // waiting on the response.
+  let clientClosed = false;
+  res.on("close", () => {
+    clientClosed = true;
+  });
+
+  try {
+    const streamConfig = { ...runConfig, streamMode: "messages" as const };
+    const stream = isInterrupted
+      ? await graph.stream(new Command({ resume: message }), streamConfig)
+      : await graph.stream(
+          {
+            messages: (() => {
+              const existingMessages = state?.values?.messages ?? [];
+              const isNewThread = existingMessages.length === 0;
+              return isNewThread
+                ? [
+                    new SystemMessage(
+                      `Current user ID for this conversation: ${user_id}. Use this ID when calling get_user_profile.`
+                    ),
+                    new HumanMessage(message),
+                  ]
+                : [new HumanMessage(message)];
+            })(),
+            user_id,
+          },
+          streamConfig
+        );
+
+    let anyTokenSent = false;
+    // Some nodes (chitchatNode/respondDecline, which share a plain, non-tool-bound
+    // model instance) emit one extra chunk after their real incremental deltas whose
+    // content is a full recap of everything already streamed for this turn, rather than
+    // a genuine delta. Detect and drop it by comparing against what's accumulated so far.
+    let accumulated = "";
+    for await (const [chunk, metadata] of stream) {
+      if (clientClosed) break;
+      const nodeName = (metadata as { langgraph_node?: string } | undefined)?.langgraph_node;
+      if (!nodeName || !STREAMED_NODES.has(nodeName)) continue;
+      const text = extractChunkText(chunk.content);
+      if (text && !(accumulated.length > 0 && text === accumulated)) {
+        accumulated += text;
+        anyTokenSent = true;
+        sendEvent("token", { text } satisfies ChatTokenEvent);
+      }
     }
 
-    const config = { configurable: { thread_id, request_id: req.id } };
+    if (clientClosed) return;
 
-    const state = (await graph.getState(config)) as {
-      values?: { messages?: unknown[] };
-      tasks?: Array<{ interrupts?: unknown[] }>;
-    } | undefined;
-    const isInterrupted = (state?.tasks ?? []).some((t) => (t.interrupts?.length ?? 0) > 0);
+    const finalState = (await graph.getState(config)) as GraphState | undefined;
+    const interrupts = getPendingInterrupts(finalState);
+    const isNowInterrupted = interrupts.length > 0;
 
-    const runConfig = {
-      ...config,
-      runName: "nutriguide-chat",
-      tags: ["chat", isInterrupted ? "resume" : "new-turn"],
-      metadata: { user_id, thread_id, request_id: req.id },
-    };
-
-    let result: { messages?: unknown[]; __interrupt__?: unknown };
-
-    if (isInterrupted) {
-      result = (await graph.invoke(new Command({ resume: message }), runConfig)) as typeof result;
-    } else {
-      const existingMessages = state?.values?.messages ?? [];
-      const isNewThread = !existingMessages || existingMessages.length === 0;
-
-      const messages = isNewThread
-        ? [
-            new SystemMessage(
-              `Current user ID for this conversation: ${user_id}. Use this ID when calling get_user_profile.`
-            ),
-            new HumanMessage(message),
-          ]
-        : [new HumanMessage(message)];
-
-      result = (await graph.invoke({ messages, user_id }, runConfig)) as typeof result;
+    if (!isNowInterrupted && !anyTokenSent) {
+      const fallbackText = extractLastMessageText(finalState?.values?.messages ?? []);
+      if (fallbackText) sendEvent("token", { text: fallbackText } satisfies ChatTokenEvent);
     }
 
-    if (result.__interrupt__ != null) {
-      const raw = result.__interrupt__;
-      const payload = Array.isArray(raw)
-        ? (raw[0] as { value?: unknown })?.value ?? raw[0]
-        : raw;
+    if (isNowInterrupted) {
+      const raw = interrupts[0];
+      const payload = (raw as { value?: unknown })?.value ?? raw;
       const formatted =
         typeof payload === "object" && payload !== null && "type" in payload
           ? formatFoodLogInterrupt(payload as Parameters<typeof formatFoodLogInterrupt>[0])
           : String(payload);
-      res.json({ response: formatted, interrupted: true } satisfies ChatResponse);
-      return;
+      sendEvent("interrupt", { text: formatted } satisfies ChatInterruptEvent);
     }
 
-    const resultMessages = (result?.messages ?? []) as Array<{ content?: unknown }>;
-    const responseText = extractResponseText(resultMessages);
-    res.json({ response: responseText } satisfies ChatResponse);
+    sendEvent("done", { interrupted: isNowInterrupted } satisfies ChatDoneEvent);
   } catch (err) {
     req.log.error({ err }, "Chat error");
-    res.status(500).json({ error: (err as Error).message ?? "Chat request failed" });
+    sendEvent("error", { error: (err as Error).message ?? "Chat request failed" } satisfies ChatErrorEvent);
+  } finally {
+    res.end();
   }
 });
 

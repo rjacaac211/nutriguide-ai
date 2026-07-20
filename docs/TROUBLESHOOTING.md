@@ -58,6 +58,7 @@ Common issues and fixes for NutriGuide-AI deployment.
 - Backend or AI agent may not be running. SSH to EC2 and run `docker ps` to verify all containers are up (frontend, backend, ai-agent)
 - Check logs: `docker compose -f docker-compose.prod.yml logs backend` and `logs ai-agent`
 - Both services log structured JSON (`pino`) and correlate a single request across both logs via `X-Request-Id` — grep the failing request's ID in both services' logs (visible in the backend's "Proxying chat to agent"/"Agent chat response" lines) to see exactly where it broke
+- Chat responses stream over SSE (`text/event-stream`) end-to-end (agent → backend → nginx → browser). If the request completes (200, full response eventually appears) but nothing renders incrementally — everything shows up at once instead of token-by-token — something in the chain is buffering the whole response before forwarding it. Check `frontend/nginx.conf`'s `location /api/chat` block has `proxy_buffering off;`; if you've added another reverse proxy or CDN in front of nginx, it needs the equivalent setting too.
 
 ### Backend or AI agent container exits immediately on boot (prod)
 

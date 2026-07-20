@@ -67,7 +67,7 @@ Every route below except `POST /api/users` and `GET /api/users/by-name` requires
 | ------ | -------- | ----------- |
 | POST | `/api/users` | Create a new account server-side. Body: same fields as profile update. Returns `{ userId, token, profile }`. |
 | GET | `/api/users/by-name?name=...` | Log in by name (case-insensitive, no password). Returns `{ userId, token, profile }` or 404 if not found. |
-| POST | `/api/chat` | Send message to agent. Body: `{ message, threadId }` (userId comes from the token). Returns `{ response }` with the final AI output only. Forwards this request's correlation ID to the agent as `X-Request-Id`, so one ID threads through both services' logs. |
+| POST | `/api/chat` | Send message to agent. Body: `{ message, threadId }` (userId comes from the token). Responds `text/event-stream`, streaming the AI output as SSE `token` events — this route is a byte-level passthrough of the agent's own SSE response (`Readable.fromWeb(response.body).pipe(res)`), not a JSON re-serialize. Forwards this request's correlation ID to the agent as `X-Request-Id`, so one ID threads through both services' logs. |
 | GET | `/api/users/:id/profile` | Get user profile |
 | PUT | `/api/users/:id/profile` | Update profile. Body: `{ name, gender, birth_date, height_cm, weight_kg, goal_weight_kg, goal, activity_level, speed_kg_per_week, preferences, challenges, dietary_restrictions }`. Names must be unique; returns 400 `{ error: "Name already taken" }` if name exists. When `weight_kg` is provided and the user has no weight logs, seeds an initial WeightLog for today. |
 | GET | `/api/users/:id/calorie-goal` | Get TDEE calorie goal. Uses latest WeightLog weight when available, else profile. Returns `{ goalKcal, bmr, tdee }` |
