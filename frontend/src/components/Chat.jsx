@@ -31,18 +31,17 @@ export default function Chat() {
             advice based on your profile.
           </div>
         )}
-        {messages.map((m, i) => (
-          <div key={i} className={`message message-${m.role}`}>
-            <span className="message-role">{m.role === "user" ? "You" : "NutriGuide"}</span>
-            <div className="message-content">{m.content}</div>
-          </div>
-        ))}
-        {loading && (
-          <div className="message message-assistant">
-            <span className="message-role">NutriGuide</span>
-            <div className="message-content typing">Thinking...</div>
-          </div>
-        )}
+        {messages.map((m, i) => {
+          const isPendingStream = m.streaming && !m.content;
+          return (
+            <div key={i} className={`message message-${m.role}`}>
+              <span className="message-role">{m.role === "user" ? "You" : "NutriGuide"}</span>
+              <div className={`message-content${isPendingStream ? " typing" : ""}`}>
+                {isPendingStream ? "Thinking..." : m.content}
+              </div>
+            </div>
+          );
+        })}
         <div ref={bottomRef} />
       </div>
       {error && (

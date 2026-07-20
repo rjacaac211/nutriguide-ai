@@ -68,16 +68,16 @@ Open http://localhost:5173 and use the chat.
 Bypass frontend and backend to isolate the AI agent. Run in a separate CMD window:
 
 ```cmd
-curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"user_id\":\"test-user\",\"message\":\"What are good sources of protein?\",\"thread_id\":\"thread-1\"}"
+curl -N -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"user_id\":\"test-user\",\"message\":\"What are good sources of protein?\",\"thread_id\":\"thread-1\"}"
 ```
 
 Shorter message:
 
 ```cmd
-curl -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"user_id\":\"t\",\"message\":\"Hi\",\"thread_id\":\"t1\"}"
+curl -N -X POST http://localhost:8000/chat -H "Content-Type: application/json" -d "{\"user_id\":\"t\",\"message\":\"Hi\",\"thread_id\":\"t1\"}"
 ```
 
-**Response format:** The agent returns `{ response }` with the final AI output only (no intermediate tool outputs or internal details).
+**Response format:** `text/event-stream` (SSE) — `curl -N` disables curl's own output buffering so you see `token` events arrive incrementally instead of all at once. See [ai-agent-ts/README.md](../ai-agent-ts/README.md#chat-api) for the full event contract.
 
 ---
 

@@ -33,7 +33,26 @@ export async function signup(profile) {
   return res.json();
 }
 
-export async function sendChat(message, threadId) {
+// Parses one complete SSE event block (already split on the blank-line separator)
+// into its `event:`/`data:` fields.
+function parseSSEEvent(raw) {
+  let event = null;
+  let data = null;
+  for (const line of raw.split("\n")) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    else if (line.startsWith("data:")) data = line.slice(5).trim();
+  }
+  return { event, data };
+}
+
+/**
+ * Streams a chat turn over SSE. Callbacks fire as events arrive:
+ * onToken(text) per streamed chunk, onInterrupt(text) once if the agent
+ * pauses for food-log confirmation, onDone(interrupted) when the stream
+ * ends normally, onError(err) on failure (network, timeout, or an
+ * in-stream `error` event from the agent).
+ */
+export async function sendChatStream(message, threadId, { onToken, onInterrupt, onDone, onError }) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), CHAT_TIMEOUT_MS);
 
@@ -44,26 +63,52 @@ export async function sendChat(message, threadId) {
       body: JSON.stringify({ message, threadId }),
       signal: controller.signal,
     });
-    clearTimeout(timeoutId);
-    if (!res.ok) {
+
+    if (!res.ok || !res.body) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
       throw new Error(err.error || "Chat failed");
     }
-    return res.json();
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      let sepIndex;
+      while ((sepIndex = buffer.indexOf("\n\n")) !== -1) {
+        const rawEvent = buffer.slice(0, sepIndex);
+        buffer = buffer.slice(sepIndex + 2);
+        const { event, data } = parseSSEEvent(rawEvent);
+        if (!event || data === null) continue;
+        const parsed = JSON.parse(data);
+
+        if (event === "token") onToken?.(parsed.text);
+        else if (event === "interrupt") onInterrupt?.(parsed.text);
+        else if (event === "error") {
+          onError?.(new Error(parsed.error || "Chat failed"));
+          return;
+        } else if (event === "done") onDone?.(parsed.interrupted);
+      }
+    }
   } catch (err) {
-    clearTimeout(timeoutId);
     if (err.name === "AbortError") {
-      throw new Error(
-        "Request timed out. Ensure the backend (port 3001) and AI agent (port 8000) are running."
+      onError?.(
+        new Error("Request timed out. Ensure the backend (port 3001) and AI agent (port 8000) are running.")
       );
+      return;
     }
     const msg = err.message || "";
     if (msg.includes("fetch") || msg.includes("network") || msg.includes("Connection")) {
-      throw new Error(
-        "Cannot reach backend. Start it with: cd backend && npm run dev"
-      );
+      onError?.(new Error("Cannot reach backend. Start it with: cd backend && npm run dev"));
+      return;
     }
-    throw err;
+    onError?.(err);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

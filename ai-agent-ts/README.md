@@ -30,7 +30,16 @@ flowchart TD
 
 ## Chat API
 
-`POST /chat` — Request: `{ user_id, message, thread_id }`. Returns `{ response }` or `{ response, interrupted: true }` when the agent pauses for food log confirmation. The response contains the final AI output (extracted from the last assistant message; intermediate tool outputs, user profile dumps, and RAG content are not included). When `interrupted` is true, the client should display the options and send the user's next reply (e.g. "1" or "2") in a follow-up request with the same `thread_id`—the agent resumes with that value and creates the log. The user ID is passed to the agent via a system message so it never appears in chat bubbles.
+`POST /chat` — Request: `{ user_id, message, thread_id }`. Response is `text/event-stream` (SSE), not a single JSON blob. Events:
+
+| Event | Payload | Meaning |
+|-------|---------|---------|
+| `token` | `{ text }` | One streamed chunk of the AI response. Only chunks from user-facing nodes (`agentNode`, `chitchatNode`, `respondDecline`) are forwarded — `classifyIntent`'s structured-output tokens and `analyze`'s internal reasoning are filtered out by `langgraph_node` in the streamed metadata. A handful of nodes (`logFoodNode`'s resume confirmation) construct their final message directly instead of via a streamed LLM call; if no `token` events were emitted for a completed turn, one is sent with the full text as a fallback. |
+| `interrupt` | `{ text }` | Sent once, when the agent pauses for food log confirmation (formatted options list). No further `token` events follow. |
+| `done` | `{ interrupted }` | Terminates the stream. `interrupted` mirrors whether the turn ended in an `interrupt` event. |
+| `error` | `{ error }` | Sent if the turn fails after the stream has already started (headers are committed to `text/event-stream` as soon as request validation passes, so failures can't downgrade to a JSON error response). |
+
+When `interrupted` is true, the client should display the interrupt text's options and send the user's next reply (e.g. "1" or "2") in a follow-up request with the same `thread_id`—the agent resumes with that value (via `graph.stream(new Command({ resume: message }), ...)`) and creates the log. The user ID is passed to the agent via a system message so it never appears in chat bubbles.
 
 ## Project structure (src/)
 
@@ -112,7 +121,7 @@ Dataset and evaluators live in `src/eval/`. Not yet wired into CI (`deploy.yml`)
 
 ## Observability
 
-Every `graph.invoke` call carries LangSmith `tags`/`metadata`/`runName`: live chat traffic is tagged `chat` + `new-turn`/`resume` (see `src/index.ts`), while the eval harness and `test:chat` script tag their runs `eval`/`manual-test` so traces are filterable by source. Each LLM-calling node (`classifyIntent`, `respondDecline`, `chitchatNode`, `analyze`, `agentNode`) logs token usage and an estimated cost via `logTokenUsage()` (`agent/observability.ts`), priced off a small hardcoded table keyed by `nodes.ts`'s `MODEL_NAME` constant — **if you change the model, update that pricing table too**, or cost logging warns and skips the estimate instead of silently pricing against the old model.
+Every graph call carries LangSmith `tags`/`metadata`/`runName`: live chat traffic (`src/index.ts`, via `graph.stream(..., { streamMode: "messages" })` so responses stream to the client) is tagged `chat` + `new-turn`/`resume`, while the eval harness and `test:chat` script (both call `graph.invoke()` directly, in-process, bypassing HTTP entirely) tag their runs `eval`/`manual-test` so traces are filterable by source. Each LLM-calling node (`classifyIntent`, `respondDecline`, `chitchatNode`, `analyze`, `agentNode`) logs token usage and an estimated cost via `logTokenUsage()` (`agent/observability.ts`), priced off a small hardcoded table keyed by `nodes.ts`'s `MODEL_NAME` constant — **if you change the model, update that pricing table too**, or cost logging warns and skips the estimate instead of silently pricing against the old model.
 
 Logging itself is structured JSON via `pino` (`logger.ts`), pretty-printed in dev. `pino-http` is mounted first in the Express app and attaches a per-request `req.log` plus `req.id`; when the backend calls `/chat`, it forwards its own request ID as an `X-Request-Id` header, which the agent reuses instead of minting a new one — so one ID threads through both services' logs, and is also included in each run's LangSmith `metadata` for full-stack trace correlation.
 
