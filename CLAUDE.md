@@ -78,6 +78,8 @@ Optional: `LANGSMITH_TRACING_V2`, `LANGSMITH_API_KEY`, `LANGSMITH_PROJECT` for L
 
 `ai-agent-ts/src/agent/graph.ts` defines a `StateGraph` compiled with a Postgres-backed `PostgresSaver` checkpointer (`@langchain/langgraph-checkpoint-postgres`, using the same `DATABASE_URL` as the backend) — conversation history and in-flight interrupts survive process restarts and redeploys. Flow:
 
+**RDS SSL gotcha**: `graph.ts` builds its own `pg.Pool` (not `PostgresSaver.fromConnString`) and strips `sslmode` off `DATABASE_URL` before passing it as `connectionString`, passing SSL config instead via an explicit `ssl: { rejectUnauthorized: false }` option. This isn't cosmetic — `pg`'s `ConnectionParameters` re-parses `connectionString` internally and applies that re-parsed result *after* your explicit config (`Object.assign` order in `pg/lib/connection-parameters.js`), so if `sslmode=require` is left in the string, its derived `ssl: {}` silently overwrites the explicit override, re-enabling strict certificate verification and failing against RDS's cert chain with `SELF_SIGNED_CERT_IN_CHAIN`. Caused a real prod outage (agent crash-looping) since PR #13 first introduced the pool — don't "simplify" this back to passing `databaseUrl` directly just because it looks redundant.
+
 ```
 START → classifyIntent → routeAfterClassify →
   "off_topic"  → respondDecline → END
