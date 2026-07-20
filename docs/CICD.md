@@ -25,14 +25,20 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/README.md'
+      - 'CLAUDE.md'
       - '.env.example'
       - '.gitignore'
       - '.dockerignore'
+      - 'docker-compose.yml'
+      - 'backend/scripts/dummy-data*.sql'
 ```
 
 - `docs/**` – any file under the `docs/` folder  
 - `**/README.md` – README files anywhere (root, `frontend/`, `backend/`, `ai-agent-ts/`, etc.)  
+- `CLAUDE.md` – repo-root guidance file for Claude Code, doesn't affect the build
 - `.env.example`, `.gitignore`, `.dockerignore` – config files that do not affect the build
+- `docker-compose.yml` – local dev compose file, not used in prod (`docker-compose.prod.yml` is)
+- `backend/scripts/dummy-data*.sql` – dev-only seed data, never run in prod
 
 Note: `*.md` was removed so pushes that change `ai-agent-ts/knowledge/*.md` trigger the workflow (for RAG indexing).
 
