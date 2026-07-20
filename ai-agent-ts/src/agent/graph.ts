@@ -50,9 +50,26 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL environment variable is required for the Postgres checkpointer");
 }
 
+// pg's ConnectionParameters re-parses `connectionString` internally and lets whatever
+// it derives from a `sslmode=...` query param silently overwrite an explicitly-passed
+// `ssl` option (Object.assign order in pg/lib/connection-parameters.js runs the
+// re-parsed result last) — so passing both `connectionString` (with sslmode=require)
+// and `ssl: { rejectUnauthorized: false }` doesn't work as intended: the string-derived
+// `ssl: {}` wins, re-enabling strict certificate verification, which then fails against
+// RDS's certificate chain (SELF_SIGNED_CERT_IN_CHAIN). Strip sslmode from the string
+// handed to Pool so our explicit override survives that re-parse; still SSL either way.
+const requiresSsl = /sslmode=require/.test(databaseUrl);
+const poolConnectionString = requiresSsl
+  ? (() => {
+      const url = new URL(databaseUrl);
+      url.searchParams.delete("sslmode");
+      return url.toString();
+    })()
+  : databaseUrl;
+
 const pool = new pg.Pool({
-  connectionString: databaseUrl,
-  ssl: /sslmode=require/.test(databaseUrl) ? { rejectUnauthorized: false } : undefined,
+  connectionString: poolConnectionString,
+  ssl: requiresSsl ? { rejectUnauthorized: false } : undefined,
 });
 
 const checkpointer = new PostgresSaver(pool);
