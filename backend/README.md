@@ -59,6 +59,14 @@ npm run dev
 
 Runs on **http://localhost:3001**. For production-like runs, `npm start` runs migrations before starting the server.
 
+## Test
+
+```bash
+npm test
+```
+
+Runs unit tests (`vitest run`) for pure-logic modules in `src/services/` — currently `tdee.js`'s `calculateTDEE`. No database or network access required. Gated on every PR via `.github/workflows/ci.yml`.
+
 ## API
 
 Every route below except `POST /api/users` and `GET /api/users/by-name` requires `Authorization: Bearer <token>`; the token's userId must match the `:id` in the URL or the request is rejected with 403.

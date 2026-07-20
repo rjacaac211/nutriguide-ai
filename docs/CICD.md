@@ -2,7 +2,19 @@
 
 How the GitHub Actions pipeline works and how to modify it.
 
-## Trigger
+## PR checks (`ci.yml`)
+
+Separate from the deploy pipeline below: `.github/workflows/ci.yml` runs on every pull request targeting `main` and gates on correctness, not deployment. Three independent jobs, each `actions/checkout` + `actions/setup-node@v4` (Node 20) + `npm ci` in that service's directory:
+
+| Job | Working directory | Steps |
+|-----|-------------------|-------|
+| `ai-agent-test` | `ai-agent-ts/` | `npm run typecheck` (`tsc --noEmit`), then `npm test` (`vitest run`) |
+| `backend-test` | `backend/` | `npm test` (`vitest run`) |
+| `frontend-build` | `frontend/` | `npm run build` (Vite) |
+
+No secrets, no Postgres service container, no live network access — the unit tests only cover pure functions (`parseLogFoodMessage`, `parseSelectionToIndex` in the agent; `calculateTDEE` in the backend), so nothing here touches the database or external APIs. This does **not** run the eval harness (`npm run eval` in `ai-agent-ts`) — that still needs a live backend + database + API keys and isn't wired into CI (see the Evaluation section of `ai-agent-ts/README.md`).
+
+## Trigger (deploy pipeline, `deploy.yml`)
 
 The workflow runs on **push to `main`**, but is **skipped** when the push only touches documentation or config files:
 

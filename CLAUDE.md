@@ -33,6 +33,8 @@ npm run dev            # tsx watch (hot reload, no build needed)
 npm run index          # index knowledge/ files to Pinecone (run after changing .md files)
 npm run test:chat      # smoke test agent directly
 npm run eval           # run offline eval suite (LLM-as-judge + agentevals trajectory match + retrieval-source check); uses LangSmith evaluate() if LANGSMITH_TRACING_V2/LANGSMITH_API_KEY are set, else runs locally
+npm run typecheck      # tsc --noEmit
+npm test               # vitest run — unit tests for pure-logic functions (parseLogFoodMessage, parseSelectionToIndex), no live services needed
 ```
 
 ### Backend (`backend/`)
@@ -41,6 +43,7 @@ npm install
 npm run migrate dev    # run Prisma migrations (requires PostgreSQL)
 npm run dev            # node --watch src/index.js
 npm start              # migrate-and-start (used in Docker/prod)
+npm test               # vitest run — unit tests for pure-logic functions (tdee.js's calculateTDEE), no live services needed
 ```
 
 ### Frontend (`frontend/`)
@@ -146,6 +149,10 @@ All component styles live in `frontend/src/App.css`. Design tokens are CSS varia
 PostgreSQL 15+ with Prisma ORM. Run migrations with `npm run migrate dev` from `backend/`. Schema: `users` → `profile` (1:1), `food_log` (many), `weight_log` (many). `WeightLog` has a unique constraint on `(userId, date)` — one log per user per day.
 
 The same database also holds the AI agent's LangGraph checkpoint tables (`checkpoints`, `checkpoint_blobs`, `checkpoint_writes`, `checkpoint_migrations`), created and managed by `PostgresSaver.setup()` (see Agent Architecture above) — outside Prisma's schema/migrations, no collision.
+
+## CI
+
+Pull requests targeting `main` trigger `.github/workflows/ci.yml`: three independent jobs (`ai-agent-test`, `backend-test`, `frontend-build`), each `npm ci` + the relevant check (`npm run typecheck && npm test` for the agent, `npm test` for the backend, `npm run build` for the frontend). No Postgres service container and no secrets are needed — the unit tests only cover pure functions (no DB/network access). This is separate from `deploy.yml` below and doesn't run the eval harness (`npm run eval`), which still needs a live backend + DB + API keys and isn't wired into CI.
 
 ## Deployment
 

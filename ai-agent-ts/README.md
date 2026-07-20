@@ -83,6 +83,15 @@ AGENT_PORT=8000 npm start
 
 Or use the project's `docker-compose.yml` which includes the agent.
 
+## Unit tests & typecheck
+
+```bash
+npm run typecheck   # tsc --noEmit
+npm test            # vitest run
+```
+
+Unit tests cover pure-logic functions with no live services required — currently `parseLogFoodMessage` and `parseSelectionToIndex` (both in `src/agent/`). Gated on every PR via `.github/workflows/ci.yml`. This is separate from `npm run test:chat` below, which is a manual smoke test against a live agent, and from `npm run eval`, which needs a live backend + API keys.
+
 ## Test (direct agent)
 
 ```bash
