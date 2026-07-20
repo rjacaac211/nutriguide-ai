@@ -156,7 +156,7 @@ This is an LLM-driven agent: it takes untrusted free-text user input and feeds i
 - `PINECONE_API_KEY` — Required for RAG
 - `PINECONE_INDEX` — Pinecone index name (default: nutriguide-app-knowledge)
 - `AGENT_PORT` — Server port (required)
-- `DATABASE_URL` — Required; the LangGraph checkpointer (`PostgresSaver`) persists conversation state and in-flight interrupts to this Postgres database (same instance as the backend, separate tables). The process throws on startup if unset.
+- `DATABASE_URL` — Required; the LangGraph checkpointer (`PostgresSaver`) persists conversation state and in-flight interrupts to this Postgres database (same instance as the backend, separate tables). The process throws on startup if unset. For RDS (`?sslmode=require`), `src/agent/graph.ts` deliberately strips `sslmode` from the string it hands to `pg.Pool` and sets SSL via an explicit `ssl: { rejectUnauthorized: false }` option instead — `pg` otherwise silently discards that override and re-enables strict cert verification, which fails against RDS with `SELF_SIGNED_CERT_IN_CHAIN`. See CLAUDE.md's Agent Architecture section for the full explanation.
 - `BACKEND_URL` — Backend base URL for fetching profiles (default: http://localhost:3001; use http://backend:3001 in Docker)
 - `INTERNAL_API_KEY` — Required for agent-backend auth (must match backend)
 - `LANGSMITH_*` — Optional LangSmith tracing

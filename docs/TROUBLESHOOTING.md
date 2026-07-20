@@ -74,6 +74,7 @@ Common issues and fixes for NutriGuide-AI deployment.
 - **Dev**: Ensure PostgreSQL is running and `DATABASE_URL` in `.env` is correct. For Docker, use `host.docker.internal` as host. See [DATABASE_SETUP.md](DATABASE_SETUP.md)
 - **Prod**: Verify `DATABASE_URL` in GitHub Secrets. RDS must be in same VPC as EC2; security group must allow 5432 from EC2. Add `?sslmode=require` for RDS
 - **AI agent won't start**: The agent's LangGraph checkpointer (`PostgresSaver`) connects to Postgres on boot and throws immediately if `DATABASE_URL` is missing or the database is unreachable — unlike the backend, this isn't a per-request error, the container/process exits. Check `docker compose logs ai-agent` (or the terminal running `npm run dev` in `ai-agent-ts/`) for the connection error.
+- **AI agent won't start, error is `SELF_SIGNED_CERT_IN_CHAIN`**: This is a client-library quirk, not a bad `DATABASE_URL` — don't "fix" it by removing `?sslmode=require` (that just trades this error for either a rejected plain connection or unencrypted DB traffic). See `docs/DATABASE_SETUP.md`'s "SSL required (RDS)" entry and CLAUDE.md's Agent Architecture section for the real cause and where it's handled in code (`ai-agent-ts/src/agent/graph.ts`).
 
 ### Env vars missing
 

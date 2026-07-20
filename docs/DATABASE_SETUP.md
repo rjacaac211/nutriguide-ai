@@ -185,6 +185,7 @@ The deploy workflow writes `DATABASE_URL` to EC2 `.env`. Migrations run automati
 ### SSL required (RDS)
 
 - Add `?sslmode=require` to the end of `DATABASE_URL` for production RDS
+- **Agent-specific**: if the `ai-agent` container crash-loops with `SELF_SIGNED_CERT_IN_CHAIN` even though `DATABASE_URL` has `?sslmode=require`, that's a known `pg` library quirk, not a bad connection string — see the "RDS SSL gotcha" note in the root `CLAUDE.md`'s Agent Architecture section. Already handled in `ai-agent-ts/src/agent/graph.ts`; if this error reappears, something likely reverted that handling.
 
 ### Migration failed
 
