@@ -319,6 +319,12 @@ export const toolNode = async (state: NutriGuideStateType, config?: NodeConfig) 
     const start = Date.now();
     try {
       const args = (toolCall.args ?? {}) as Record<string, unknown>;
+      // The model chooses tool-call arguments, including user_id — a prompt injection
+      // could try to make it call a tool with a different user's ID. Force it back to
+      // the authenticated session's user_id rather than trusting the model's argument.
+      if ("user_id" in args) {
+        args.user_id = state.user_id;
+      }
       const observation = await (tool as { invoke: (input: unknown) => Promise<unknown> }).invoke(args);
       logger.debug(
         { tool: toolCall.name, thread_id, duration_ms: Date.now() - start },

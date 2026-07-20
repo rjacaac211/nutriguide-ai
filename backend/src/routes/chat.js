@@ -8,12 +8,23 @@ if (!AGENT_URL) {
   throw new Error("AGENT_URL environment variable is required");
 }
 
+// Keep in sync with ai-agent-ts/src/index.ts's MAX_MESSAGE_LENGTH — the agent's
+// /chat endpoint enforces this independently since it's also reachable directly
+// (eval harness, test:chat script), not just through this proxy.
+const MAX_MESSAGE_LENGTH = 4000;
+
 router.post("/", requireAuth, async (req, res) => {
   const { message, threadId } = req.body;
   const userId = req.userId;
 
   if (!message || !threadId) {
     return res.status(400).json({ error: "message and threadId are required" });
+  }
+
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return res
+      .status(400)
+      .json({ error: `message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters` });
   }
 
   // res.on("close") — not req.on("close") — is the correct client-disconnect signal here:

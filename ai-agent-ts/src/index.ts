@@ -25,6 +25,11 @@ import type {
 // step feeding agentNode's system prompt) are deliberately excluded.
 const STREAMED_NODES = new Set(["agentNode", "chitchatNode", "respondDecline"]);
 
+// Keep in sync with backend/src/routes/chat.js's MAX_MESSAGE_LENGTH — enforced
+// independently here since this endpoint is also reachable directly (eval harness,
+// test:chat script), not just through the backend proxy.
+const MAX_MESSAGE_LENGTH = 4000;
+
 const app = express();
 app.use(
   pinoHttp({
@@ -100,6 +105,11 @@ app.post("/chat", async (req: Request, res: Response) => {
 
   if (!user_id || !message || !thread_id) {
     res.status(400).json({ error: "user_id, message, and thread_id are required" });
+    return;
+  }
+
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    res.status(400).json({ error: `message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters` });
     return;
   }
 
