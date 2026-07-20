@@ -260,7 +260,7 @@ export const getCalorieGoalTool = tool(
   }
 );
 
-function parseSelectionToIndex(resumeValue: unknown, optionCount: number): number | null {
+export function parseSelectionToIndex(resumeValue: unknown, optionCount: number): number | null {
   if (resumeValue == null) return null;
   const s = String(resumeValue).trim().toLowerCase();
   if (

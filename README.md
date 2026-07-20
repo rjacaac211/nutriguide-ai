@@ -12,6 +12,7 @@ Users create an account (or log in by name) and complete a short onboarding flow
 | **RAG** | OpenAI embeddings, Pinecone vector store, Markdown knowledge base |
 | **Observability** | LangSmith run tags/metadata/cost tracking, structured JSON logging (`pino`), cross-service request correlation IDs |
 | **Evaluation** | Offline eval harness: LLM-as-judge response grading, `agentevals` trajectory matching, LangSmith `evaluate()` experiment dashboard; `npm run eval` in ai-agent-ts |
+| **Testing / CI** | `vitest` unit tests (agent + backend), TypeScript typecheck gate, PR-triggered GitHub Actions checks (`.github/workflows/ci.yml`) |
 | **Stack** | Full stack: React (Vite), Node.js/Express, TypeScript AI agent |
 | **Deployment** | Docker, AWS (EC2, ECR), GitHub Actions CI/CD |
 | **APIs** | Internal APIs (agent ↔ backend), external APIs (USDA FoodData Central) |
