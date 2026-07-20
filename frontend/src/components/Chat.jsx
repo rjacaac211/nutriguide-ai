@@ -56,6 +56,7 @@ export default function Chat() {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about nutrition..."
           disabled={loading}
+          maxLength={4000}
         />
         <button type="submit" disabled={loading || !input.trim()}>
           Send
