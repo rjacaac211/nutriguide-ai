@@ -12,7 +12,17 @@ Separate from the deploy pipeline below: `.github/workflows/ci.yml` runs on ever
 | `backend-test` | `backend/` | `npm test` (`vitest run`) |
 | `frontend-build` | `frontend/` | `npm run build` (Vite) |
 
-No secrets, no Postgres service container, no live network access — the unit tests only cover pure functions (`parseLogFoodMessage`, `parseSelectionToIndex` in the agent; `calculateTDEE` in the backend), so nothing here touches the database or external APIs. This does **not** run the eval harness (`npm run eval` in `ai-agent-ts`) — that still needs a live backend + database + API keys and isn't wired into CI (see the Evaluation section of `ai-agent-ts/README.md`).
+No secrets, no Postgres service container, no live network access — the unit tests only cover pure functions (`parseLogFoodMessage`, `parseSelectionToIndex` in the agent; `calculateTDEE` in the backend), so nothing here touches the database or external APIs. This does **not** run the eval harness (`npm run eval` in `ai-agent-ts`) — that's wired separately as a manually-triggered workflow, `eval.yml` (see below), since it's too costly/slow to gate every PR.
+
+## Offline Eval (`eval.yml`)
+
+Runs the agent's offline eval harness (LLM-as-judge + `agentevals` trajectory match + retrieval-source check, ~46 examples) against a real backend, ephemeral database, and live external APIs (OpenAI, Pinecone, USDA). Deliberately **not** a PR gate: every example makes multiple billed LLM calls (agent turn + judge + trajectory-match), so it's triggered manually via `workflow_dispatch` — run it after changing the system prompt, model, `knowledge/*.md`, or tool/node logic, not on every commit.
+
+- **Runner**: `ubuntu-latest`, single `eval` job, 30 min timeout
+- **Postgres**: a `postgres:16` `services:` container (ephemeral, wiped after the run) — deliberately **not** the real `secrets.DATABASE_URL` (production RDS), since eval writes checkpoint/interrupt state and this must never touch prod
+- **Steps**: install backend deps → `npx prisma migrate deploy` against the ephemeral DB → seed the `eval-test-user` fixture (`backend/scripts/eval-seed.js` — the eval dataset hardcodes this user id for every example; without seeded profile/food-log/weight-log data, profile-dependent examples degrade to a "no data found" response instead of the personalized path their reference answers were written against) → start the backend in the background → poll `GET /health` until it responds → install agent deps → `npm run eval`
+- **Secrets/vars reused** from the `deploy.yml` set below (no new ones needed): `OPENAI_API_KEY`, `PINECONE_API_KEY`, `PINECONE_INDEX`, `USDA_FDC_API_KEY`. `INTERNAL_API_KEY` and `JWT_SECRET` are hardcoded CI-local dummy strings instead of the real secrets — backend and agent are both freshly started in the same job and only need to agree with each other, nothing real trusts these values.
+- **Pass/fail**: `run-eval.ts` normally always exits 0 (it only fails on infra errors like a missing DB); this workflow sets `EVAL_FAIL_BELOW=0.7` so the job actually fails if the overall pass rate drops below 70%. The threshold is deliberately generous since the judge and trajectory-match evaluators are themselves LLM-based and non-deterministic. Results (per-evaluator + overall pass rate) are also written to the job's `$GITHUB_STEP_SUMMARY` regardless of pass/fail.
 
 ## Trigger (deploy pipeline, `deploy.yml`)
 

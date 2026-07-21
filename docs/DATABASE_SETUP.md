@@ -94,6 +94,13 @@ psql $DATABASE_URL -f backend/scripts/dummy-data.sql
 
 > **Warning:** Do not run the dummy data script in production.
 
+**Eval fixture (separate from the above):** `backend/scripts/eval-seed.js` seeds a small, fixed profile + food/weight log history for user id `eval-test-user` — the id the AI agent's offline eval dataset (`ai-agent-ts/src/eval/dataset.ts`) hardcodes for every example. It's a Node/Prisma script (not SQL, and idempotent — safe to re-run), run automatically by `.github/workflows/eval.yml` against CI's ephemeral database. Run it locally the same way if you want your dev DB to have this fixture for testing the eval harness directly:
+
+```bash
+cd backend
+node scripts/eval-seed.js
+```
+
 ---
 
 ## Production Setup (AWS RDS)

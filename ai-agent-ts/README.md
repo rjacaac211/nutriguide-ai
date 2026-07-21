@@ -126,7 +126,7 @@ Runs offline evaluation on a curated dataset (~46 examples) covering intent clas
 | response_quality_judge | LLM-as-judge (`gpt-4o-mini`, structured output): grades whether the response is grounded and actually addresses the question, against a golden `reference_answer` in the dataset - not a length/keyword heuristic |
 | retrieval_source_correct | For nutrition examples with an `expected_source_file`, checks that `search_nutrition_knowledge`'s returned Sources list actually includes that knowledge file's URL (from `rag.ts`'s `KNOWN_SOURCES`) - catches wrong/irrelevant retrieval that a plausible-sounding final answer could otherwise mask |
 
-Dataset and evaluators live in `src/eval/`. Not yet wired into CI (`deploy.yml`) - the nutrition/log-food examples need a live backend+DB, which the CI runner doesn't have; that's a separate follow-up (standing up service containers + a seeded eval user).
+Dataset and evaluators live in `src/eval/`. Wired into CI as its own manually-triggered workflow, `.github/workflows/eval.yml` (`workflow_dispatch`, not a PR gate) - it stands up an ephemeral Postgres service container, a seeded `eval-test-user` fixture, and a live backend process, then runs this same `npm run eval` command against them. See `docs/CICD.md`'s "Offline Eval (eval.yml)" section for the full breakdown.
 
 ## Observability
 
