@@ -23,7 +23,7 @@ flowchart TD
 - **classifyIntent**: Routes to respondDecline (off-topic), chitchatNode (greetings/small talk), logFoodNode (log/add food), or analyze (nutrition)
 - **respondDecline**: Polite decline for non-nutrition questions
 - **chitchatNode**: Short friendly reply for greetings and small talk (no tools, no RAG)
-- **logFoodNode**: Direct path for food logging (e.g. "log 100g chicken for lunch", "add 1 cup rice for dinner", "log 2 servings oatmeal for breakfast"). Uses `request_food_log_confirmation` with LangGraph interrupt—pauses for user to reply "1"/"2"/"cancel", then appends to or creates the log. Accepts grams or amount+unit (cup, cups, serving, servings, oz, tbsp, tsp, piece, slice). Multiple foods for the same meal are merged into one log.
+- **logFoodNode**: Direct path for food logging (e.g. "log 100g chicken for lunch", "add 1 cup rice for dinner", "log 2 servings oatmeal for breakfast"). Parses the message with a zero-cost regex fast path first (`parseLogFoodMessage`); if that doesn't match (e.g. "log 200 grams of white rice for breakfast", "add 2kg rice for dinner"), falls back to an LLM structured-extraction call (`extractLogFoodViaLLM`, temperature 0, converts kg to grams) so natural phrasing the regex vocabulary doesn't cover still works, without adding LLM cost/latency to the common case. Then uses `request_food_log_confirmation` with LangGraph interrupt—pauses for user to reply "1"/"2"/"cancel", then appends to or creates the log. Accepts grams or amount+unit (cup, cups, serving, servings, oz, tbsp, tsp, piece, slice). Multiple foods for the same meal are merged into one log.
 - **analyze**: Multi-step reasoning before agent (what user needs, search focus)
 - **agentNode**: LLM with tools (get_user_profile, get_user_behavioural, get_calorie_goal, search_nutrition_knowledge, search_foods, request_food_log_confirmation)
 - **toolNode**: Executes tool calls, loops back to agentNode
@@ -106,7 +106,7 @@ Runs a two-turn test: "log 100g chicken for lunch" → interrupt → resume with
 npm run eval
 ```
 
-Runs offline evaluation on a curated dataset (~46 examples) covering intent classification, off-topic handling, chitchat, log-food parsing, tool selection, final response quality, and retrieval accuracy.
+Runs offline evaluation on a curated dataset (~50 examples) covering intent classification, off-topic handling, chitchat, log-food parsing (including the LLM-fallback path), tool selection, final response quality, and retrieval accuracy.
 
 **Prerequisites:** Backend running at `BACKEND_URL`, and `OPENAI_API_KEY`, `BACKEND_URL`, `INTERNAL_API_KEY`, `PINECONE_*` in `.env`.
 
@@ -121,7 +121,7 @@ Runs offline evaluation on a curated dataset (~46 examples) covering intent clas
 | intent_correct | Intent classification matches expected (chitchat, off_topic, log_food, nutrition) |
 | off_topic_handled | Off-topic responses redirect to nutrition and are brief |
 | chitchat_appropriate | Chitchat responses are friendly and invite nutrition questions |
-| log_food_parsed | Log-food messages parse correctly (search_query, grams/amount+unit, meal_type) |
+| log_food_parsed | Log-food messages parse correctly (search_query, grams/amount+unit, meal_type) via the same regex-fast-path + LLM-fallback path `logFoodNode` uses in production (`parseLogFoodMessageWithFallback`) |
 | right_tools_called | Agent's tool-call trajectory is a superset of the expected tools for the question, via `agentevals`' `createTrajectoryMatchEvaluator` (tool args ignored - this checks *which* tools ran, not their exact arguments) |
 | response_quality_judge | LLM-as-judge (`gpt-4o-mini`, structured output): grades whether the response is grounded and actually addresses the question, against a golden `reference_answer` in the dataset - not a length/keyword heuristic |
 | retrieval_source_correct | For nutrition examples with an `expected_source_file`, checks that `search_nutrition_knowledge`'s returned Sources list actually includes that knowledge file's URL (from `rag.ts`'s `KNOWN_SOURCES`) - catches wrong/irrelevant retrieval that a plausible-sounding final answer could otherwise mask |
@@ -130,7 +130,7 @@ Dataset and evaluators live in `src/eval/`. Wired into CI as its own manually-tr
 
 ## Observability
 
-Every graph call carries LangSmith `tags`/`metadata`/`runName`: live chat traffic (`src/index.ts`, via `graph.stream(..., { streamMode: "messages" })` so responses stream to the client) is tagged `chat` + `new-turn`/`resume`, while the eval harness and `test:chat` script (both call `graph.invoke()` directly, in-process, bypassing HTTP entirely) tag their runs `eval`/`manual-test` so traces are filterable by source. Each LLM-calling node (`classifyIntent`, `respondDecline`, `chitchatNode`, `analyze`, `agentNode`) logs token usage and an estimated cost via `logTokenUsage()` (`agent/observability.ts`), priced off a small hardcoded table keyed by `nodes.ts`'s `MODEL_NAME` constant — **if you change the model, update that pricing table too**, or cost logging warns and skips the estimate instead of silently pricing against the old model.
+Every graph call carries LangSmith `tags`/`metadata`/`runName`: live chat traffic (`src/index.ts`, via `graph.stream(..., { streamMode: "messages" })` so responses stream to the client) is tagged `chat` + `new-turn`/`resume`, while the eval harness and `test:chat` script (both call `graph.invoke()` directly, in-process, bypassing HTTP entirely) tag their runs `eval`/`manual-test` so traces are filterable by source. Each LLM-calling node (`classifyIntent`, `respondDecline`, `chitchatNode`, `analyze`, `agentNode`), plus `logFoodNode`'s LLM fallback (`extractLogFoodViaLLM`, logged as `logFoodFallback`), logs token usage and an estimated cost via `logTokenUsage()` (`agent/observability.ts`), priced off a small hardcoded table keyed by `nodes.ts`'s `MODEL_NAME` constant — **if you change the model, update that pricing table too**, or cost logging warns and skips the estimate instead of silently pricing against the old model.
 
 Logging itself is structured JSON via `pino` (`logger.ts`), pretty-printed in dev. `pino-http` is mounted first in the Express app and attaches a per-request `req.log` plus `req.id`; when the backend calls `/chat`, it forwards its own request ID as an `X-Request-Id` header, which the agent reuses instead of minting a new one — so one ID threads through both services' logs, and is also included in each run's LangSmith `metadata` for full-stack trace correlation.
 

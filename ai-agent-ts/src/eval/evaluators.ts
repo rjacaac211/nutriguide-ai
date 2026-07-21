@@ -7,7 +7,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { AIMessage, ToolMessage, type BaseMessage } from "@langchain/core/messages";
 import { createTrajectoryMatchEvaluator } from "agentevals";
 import { z } from "zod";
-import { parseLogFoodMessage } from "../agent/nodes.js";
+import { parseLogFoodMessageWithFallback } from "../agent/nodes.js";
 import { KNOWN_SOURCES } from "../agent/rag.js";
 import type { EvalExampleOutput } from "./dataset.js";
 
@@ -52,11 +52,11 @@ export const chitchatAppropriate: Evaluator = ({ outputs = {}, referenceOutputs 
   return { key: "chitchat_appropriate", score: isFriendly && (invitesQuestion || response.length < 200) };
 };
 
-export const logFoodParsed: Evaluator = ({ inputs, referenceOutputs }) => {
+export const logFoodParsed: Evaluator = async ({ inputs, referenceOutputs }) => {
   const ref = referenceOutputs as EvalExampleOutput | undefined;
   if (ref?.intent !== "log_food" || !ref?.parsed) return { key: "log_food_parsed", score: true };
   const message = String(inputs.message ?? "");
-  const parsed = parseLogFoodMessage(message);
+  const parsed = await parseLogFoodMessageWithFallback(message);
   const expected = ref.parsed;
   if (!parsed) return { key: "log_food_parsed", score: false };
   if (parsed.search_query !== expected.search_query) return { key: "log_food_parsed", score: false };

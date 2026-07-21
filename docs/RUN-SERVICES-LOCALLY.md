@@ -90,7 +90,7 @@ cd ai-agent-ts
 npm run eval
 ```
 
-Runs ~43 examples covering intent classification, off-topic handling, chitchat, log-food parsing, tool selection, and response quality. See [ai-agent-ts/README.md](../ai-agent-ts/README.md#evaluation) for details.
+Runs ~50 examples covering intent classification, off-topic handling, chitchat, log-food parsing, tool selection, and response quality. See [ai-agent-ts/README.md](../ai-agent-ts/README.md#evaluation) for details.
 
 ---
 

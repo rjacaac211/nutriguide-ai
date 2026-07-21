@@ -207,7 +207,69 @@ export function parseLogFoodMessage(text: string): ParsedLogFood | null {
   return null;
 }
 
-export const logFoodNode = async (state: NutriGuideStateType) => {
+// Fallback for phrasings the fast regex path above doesn't recognize (e.g. "grams"
+// spelled out, "kg", conversational phrasing like "I ate about..."). Kept as a
+// separate, deliberately lower-priority path: the regex above is zero-cost/zero-latency
+// and handles the common case, so this LLM call only runs when that fails.
+// OpenAI's structured-output strict mode (used under the hood by withStructuredOutput)
+// doesn't support zod .optional() — every property must be present with a nullable type
+// instead, hence .nullable() throughout rather than .optional().
+const LOG_FOOD_EXTRACTION_SCHEMA = z.object({
+  found: z
+    .boolean()
+    .describe("true only if this message is a request to log/add/record a food with enough info to do so"),
+  search_query: z.string().nullable().describe("the food name to search for, e.g. 'white rice'"),
+  meal_type: z.enum(["breakfast", "lunch", "dinner", "snack"]).nullable(),
+  grams: z
+    .number()
+    .positive()
+    .nullable()
+    .describe("weight in grams — convert kg to grams (x1000) if the user specified kilograms"),
+  amount: z.number().positive().nullable().describe("portion amount, only when grams isn't applicable"),
+  unit: z.string().nullable().describe("portion unit, e.g. cup, serving, tbsp — only set alongside amount"),
+});
+
+// Separate from the shared `model` instance (temperature 0.3) — this is precise
+// structured extraction feeding directly into a food search/log, not free-text
+// generation, so it uses temperature 0 for determinism.
+const extractionModel = new ChatOpenAI({ model: MODEL_NAME, temperature: 0 }).withStructuredOutput(
+  LOG_FOOD_EXTRACTION_SCHEMA,
+  { includeRaw: true }
+);
+
+async function extractLogFoodViaLLM(text: string, config?: NodeConfig): Promise<ParsedLogFood | null> {
+  const result = await extractionModel.invoke(
+    `Determine whether this message is a request to log/add/record a food to a food diary, and if so, extract the details.
+
+Message: ${text}`
+  );
+  logTokenUsage("logFoodFallback", result.raw as AIMessage, MODEL_NAME, {
+    thread_id: config?.configurable?.thread_id,
+  });
+  const parsed = result.parsed;
+  if (!parsed.found || !parsed.search_query) return null;
+  const meal_type = (parsed.meal_type ?? "lunch").toLowerCase();
+  if (parsed.grams != null && parsed.grams > 0) {
+    return { search_query: parsed.search_query.trim(), grams: parsed.grams, meal_type };
+  }
+  if (parsed.amount != null && parsed.amount > 0 && parsed.unit) {
+    return { search_query: parsed.search_query.trim(), amount: parsed.amount, unit: parsed.unit, meal_type };
+  }
+  return null;
+}
+
+// Used by both logFoodNode and the eval harness (evaluators.ts) so the eval suite
+// exercises the actual production parsing path, not just the regex fast path.
+export async function parseLogFoodMessageWithFallback(
+  text: string,
+  config?: NodeConfig
+): Promise<ParsedLogFood | null> {
+  const fastPathResult = parseLogFoodMessage(text);
+  if (fastPathResult) return fastPathResult;
+  return extractLogFoodViaLLM(text, config);
+}
+
+export const logFoodNode = async (state: NutriGuideStateType, config?: NodeConfig) => {
   const messages = Array.isArray(state.messages) ? state.messages : [];
   const lastMsg = messages.at(-1);
   const text =
@@ -218,7 +280,16 @@ export const logFoodNode = async (state: NutriGuideStateType) => {
             .map((c) => (typeof c === "string" ? c : c?.text ?? ""))
             .join(" ")
         : "";
-  const parsed = parseLogFoodMessage(text);
+  let parsed = parseLogFoodMessage(text);
+  if (!parsed) {
+    parsed = await extractLogFoodViaLLM(text, config);
+    if (parsed) {
+      logger.info(
+        { text, parsed, thread_id: config?.configurable?.thread_id },
+        "logFoodNode: regex fast-path missed, used LLM fallback"
+      );
+    }
+  }
   if (!parsed || !state.user_id) {
     return {
       messages: [
