@@ -190,6 +190,40 @@ export const EVAL_EXAMPLES: EvalExample[] = [
     },
   },
 
+  // --- Log food: LLM fallback path (4) ---
+  // These deliberately don't match LOG_FOOD_GRAMS_REGEX/LOG_FOOD_PORTION_REGEX (spelled-out
+  // "grams" and "kg" aren't in the regex's unit vocabulary), so logFoodParsed's use of
+  // parseLogFoodMessageWithFallback only passes if the LLM fallback (extractLogFoodViaLLM
+  // in nodes.ts) correctly extracts them, including kg -> grams conversion.
+  {
+    inputs: { message: "log 200 grams of white rice for breakfast", user_id: EVAL_USER_ID },
+    outputs: {
+      intent: "log_food",
+      parsed: { search_query: "white rice", grams: 200, meal_type: "breakfast" },
+    },
+  },
+  {
+    inputs: { message: "add 2kg rice for dinner", user_id: EVAL_USER_ID },
+    outputs: {
+      intent: "log_food",
+      parsed: { search_query: "rice", grams: 2000, meal_type: "dinner" },
+    },
+  },
+  {
+    inputs: { message: "log 150 grams of salmon for lunch", user_id: EVAL_USER_ID },
+    outputs: {
+      intent: "log_food",
+      parsed: { search_query: "salmon", grams: 150, meal_type: "lunch" },
+    },
+  },
+  {
+    inputs: { message: "record 1.5 kg pasta for dinner", user_id: EVAL_USER_ID },
+    outputs: {
+      intent: "log_food",
+      parsed: { search_query: "pasta", grams: 1500, meal_type: "dinner" },
+    },
+  },
+
   // --- Nutrition (15) ---
   {
     inputs: { message: "how much protein should I eat per day?", user_id: EVAL_USER_ID },
