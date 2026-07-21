@@ -27,6 +27,11 @@ jobs:
       JWT_SECRET: eval-ci-local-jwt-secret
       BACKEND_URL: http://localhost:3001
       PORT: 3001
+      # Never actually called during eval (the harness invokes the graph
+      # in-process, not via HTTP) - only needed because backend/src/routes/chat.js
+      # throws at import time if this is unset, which would otherwise fail
+      # the backend's boot before it can serve the internal endpoints eval does use.
+      AGENT_URL: http://localhost:8000
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
       PINECONE_INDEX: ${{ vars.PINECONE_INDEX }}
