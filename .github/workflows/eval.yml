@@ -1,0 +1,103 @@
+name: Agent Eval
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nutriguide
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nutriguide
+      INTERNAL_API_KEY: eval-ci-local-key
+      JWT_SECRET: eval-ci-local-jwt-secret
+      BACKEND_URL: http://localhost:3001
+      PORT: 3001
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+      PINECONE_INDEX: ${{ vars.PINECONE_INDEX }}
+      USDA_FDC_API_KEY: ${{ secrets.USDA_FDC_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend deps
+        working-directory: backend
+        run: npm ci
+
+      - name: Run backend migrations
+        working-directory: backend
+        run: npx prisma migrate deploy
+
+      - name: Seed eval fixture user
+        working-directory: backend
+        run: node scripts/eval-seed.js
+
+      - name: Start backend
+        working-directory: backend
+        run: nohup npm start > backend.log 2>&1 &
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3001/health > /dev/null; then
+              echo "Backend is up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend failed to start within 60s"
+          cat backend/backend.log
+          exit 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ai-agent-ts/package-lock.json
+
+      - name: Install agent deps
+        working-directory: ai-agent-ts
+        run: npm ci
+
+      - name: Run offline eval
+        working-directory: ai-agent-ts
+        env:
+          EVAL_FAIL_BELOW: "0.7"
+        run: npm run eval | tee eval-output.log
+
+      - name: Publish results to job summary
+        if: always()
+        run: |
+          {
+            echo "## Offline Eval Results"
+            echo '```'
+            tail -n 40 ai-agent-ts/eval-output.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload backend log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log
+          path: backend/backend.log

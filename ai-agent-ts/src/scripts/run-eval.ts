@@ -149,6 +149,15 @@ async function main() {
 
   const { byKey, passCount, totalCount } = hasLangSmith ? await runLangSmithEval() : await runLocalEval();
   printResults(byKey, passCount, totalCount);
+
+  // Opt-in pass-rate gate: unset locally, so `npm run eval` always exits 0 for
+  // a developer eyeballing results. CI (eval.yml) sets this to make the
+  // workflow actually fail on a real regression instead of only on infra errors.
+  const failBelow = process.env.EVAL_FAIL_BELOW ? Number(process.env.EVAL_FAIL_BELOW) : undefined;
+  if (failBelow !== undefined && totalCount > 0 && passCount / totalCount < failBelow) {
+    console.error(`\nPass rate ${(passCount / totalCount).toFixed(3)} is below EVAL_FAIL_BELOW threshold ${failBelow}`);
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {
