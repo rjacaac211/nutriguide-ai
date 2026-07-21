@@ -92,7 +92,7 @@ START → classifyIntent → routeAfterClassify →
 
 **Nodes** (`nodes.ts`):
 - `classifyIntent` — structured output (zod schema) to classify intent
-- `logFoodNode` — regex-parses food log messages, calls `requestFoodLogConfirmationTool` directly
+- `logFoodNode` — parses food log messages via a zero-cost regex fast path (`parseLogFoodMessage`), falling back to an LLM structured-extraction call (`extractLogFoodViaLLM`, temperature 0) when the regex's unit vocabulary doesn't match (e.g. "grams" spelled out, "kg" — the fast path only recognizes literal `g` plus a fixed portion-unit list, converts kg to grams in the fallback), then calls `requestFoodLogConfirmationTool` directly. The combined path is exported as `parseLogFoodMessageWithFallback` and reused by the eval harness's `logFoodParsed` evaluator so eval scores reflect the actual production parsing behavior, not just the regex.
 - `analyze` — brief LLM reasoning step before agent loop
 - `agentNode` — GPT-4o-mini with tools bound; loops with `toolNode` until no tool calls remain
 - `toolNode` — executes tool calls from agent, returns ToolMessages; overwrites any `user_id` argument in a tool call with the trusted `state.user_id` before invoking (see "Prompt injection mitigations" below)
