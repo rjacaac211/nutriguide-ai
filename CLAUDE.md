@@ -142,11 +142,13 @@ CORS (`backend/src/index.js`) allows origins in `FRONTEND_URL` (comma-separated)
 
 `Chat.jsx` renders assistant messages through `react-markdown`/`remark-gfm` (bold, lists, links) so agent output like the RAG `**Sources**` citations format correctly instead of showing literal markdown syntax; user messages render as plain text since the chat input is single-line and free-typed content shouldn't be reinterpreted as markdown.
 
-`DashboardLayout` renders the tab bar (Overview / Chat) and wraps the `<Outlet>`. `DashboardOverview` is the index route. `ChatPage` is `/dashboard/chat`.
+`DashboardLayout` renders the tab bar (Overview / Chat / Profile) and wraps the `<Outlet>`. `DashboardOverview` is the index route, `ChatPage` is `/dashboard/chat`, `ProfileView` is `/dashboard/profile` — a read-only display of onboarding-collected fields (goal, age, height, starting weight, activity level, preferences, challenges). It fetches fresh via `getProfile(userId)` rather than trusting the `profile` object already in `Outlet` context, since that object has a different shape right after signup (raw onboarding fields, no server-computed `age`) than after login (full `serializeProfile()` shape).
+
+All three modals (`AddFoodModal`, `EditFoodModal`, `AddWeightModal`) share keyboard accessibility — Escape-to-close, a Tab focus trap, `role="dialog"`/`aria-modal` — via `frontend/src/hooks/useModalA11y.js`.
 
 All API calls go through `frontend/src/api/client.js`.
 
-All component styles live in `frontend/src/App.css`. Design tokens are CSS variables at `:root` (green primary `#22c55e`, orange CTA `#f97316`, light theme).
+All component styles live in `frontend/src/App.css`. Design tokens are CSS variables at `:root` implementing a "Bento & Bold" visual identity: warm off-white background (`#fffaf2`), near-black ink (`#211531`), coral primary (`#ff5d73`), lime and sky secondary accents, thick `2.5px` borders paired with hard offset shadows (not soft blur), and chunky pill-shaped buttons. Display type is self-hosted Fredoka (headings, big numbers); body copy is self-hosted Plus Jakarta Sans — both `woff2` files live in `frontend/public/fonts/` and are loaded via `@font-face` in `App.css`, no font CDN dependency.
 
 ## Database
 
