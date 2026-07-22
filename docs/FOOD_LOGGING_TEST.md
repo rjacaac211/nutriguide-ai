@@ -52,9 +52,9 @@ Open http://localhost (port 80)
 
 1. **Create Account or Log in** — New users: Landing → Onboarding → Name → Summary → Dashboard. Returning users: click **Log in**, enter your name. This creates or restores a profile and user.
 
-2. **Dashboard** — Two tabs: **Overview** (date picker, calorie summary, meals, weight, progress charts) and **Chat** (full-page AI chat at `/dashboard/chat`). On Overview you should see:
+2. **Dashboard** — Three tabs: **Overview** (date picker, calorie summary, meals, weight, progress charts), **Chat** (full-page AI chat at `/dashboard/chat`), and **Profile** (read-only view of onboarding-collected details). On Overview you should see:
    - Date picker (default: today)
-   - Calorie summary (Eaten, Goal, Burned; goal from TDEE using latest weight log or profile)
+   - Calorie summary (Eaten, Goal/Remaining; goal from TDEE using latest weight log or profile)
    - Progress charts: weight trend and calories vs goal (7/30/90-day presets)
    - Meals: Breakfast, Lunch, Dinner, Snack with "+" buttons
    - Weight: current weight for selected date, add/edit/delete weight logs
