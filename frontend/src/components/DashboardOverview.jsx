@@ -26,7 +26,7 @@ export default function DashboardOverview() {
   const { userId } = useOutletContext();
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [foodLogs, setFoodLogs] = useState([]);
-  const [goalKcal, setGoalKcal] = useState(1625);
+  const [goalKcal, setGoalKcal] = useState(null);
 
   const refresh = useCallback(async () => {
     if (!userId) return;
@@ -48,7 +48,7 @@ export default function DashboardOverview() {
   }, [refresh]);
 
   const eaten = foodLogs.reduce((sum, log) => sum + (log.totalCal ?? 0), 0);
-  const remaining = Math.max(0, goalKcal - eaten);
+  const remaining = goalKcal != null ? Math.max(0, goalKcal - eaten) : null;
 
   return (
     <>
@@ -59,7 +59,7 @@ export default function DashboardOverview() {
       <div className="dashboard-content">
         <CalorieSummary
           eaten={Math.round(eaten)}
-          remaining={Math.round(remaining)}
+          remaining={remaining != null ? Math.round(remaining) : null}
           goal={goalKcal}
         />
         <MealsLogged
