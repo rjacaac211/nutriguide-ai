@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useOutletContext } from "react-router-dom";
 import CalorieSummary from "./CalorieSummary";
 import MealsLogged from "./MealsLogged";
-import ActivitySection from "./ActivitySection";
 import WeightSection from "./WeightSection";
 import ProgressCharts from "./ProgressCharts";
 import DatePicker from "./DatePicker";
@@ -61,7 +60,6 @@ export default function DashboardOverview() {
         <CalorieSummary
           eaten={Math.round(eaten)}
           remaining={Math.round(remaining)}
-          burned={0}
           goal={goalKcal}
         />
         <MealsLogged
@@ -72,7 +70,6 @@ export default function DashboardOverview() {
         />
         <WeightSection userId={userId} selectedDate={selectedDate} onRefresh={refresh} />
         <ProgressCharts userId={userId} />
-        <ActivitySection burned={0} />
       </div>
       <footer className="dashboard-footer">
         <a
