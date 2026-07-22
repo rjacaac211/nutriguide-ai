@@ -1257,13 +1257,15 @@
 /* Progress charts */
 .progress-charts {
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: var(--border-tile);
   border-radius: var(--radius);
-  padding: 1rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-md);
+  min-width: 0;
 }
 
 .progress-charts-title {
+  font-family: var(--font-display);
   font-size: 0.85rem;
   color: var(--color-text-muted);
   margin: 0 0 1rem 0;
@@ -1290,24 +1292,24 @@
 }
 
 .progress-charts-preset {
-  padding: 0.35rem 0.6rem;
+  padding: 0.35rem 0.7rem;
+  font-weight: 600;
   font-size: 0.8rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  border: var(--border-tile-sm);
   background: var(--color-bg);
   color: var(--color-text-muted);
   cursor: pointer;
 }
 
 .progress-charts-preset:hover {
-  border-color: var(--color-primary);
   color: var(--color-text);
 }
 
 .progress-charts-preset.active {
-  background: rgba(34, 197, 94, 0.15);
+  background: var(--color-primary);
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--color-bg);
 }
 
 .progress-charts-loading,
@@ -1326,16 +1328,23 @@
 }
 
 .progress-charts-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
 }
 
 .progress-charts-card {
   min-height: 200px;
+  min-width: 0;
+  padding: 1rem;
+  background: var(--color-bg-subtle);
+  border: var(--border-tile-sm);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
 }
 
 .progress-charts-card-title {
+  font-family: var(--font-display);
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-text);
@@ -1359,8 +1368,8 @@
   height: 56px;
   border-radius: 50%;
   background: var(--color-cta);
-  color: white;
-  border: none;
+  color: var(--color-bg);
+  border: var(--border-tile);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1388,9 +1397,9 @@
   max-width: calc(100vw - 2rem);
   height: 500px;
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: var(--border-tile);
   border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1401,12 +1410,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: var(--border-tile-sm);
   background: var(--color-bg);
 }
 
 .chat-widget-header span {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 700;
   color: var(--color-text);
 }
 
@@ -1443,11 +1453,12 @@
 
 .chat-widget-open-tab {
   padding: 0.5rem 1rem;
+  font-weight: 600;
   font-size: 0.85rem;
   color: var(--color-primary);
   background: transparent;
   border: none;
-  border-top: 1px solid var(--color-border);
+  border-top: var(--border-tile-sm);
   cursor: pointer;
   width: 100%;
   flex-shrink: 0;
