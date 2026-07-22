@@ -1482,8 +1482,9 @@
 
 .modal {
   background: var(--color-bg);
+  border: var(--border-tile);
   border-radius: var(--radius);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
   max-width: 480px;
   width: 100%;
   max-height: 90vh;
@@ -1501,12 +1502,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: var(--border-tile-sm);
 }
 
 .modal-header h3 {
+  font-family: var(--font-display);
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   color: var(--color-text);
 }
 
@@ -1532,10 +1534,12 @@
 .modal-search-input {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border: var(--border-tile-sm);
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   margin-bottom: 1rem;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .modal-search-input:focus {
@@ -1572,8 +1576,8 @@
   align-items: flex-start;
   padding: 0.75rem 1rem;
   background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border: var(--border-tile-sm);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   text-align: left;
   transition: border-color 0.15s;
@@ -1636,9 +1640,11 @@
   width: 100%;
   margin-top: 0.25rem;
   padding: 0.6rem 0.75rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border: var(--border-tile-sm);
+  border-radius: var(--radius-sm);
   font-size: 1rem;
+  background: var(--color-bg);
+  color: var(--color-text);
 }
 
 .modal-unit-select {
@@ -1679,17 +1685,17 @@
 }
 
 .modal-btn {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-weight: 600;
+  padding: 0.55rem 1.1rem;
+  border-radius: 100px;
+  font-weight: 700;
   cursor: pointer;
   font-size: 0.9rem;
 }
 
 .modal-btn-primary {
   background: var(--color-cta);
-  color: white;
-  border: none;
+  color: var(--color-bg);
+  border: var(--border-tile-sm);
 }
 
 .modal-btn-primary:hover:not(:disabled) {
@@ -1702,13 +1708,13 @@
 }
 
 .modal-btn-secondary {
-  background: var(--color-bg-subtle);
+  background: var(--color-bg);
   color: var(--color-text);
-  border: 1px solid var(--color-border);
+  border: var(--border-tile-sm);
 }
 
 .modal-btn-secondary:hover {
-  background: var(--color-border);
+  background: var(--color-bg-subtle);
 }
 
 .modal-close:focus-visible,
