@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { searchFoods, getFoodDetails } from "../api/client";
+import { useModalA11y } from "../hooks/useModalA11y";
 
 function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -60,6 +61,9 @@ export default function AddFoodModal({ isOpen, onClose, mealType, onAdd, selecte
   const [selectedUnit, setSelectedUnit] = useState("g");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  const containerRef = useRef(null);
+  useModalA11y(isOpen, onClose, containerRef);
 
   const debouncedQuery = useDebounce(query, 300);
 
@@ -152,9 +156,17 @@ export default function AddFoodModal({ isOpen, onClose, mealType, onAdd, selecte
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal add-food-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal add-food-modal"
+        onClick={(e) => e.stopPropagation()}
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-food-modal-title"
+      >
         <div className="modal-header">
-          <h3>Add food to {mealType}</h3>
+          <h3 id="add-food-modal-title">Add food to {mealType}</h3>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>

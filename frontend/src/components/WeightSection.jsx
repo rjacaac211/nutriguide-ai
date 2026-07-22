@@ -45,7 +45,6 @@ export default function WeightSection({ userId, selectedDate, onRefresh }) {
   }, [refresh]);
 
   const logForSelectedDate = logs[0] ?? null;
-  const currentWeight = logForSelectedDate?.weightKg ?? null;
   const hasLogForSelectedDate = logForSelectedDate != null;
 
   const handleAdd = async ({ weightKg, date, notes }) => {
@@ -78,12 +77,6 @@ export default function WeightSection({ userId, selectedDate, onRefresh }) {
   return (
     <div className="weight-section">
       <h3 className="weight-title">Weight</h3>
-      <div className="weight-current-card">
-        <span className="weight-current-label">Current weight</span>
-        <span className="weight-current-value">
-          {currentWeight != null ? `${currentWeight} kg` : "—"}
-        </span>
-      </div>
       <div className="weight-list">
         {logForSelectedDate && (
           <div key={logForSelectedDate.id} className="weight-entry">

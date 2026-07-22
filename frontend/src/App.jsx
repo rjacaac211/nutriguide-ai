@@ -8,6 +8,7 @@ import EnterNameStep from "./components/EnterNameStep";
 import GoalSummaryStep from "./components/GoalSummaryStep";
 import DashboardLayout from "./components/DashboardLayout";
 import DashboardOverview from "./components/DashboardOverview";
+import ProfileView from "./components/ProfileView";
 import ChatPage from "./components/ChatPage";
 import ChatWidget from "./components/ChatWidget";
 import { ChatThreadProvider } from "./context/ChatThreadContext";
@@ -149,6 +150,7 @@ export default function App() {
             >
               <Route index element={<DashboardOverview />} />
               <Route path="chat" element={<ChatPage />} />
+              <Route path="profile" element={<ProfileView />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

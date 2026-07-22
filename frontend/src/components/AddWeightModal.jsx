@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useModalA11y } from "../hooks/useModalA11y";
 
 function todayStr() {
   const d = new Date();
@@ -12,6 +13,9 @@ export default function AddWeightModal({ isOpen, onClose, onAdd, initialLog, ini
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  const containerRef = useRef(null);
+  useModalA11y(isOpen, onClose, containerRef);
 
   useEffect(() => {
     if (isOpen) {
@@ -55,9 +59,17 @@ export default function AddWeightModal({ isOpen, onClose, onAdd, initialLog, ini
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal add-weight-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal add-weight-modal"
+        onClick={(e) => e.stopPropagation()}
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-weight-modal-title"
+      >
         <div className="modal-header">
-          <h3>{isEdit ? "Edit weight" : "Add weight"}</h3>
+          <h3 id="add-weight-modal-title">{isEdit ? "Edit weight" : "Add weight"}</h3>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>

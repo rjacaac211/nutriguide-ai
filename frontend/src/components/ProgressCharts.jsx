@@ -17,6 +17,11 @@ const PRESETS = [
   { key: "90d", label: "90 days", days: 90 },
 ];
 
+// A single logged weight is still a real 2-point trend; calorie logging
+// is denser, so it takes a few active days before a line is meaningful.
+const MIN_WEIGHT_POINTS = 2;
+const MIN_CALORIE_ACTIVE_DAYS = 3;
+
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -88,6 +93,9 @@ export default function ProgressCharts({ userId }) {
 
   const hasWeightData = weightLogs.length > 0;
   const hasCalorieData = dailyCalories.some((d) => d.calories > 0);
+  const calorieActiveDays = dailyCalories.filter((d) => d.calories > 0).length;
+  const weightTrendReady = weightLogs.length >= MIN_WEIGHT_POINTS;
+  const calorieTrendReady = calorieActiveDays >= MIN_CALORIE_ACTIVE_DAYS;
 
   if (loading) {
     return (
@@ -134,6 +142,50 @@ export default function ProgressCharts({ userId }) {
           {hasWeightData && (
             <div className="progress-charts-card">
               <h4 className="progress-charts-card-title">Weight (kg)</h4>
+              {weightTrendReady ? (
+                <div className="progress-charts-chart">
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                      <XAxis
+                        dataKey="dateLabel"
+                        tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
+                      />
+                      <YAxis
+                        dataKey="weight"
+                        domain={["auto", "auto"]}
+                        tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--color-bg)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "var(--radius)",
+                        }}
+                        labelFormatter={(_, payload) => payload?.[0]?.payload?.date}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="weight"
+                        stroke="var(--color-primary)"
+                        strokeWidth={2}
+                        dot={{ fill: "var(--color-primary)", r: 3 }}
+                        connectNulls={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="progress-charts-empty">
+                  Log a few more days to see your weight trend.
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="progress-charts-card">
+            <h4 className="progress-charts-card-title">Calories vs goal</h4>
+            {calorieTrendReady ? (
               <div className="progress-charts-chart">
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
@@ -143,8 +195,8 @@ export default function ProgressCharts({ userId }) {
                       tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
                     />
                     <YAxis
-                      dataKey="weight"
-                      domain={["auto", "auto"]}
+                      dataKey="calories"
+                      domain={[0, "auto"]}
                       tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
                     />
                     <Tooltip
@@ -155,9 +207,17 @@ export default function ProgressCharts({ userId }) {
                       }}
                       labelFormatter={(_, payload) => payload?.[0]?.payload?.date}
                     />
+                    {goalKcal != null && (
+                      <ReferenceLine
+                        y={goalKcal}
+                        stroke="var(--color-cta)"
+                        strokeDasharray="4 4"
+                        label={{ value: "Goal", fill: "var(--color-text-muted)", fontSize: 10 }}
+                      />
+                    )}
                     <Line
                       type="monotone"
-                      dataKey="weight"
+                      dataKey="calories"
                       stroke="var(--color-primary)"
                       strokeWidth={2}
                       dot={{ fill: "var(--color-primary)", r: 3 }}
@@ -166,51 +226,11 @@ export default function ProgressCharts({ userId }) {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-          )}
-
-          <div className="progress-charts-card">
-            <h4 className="progress-charts-card-title">Calories vs goal</h4>
-            <div className="progress-charts-chart">
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis
-                    dataKey="dateLabel"
-                    tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
-                  />
-                  <YAxis
-                    dataKey="calories"
-                    domain={[0, "auto"]}
-                    tick={{ fontSize: 11, fill: "var(--color-text-muted)" }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--color-bg)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "var(--radius)",
-                    }}
-                    labelFormatter={(_, payload) => payload?.[0]?.payload?.date}
-                  />
-                  {goalKcal != null && (
-                    <ReferenceLine
-                      y={goalKcal}
-                      stroke="var(--color-cta)"
-                      strokeDasharray="4 4"
-                      label={{ value: "Goal", fill: "var(--color-text-muted)", fontSize: 10 }}
-                    />
-                  )}
-                  <Line
-                    type="monotone"
-                    dataKey="calories"
-                    stroke="var(--color-primary)"
-                    strokeWidth={2}
-                    dot={{ fill: "var(--color-primary)", r: 3 }}
-                    connectNulls={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            ) : (
+              <div className="progress-charts-empty">
+                Log a few days of meals to see your calorie trend.
+              </div>
+            )}
           </div>
         </div>
       )}

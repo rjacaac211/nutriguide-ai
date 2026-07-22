@@ -26,6 +26,12 @@ export default function DashboardLayout({ profile, userId, onLogout }) {
           >
             Chat
           </NavLink>
+          <NavLink
+            to="/dashboard/profile"
+            className={({ isActive }) => `dashboard-tab ${isActive ? "active" : ""}`}
+          >
+            Profile
+          </NavLink>
         </nav>
       </header>
       <div className="dashboard-outlet">

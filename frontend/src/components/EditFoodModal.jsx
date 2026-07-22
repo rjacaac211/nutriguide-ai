@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updateFoodLogItem, deleteFoodLogItem, getFoodDetails } from "../api/client";
+import { useModalA11y } from "../hooks/useModalA11y";
 
 function buildPatchFromAmountAndUnit(food, amount, unit) {
   const amt = Number(amount) || 0;
@@ -53,6 +54,9 @@ export default function EditFoodModal({
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState(null);
+
+  const containerRef = useRef(null);
+  useModalA11y(isOpen, onClose, containerRef);
 
   useEffect(() => {
     if (isOpen && item?.fdcId) {
@@ -158,9 +162,17 @@ export default function EditFoodModal({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal edit-food-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal edit-food-modal"
+        onClick={(e) => e.stopPropagation()}
+        ref={containerRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="edit-food-modal-title"
+      >
         <div className="modal-header">
-          <h3>Edit food</h3>
+          <h3 id="edit-food-modal-title">Edit food</h3>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
             ×
           </button>

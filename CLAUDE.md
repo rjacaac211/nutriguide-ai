@@ -140,6 +140,8 @@ CORS (`backend/src/index.js`) allows origins in `FRONTEND_URL` (comma-separated)
 
 `ChatThreadProvider` (`context/ChatThreadContext.jsx`) holds shared `threadId`, `messages`, `input`, and `handleSubmit` — both `ChatWidget` (floating overlay) and `ChatPage` (full-page `/dashboard/chat`) consume the same context so they share the same thread.
 
+`Chat.jsx` renders assistant messages through `react-markdown`/`remark-gfm` (bold, lists, links) so agent output like the RAG `**Sources**` citations format correctly instead of showing literal markdown syntax; user messages render as plain text since the chat input is single-line and free-typed content shouldn't be reinterpreted as markdown.
+
 `DashboardLayout` renders the tab bar (Overview / Chat) and wraps the `<Outlet>`. `DashboardOverview` is the index route. `ChatPage` is `/dashboard/chat`.
 
 All API calls go through `frontend/src/api/client.js`.
