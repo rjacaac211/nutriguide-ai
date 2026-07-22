@@ -68,6 +68,7 @@ export default function OnboardingWizard({ profile, onUpdate, onComplete, onBack
 
       <div className="onboarding-content">
         <QuestionSlide
+          key={currentQuestion.id}
           question={currentQuestion}
           value={profile[currentQuestion?.field]}
           onChange={(val) => handleChoiceChange(currentQuestion.field, val)}

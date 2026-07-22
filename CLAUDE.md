@@ -44,6 +44,7 @@ npm run migrate dev    # run Prisma migrations (requires PostgreSQL)
 npm run dev            # node --watch src/index.js
 npm start              # migrate-and-start (used in Docker/prod)
 npm test               # vitest run — unit tests for pure-logic functions (tdee.js's calculateTDEE), no live services needed
+node scripts/demo-seed.js  # seed "Alex Demo" demo account (id demo-user, 14 days of logs) for README media/local demos — idempotent, item macros scaled to grams (matching real UI/agent logs, unlike eval-seed.js's per-100g values), refuses amazonaws.com DATABASE_URL, rewrites host.docker.internal→localhost when run from the host
 ```
 
 ### Frontend (`frontend/`)

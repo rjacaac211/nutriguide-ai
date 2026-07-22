@@ -170,7 +170,7 @@ export default function ProgressCharts({ userId }) {
                         stroke="var(--color-primary)"
                         strokeWidth={2}
                         dot={{ fill: "var(--color-primary)", r: 3 }}
-                        connectNulls={false}
+                        connectNulls
                       />
                     </LineChart>
                   </ResponsiveContainer>
