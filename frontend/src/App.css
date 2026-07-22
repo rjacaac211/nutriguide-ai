@@ -1390,6 +1390,10 @@
   flex-direction: column;
 }
 
+.modal:focus {
+  outline: none;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -1602,4 +1606,12 @@
 
 .modal-btn-secondary:hover {
   background: var(--color-border);
+}
+
+.modal-close:focus-visible,
+.modal-btn:focus-visible,
+.modal-back:focus-visible,
+.food-search-item:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
