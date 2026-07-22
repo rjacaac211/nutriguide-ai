@@ -51,6 +51,12 @@ Run migrations (requires DATABASE_URL and a running PostgreSQL):
 npm run migrate dev
 ```
 
+Optional — seed the "Alex Demo" demo account (14 days of food/weight logs, log in by name through the UI; idempotent, refuses to run against a remote `amazonaws.com` database):
+
+```bash
+node scripts/demo-seed.js
+```
+
 ## Run
 
 ```bash
@@ -119,6 +125,10 @@ backend/
 ├── prisma/
 │   ├── schema.prisma
 │   └── migrations/
+├── scripts/
+│   ├── demo-seed.js      # "Alex Demo" demo account (README media / local demos)
+│   ├── eval-seed.js      # eval-test-user fixture (eval harness / eval.yml)
+│   └── dummy-data*.sql   # raw-SQL dev seed data
 ├── src/
 │   ├── db.js
 │   ├── env.js           # Load .env before routes

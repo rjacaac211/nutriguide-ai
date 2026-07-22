@@ -94,6 +94,13 @@ psql $DATABASE_URL -f backend/scripts/dummy-data.sql
 
 > **Warning:** Do not run the dummy data script in production.
 
+**Demo account (separate from the above):** `backend/scripts/demo-seed.js` seeds a ready-made "Alex Demo" account (fixed id `demo-user`) with 14 days of varied food logs and a weight trend — log in through the UI by name to browse it. Used for README screenshots/GIFs and live demos. Node/Prisma, idempotent (re-running refreshes the data relative to today), and it refuses to run against an `amazonaws.com` `DATABASE_URL`:
+
+```bash
+cd backend
+node scripts/demo-seed.js
+```
+
 **Eval fixture (separate from the above):** `backend/scripts/eval-seed.js` seeds a small, fixed profile + food/weight log history for user id `eval-test-user` — the id the AI agent's offline eval dataset (`ai-agent-ts/src/eval/dataset.ts`) hardcodes for every example. It's a Node/Prisma script (not SQL, and idempotent — safe to re-run), run automatically by `.github/workflows/eval.yml` against CI's ephemeral database. Run it locally the same way if you want your dev DB to have this fixture for testing the eval harness directly:
 
 ```bash
