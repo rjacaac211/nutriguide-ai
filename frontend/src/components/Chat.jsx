@@ -1,5 +1,11 @@
 import { useRef, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { useChatThread } from "../context/ChatThreadContext";
+
+function MarkdownLink({ node, ...props }) {
+  return <a {...props} target="_blank" rel="noopener noreferrer" />;
+}
 
 export default function Chat() {
   const bottomRef = useRef(null);
@@ -37,7 +43,15 @@ export default function Chat() {
             <div key={i} className={`message message-${m.role}`}>
               <span className="message-role">{m.role === "user" ? "You" : "NutriGuide"}</span>
               <div className={`message-content${isPendingStream ? " typing" : ""}`}>
-                {isPendingStream ? "Thinking..." : m.content}
+                {isPendingStream ? (
+                  "Thinking..."
+                ) : m.role === "user" ? (
+                  m.content
+                ) : (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ a: MarkdownLink }}>
+                    {m.content}
+                  </ReactMarkdown>
+                )}
               </div>
             </div>
           );
