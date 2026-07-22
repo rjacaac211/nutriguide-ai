@@ -820,11 +820,12 @@
 }
 
 .dashboard-logout-btn {
-  padding: 0.4rem 0.75rem;
-  background: transparent;
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
+  padding: 0.4rem 0.9rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: var(--border-tile-sm);
+  border-radius: 100px;
+  font-weight: 600;
   font-size: 0.85rem;
   cursor: pointer;
 }
@@ -835,13 +836,11 @@
 }
 
 .dashboard-header h1 {
+  font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 700;
   margin: 0 0 0.25rem 0;
-  background: linear-gradient(90deg, var(--color-primary), #16a34a);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-primary);
 }
 
 .dashboard-date {
@@ -865,29 +864,29 @@
 .dashboard-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.4rem;
   margin-top: 1rem;
-  border-bottom: 1px solid var(--color-border);
 }
 
 .dashboard-tab {
   padding: 0.5rem 1rem;
-  font-size: 0.95rem;
-  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-text);
   text-decoration: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  border-radius: var(--radius) var(--radius) 0 0;
+  background: var(--color-bg);
+  border: var(--border-tile-sm);
+  border-radius: 100px;
 }
 
 .dashboard-tab:hover {
-  color: var(--color-text);
+  background: var(--color-bg-subtle);
 }
 
 .dashboard-tab.active {
-  color: var(--color-primary);
-  font-weight: 600;
-  border-bottom-color: var(--color-primary);
+  background: var(--color-cta);
+  color: var(--color-bg);
+  border-color: var(--color-cta);
 }
 
 .dashboard-footer {
@@ -909,8 +908,8 @@
 
 .date-picker {
   padding: 0.4rem 0.6rem;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border: var(--border-tile-sm);
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   color: var(--color-text);
   background: var(--color-bg);
@@ -922,54 +921,76 @@
 }
 
 .dashboard-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
 }
 
-.calorie-summary {
+@media (min-width: 700px) {
+  .dashboard-content {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-areas:
+      "remaining eaten"
+      "meals weight"
+      "charts charts";
+  }
+
+  .calorie-tile-remaining { grid-area: remaining; }
+  .calorie-tile-eaten { grid-area: eaten; }
+  .meals-logged { grid-area: meals; }
+  .weight-section { grid-area: weight; }
+  .progress-charts { grid-area: charts; }
+}
+
+.calorie-tile {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 0;
   padding: 1.5rem;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: var(--border-tile);
   border-radius: var(--radius);
   box-shadow: var(--shadow-md);
-}
-
-.calorie-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.calorie-label {
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
-}
-
-.calorie-value {
-  font-size: 1.25rem;
-  font-weight: 600;
   color: var(--color-text);
 }
 
-.calorie-remaining .calorie-remaining-value {
-  font-size: 1.75rem;
-  color: var(--color-primary);
+.calorie-tile-remaining {
+  background: var(--color-primary);
+}
+
+.calorie-tile-eaten {
+  background: var(--color-lime);
+}
+
+.calorie-tile-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.calorie-tile-value-sm {
+  font-size: 1.5rem;
+}
+
+.calorie-tile-label {
+  font-weight: 600;
+  font-size: 0.85rem;
 }
 
 .meals-logged {
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: var(--border-tile);
   border-radius: var(--radius);
-  padding: 1rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-md);
+  min-width: 0;
 }
 
 .meals-title {
+  font-family: var(--font-display);
   font-size: 0.85rem;
   color: var(--color-text-muted);
   margin: 0 0 1rem 0;
@@ -978,19 +999,21 @@
 }
 
 .meals-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
 }
 
 .meal-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  min-width: 0;
   padding: 1rem;
   background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border: var(--border-tile-sm);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
 }
 
 .meal-info {
@@ -1059,7 +1082,7 @@
   flex-shrink: 0;
   border-radius: 50%;
   background: var(--color-cta);
-  color: white;
+  color: var(--color-bg);
   border: none;
   font-size: 1.25rem;
   cursor: pointer;
@@ -1076,13 +1099,18 @@
 /* Weight section */
 .weight-section {
   background: var(--color-bg);
-  border: 1px solid var(--color-border);
+  border: var(--border-tile);
   border-radius: var(--radius);
-  padding: 1rem;
+  padding: 1.25rem;
   box-shadow: var(--shadow-md);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .weight-title {
+  font-family: var(--font-display);
   font-size: 0.85rem;
   color: var(--color-text-muted);
   margin: 0 0 0.75rem 0;
@@ -1099,12 +1127,14 @@
 
 .weight-entry {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background: var(--color-bg-subtle);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border: var(--border-tile-sm);
+  border-radius: var(--radius-sm);
 }
 
 .weight-entry-info {
@@ -1161,21 +1191,23 @@
 
 .weight-add-btn {
   width: 100%;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
   background: var(--color-bg-subtle);
   color: var(--color-text);
-  border: 1px solid var(--color-border);
+  border: var(--border-tile-sm);
+  font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
 }
 
 .weight-add-btn:hover {
-  background: var(--color-border);
+  background: var(--color-lime);
 }
 
 /* Profile view */
 .profile-view-title {
+  font-family: var(--font-display);
   font-size: 0.85rem;
   color: var(--color-text-muted);
   margin: 0 0 0.75rem 0;
